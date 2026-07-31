@@ -21,6 +21,8 @@ import {
 
 const PRAYER_KEYS: readonly PrayerKey[] = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
 const REPOSITORY_URL = "https://github.com/DevM7mdAli/Pray-Times";
+const EXTENSION_URL = `${REPOSITORY_URL}/releases/latest`;
+const TODAY_URL = "/Pray-Times/today/";
 const LOCALE_STORAGE_KEY = "pray-times:landing-locale";
 
 const COPY = {
@@ -37,6 +39,8 @@ const COPY = {
     verificationNav: "كيف نتحقق؟",
     privacyNav: "الخصوصية",
     openProject: "افتح المشروع",
+    useOnWeb: "استخدمه على الويب",
+    getExtension: "احصل على الإضافة",
     heroEyebrow: "لا ينبغي أن يكون وقت الصلاة تخمينًا",
     heroLead:
       "إضافة هادئة تعرض مسار يومك من الفجر إلى العشاء، وتتحقق من الإحداثيات والتاريخ وطريقة الحساب قبل أن تعرض الوقت.",
@@ -93,6 +97,8 @@ const COPY = {
     verificationNav: "How we verify",
     privacyNav: "Privacy",
     openProject: "View project",
+    useOnWeb: "Use on the web",
+    getExtension: "Get the extension",
     heroEyebrow: "Prayer time should not be a guess",
     heroLead:
       "A calm companion for your path from Fajr to Isha. It checks coordinates, date, and calculation method before showing a time.",
@@ -331,8 +337,8 @@ export function App() {
           >
             {copy.languageShort}
           </button>
-          <a className="header-cta" href={REPOSITORY_URL} target="_blank" rel="noreferrer">
-            {copy.openProject} <ArrowIcon />
+          <a className="header-cta" href={TODAY_URL}>
+            {copy.useOnWeb} <ArrowIcon />
           </a>
         </div>
       </header>
@@ -360,16 +366,11 @@ export function App() {
             </h1>
             <p className="hero-lede">{copy.heroLead}</p>
             <div className="hero-actions">
-              <a
-                className="button button-primary"
-                href={REPOSITORY_URL}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {copy.openProject} <ArrowIcon />
+              <a className="button button-primary" href={TODAY_URL}>
+                {copy.useOnWeb} <ArrowIcon />
               </a>
-              <a className="text-link" href="#method">
-                {copy.learnVerification}
+              <a className="text-link" href={EXTENSION_URL} target="_blank" rel="noreferrer">
+                {copy.getExtension}
               </a>
             </div>
             <p className="micro-proof">
@@ -518,13 +519,8 @@ export function App() {
               </>
             )}
           </h2>
-          <a
-            className="button button-primary"
-            href={REPOSITORY_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {copy.openProject} <ArrowIcon />
+          <a className="button button-primary" href={TODAY_URL}>
+            {copy.useOnWeb} <ArrowIcon />
           </a>
         </section>
       </main>

@@ -1,5 +1,6 @@
 import {
   CITIES,
+  PRAYER_KEYS,
   cachePrayerDay,
   cityById,
   cityName,
@@ -19,9 +20,17 @@ import {
   type Ayah,
   type City,
   type PrayerDay,
+  type PrayerKey,
   type SupportedLocale,
 } from "@pray-times/core";
 import { EXTENSION_COPY, type ExtensionCopyKey } from "./copy.js";
+import {
+  defaultExtensionSettings,
+  migrateLegacySettings,
+  writeExtensionSettings,
+  writeStoredPrayerDay,
+  type ExtensionSettings,
+} from "./extension-state.js";
 
 const CITY_STORAGE_KEY = "pray-times:city-id";
 const LOCALE_STORAGE_KEY = "pray-times:extension-locale";
@@ -51,6 +60,9 @@ let requestVersion = 0;
 let viewState: ViewState = { kind: "no-city" };
 let ayahState: AyahState = "waiting";
 let status: Status = {};
+let extensionSettings: ExtensionSettings = defaultExtensionSettings(locale);
+let permissionWasDenied = false;
+let settingsWriteQueue: Promise<void> = Promise.resolve();
 
 const citySelect = requiredElement<HTMLSelectElement>("city-select");
 const prayerPanel = requiredElement<HTMLElement>("prayer-panel");
@@ -61,6 +73,12 @@ const sourceLine = requiredElement<HTMLElement>("source-line");
 const refreshButton = requiredElement<HTMLButtonElement>("refresh-button");
 const languageButton = requiredElement<HTMLButtonElement>("language-button");
 const settingsDialog = requiredElement<HTMLDialogElement>("settings-dialog");
+const notificationToggle = requiredElement<HTMLInputElement>("notification-toggle");
+const notificationPermission = requiredElement<HTMLElement>("notification-permission");
+const prayerNotificationOptions = requiredElement<HTMLFieldSetElement>(
+  "prayer-notification-options"
+);
+const testNotificationButton = requiredElement<HTMLButtonElement>("test-notification");
 
 function requiredElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -226,6 +244,32 @@ function renderView(): void {
   statusLine.dataset.state = status.key ? (status.state ?? "info") : "";
 }
 
+function prayerToggle(key: PrayerKey): HTMLInputElement {
+  return requiredElement<HTMLInputElement>(`prayer-toggle-${key}`);
+}
+
+async function persistSettings(settings: ExtensionSettings): Promise<void> {
+  extensionSettings = settings;
+  settingsWriteQueue = settingsWriteQueue.then(() => writeExtensionSettings(settings));
+  await settingsWriteQueue;
+}
+
+async function renderNotificationSettings(messageKey?: ExtensionCopyKey): Promise<void> {
+  const permitted = await chrome.permissions.contains({ permissions: ["notifications"] });
+  notificationToggle.checked = extensionSettings.notificationsEnabled && permitted;
+  prayerNotificationOptions.disabled = !notificationToggle.checked;
+  testNotificationButton.disabled =
+    !notificationToggle.checked || !cityById(extensionSettings.cityId);
+  for (const key of PRAYER_KEYS) {
+    prayerToggle(key).checked = extensionSettings.enabledPrayers[key];
+  }
+  const key =
+    messageKey ??
+    (permissionWasDenied ? "permissionDenied" : permitted ? "permissionReady" : "permissionNeeded");
+  notificationPermission.textContent = text(key);
+  notificationPermission.dataset.state = key === "permissionDenied" ? "error" : "info";
+}
+
 function clearCountdown(): void {
   if (countdownTimer !== undefined) window.clearInterval(countdownTimer);
   countdownTimer = undefined;
@@ -279,6 +323,7 @@ async function loadSelectedCity(force = false): Promise<void> {
 
   if (prayerResult.status === "fulfilled") {
     cachePrayerDay(localStorage, prayerResult.value);
+    await writeStoredPrayerDay(prayerResult.value);
     currentDay = prayerResult.value;
     status = {};
     startCountdown();
@@ -325,15 +370,56 @@ function applyLocale(): void {
     /* Language remains active for this popup session. */
   }
   populateCities();
+  document.querySelectorAll<HTMLElement>("[data-prayer-label]").forEach((node) => {
+    const key = node.dataset.prayerLabel;
+    if (key && PRAYER_KEYS.includes(key as PrayerKey)) {
+      node.textContent = prayerName(key as PrayerKey, locale);
+    }
+  });
   renderView();
+  void renderNotificationSettings();
 }
 
 function installEvents(): void {
-  citySelect.addEventListener("change", () => void loadSelectedCity());
+  citySelect.addEventListener("change", () => {
+    void persistSettings({ ...extensionSettings, cityId: citySelect.value });
+    void loadSelectedCity();
+  });
   refreshButton.addEventListener("click", () => void loadSelectedCity(true));
   languageButton.addEventListener("click", () => {
     locale = locale === "ar" ? "en" : "ar";
+    void persistSettings({ ...extensionSettings, locale });
     applyLocale();
+  });
+  notificationToggle.addEventListener("change", () => {
+    void (async () => {
+      let enabled = notificationToggle.checked;
+      if (enabled) {
+        enabled = await chrome.permissions.request({ permissions: ["notifications"] });
+        permissionWasDenied = !enabled;
+      }
+      await persistSettings({ ...extensionSettings, notificationsEnabled: enabled });
+      await renderNotificationSettings();
+    })();
+  });
+  for (const key of PRAYER_KEYS) {
+    prayerToggle(key).addEventListener("change", () => {
+      void (async () => {
+        await persistSettings({
+          ...extensionSettings,
+          enabledPrayers: {
+            ...extensionSettings.enabledPrayers,
+            [key]: prayerToggle(key).checked,
+          },
+        });
+        await renderNotificationSettings();
+      })();
+    });
+  }
+  testNotificationButton.addEventListener("click", () => {
+    void chrome.runtime
+      .sendMessage({ type: "test-notification" })
+      .then(() => renderNotificationSettings("testNotificationSent"));
   });
   requiredElement<HTMLButtonElement>("settings-button").addEventListener("click", () =>
     settingsDialog.showModal()
@@ -348,6 +434,20 @@ function installEvents(): void {
   });
 }
 
-applyLocale();
-installEvents();
-void loadSelectedCity();
+async function initialize(): Promise<void> {
+  let legacyCity = "";
+  try {
+    legacyCity = localStorage.getItem(CITY_STORAGE_KEY) ?? "";
+  } catch {
+    /* Start without a city when legacy storage is unavailable. */
+  }
+  extensionSettings = await migrateLegacySettings(legacyCity, locale);
+  locale = extensionSettings.locale;
+  applyLocale();
+  citySelect.value = cityById(extensionSettings.cityId) ? extensionSettings.cityId : "";
+  installEvents();
+  await renderNotificationSettings();
+  await loadSelectedCity();
+}
+
+void initialize();

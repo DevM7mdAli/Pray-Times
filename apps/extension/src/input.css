@@ -397,7 +397,9 @@
   }
   .settings-dialog {
     width: min(calc(100% - 28px), 372px);
+    max-height: min(720px, calc(100vh - 28px));
     padding: 19px;
+    overflow-y: auto;
     color: var(--nur);
     border: 1px solid rgba(245, 248, 255, 0.18);
     border-radius: 21px;
@@ -436,6 +438,131 @@
     margin: 0 0 16px;
     color: #d8e1f2;
     font-size: 12px;
+  }
+  .notification-settings {
+    margin: 0 0 18px;
+    padding: 15px;
+    border: 1px solid rgba(77, 168, 218, 0.28);
+    border-radius: 16px;
+    background: rgba(11, 23, 54, 0.46);
+  }
+  .notification-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .notification-heading h3 {
+    margin: 0 0 3px;
+    font-family: "Alexandria", "Tahoma", sans-serif;
+    font-size: 14px;
+  }
+  .notification-heading p,
+  .notification-note,
+  .permission-status {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .permission-status {
+    min-height: 17px;
+    margin-top: 10px;
+    color: var(--raml);
+  }
+  .permission-status[data-state="error"] {
+    color: #ffc5b7;
+  }
+  .switch-control {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+  .switch-control input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .switch-control > span:last-child {
+    width: 44px;
+    height: 25px;
+    cursor: pointer;
+    border: 1px solid rgba(245, 248, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(245, 248, 255, 0.12);
+    transition: background 0.2s ease;
+  }
+  .switch-control > span:last-child::after {
+    display: block;
+    width: 19px;
+    height: 19px;
+    margin: 2px;
+    border-radius: 50%;
+    background: var(--nur);
+    content: "";
+    transition: transform 0.2s ease;
+  }
+  .switch-control input:checked + span {
+    background: var(--sama);
+  }
+  .switch-control input:checked + span::after {
+    transform: translateX(19px);
+  }
+  [dir="rtl"] .switch-control input:checked + span::after {
+    transform: translateX(-19px);
+  }
+  .switch-control input:focus-visible + span {
+    outline: 2px solid var(--raml);
+    outline-offset: 3px;
+  }
+  .notification-settings fieldset {
+    margin: 13px 0 12px;
+    padding: 0;
+    border: 0;
+  }
+  .notification-settings legend {
+    margin-bottom: 7px;
+    color: #d8e1f2;
+    font-size: 11px;
+  }
+  .prayer-toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+  }
+  .prayer-toggle-grid label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 34px;
+    padding: 6px 8px;
+    border: 1px solid rgba(245, 248, 255, 0.12);
+    border-radius: 9px;
+    color: #e7edf8;
+    font-size: 11px;
+  }
+  .prayer-toggle-grid input {
+    accent-color: var(--sama);
+  }
+  .notification-settings fieldset:disabled {
+    opacity: 0.5;
+  }
+  .secondary-button {
+    width: 100%;
+    min-height: 38px;
+    cursor: pointer;
+    border: 1px solid rgba(242, 214, 162, 0.35);
+    border-radius: 10px;
+    background: rgba(242, 214, 162, 0.08);
+    color: var(--raml);
+    font-weight: 700;
+  }
+  .secondary-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  .notification-note {
+    margin-top: 9px;
+    line-height: 1.5;
   }
   .primary-button {
     width: 100%;

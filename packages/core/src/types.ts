@@ -64,3 +64,12 @@ export type NextPrayer = {
   minutesUntil: number;
   isTomorrow: boolean;
 };
+
+export type PrayerScheduleEntry = {
+  id: string;
+  key: PrayerKey;
+  cityId: string;
+  requestedDate: string;
+  time: string;
+  scheduledTime: number;
+};

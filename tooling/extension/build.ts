@@ -37,6 +37,15 @@ async function main(): Promise<void> {
     "--target=es2022",
     "--outfile=dist/popup.js",
   ]);
+  run("pnpm", [
+    "exec",
+    "esbuild",
+    "src/service-worker.ts",
+    "--bundle",
+    "--format=esm",
+    "--target=es2022",
+    "--outfile=dist/service-worker.js",
+  ]);
   await Promise.all([
     cp(path.join(extensionRoot, "manifest.json"), path.join(distRoot, "manifest.json")),
     cp(path.join(extensionRoot, "_locales"), path.join(distRoot, "_locales"), { recursive: true }),

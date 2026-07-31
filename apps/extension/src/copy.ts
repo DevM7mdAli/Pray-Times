@@ -44,6 +44,17 @@ export const EXTENSION_COPY = {
     verificationLabel: "التحقق",
     verificationDetail: "نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية",
     accuracyNote: "قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.",
+    notificationsTitle: "تنبيهات الصلاة",
+    notificationsDescription: "إشعار عند دخول وقت كل صلاة، حتى عندما تكون النافذة مغلقة.",
+    notificationsToggle: "تفعيل تنبيهات الصلاة",
+    prayerNotifications: "الصلوات التي تريد تنبيهًا لها",
+    permissionReady: "الإشعارات مفعلة على هذا الجهاز.",
+    permissionNeeded: "فعّل التنبيهات للسماح للإضافة بإظهار الإشعارات.",
+    permissionDenied: "حظر المتصفح الإشعارات. اسمح بها من إعدادات الإضافة ثم حاول مجددًا.",
+    testNotification: "إرسال إشعار تجريبي",
+    testNotificationSent: "تم إرسال إشعار تجريبي.",
+    notificationTimingNote:
+      "لا يستطيع المتصفح إيقاظ الجهاز من السكون. يظهر التنبيه المتأخر خلال ١٠ دقائق فقط.",
     understood: "فهمت",
     footer: "أم القرى · يتحقق من التاريخ والإحداثيات قبل العرض",
     verseNumber: "الآية",
@@ -94,6 +105,19 @@ export const EXTENSION_COPY = {
     verificationDetail: "We reject a result when its date, coordinates, or time zone do not match",
     accuracyNote:
       "Calculated times can differ by minutes from a mosque or local authority announcement.",
+    notificationsTitle: "Prayer alerts",
+    notificationsDescription:
+      "Get an alert when each prayer begins, even while the popup is closed.",
+    notificationsToggle: "Enable prayer notifications",
+    prayerNotifications: "Prayers to notify me about",
+    permissionReady: "Notifications are enabled on this device.",
+    permissionNeeded: "Enable alerts to let the extension show notifications.",
+    permissionDenied:
+      "The browser blocked notifications. Allow them in the extension settings, then try again.",
+    testNotification: "Send a test notification",
+    testNotificationSent: "Test notification sent.",
+    notificationTimingNote:
+      "The browser cannot wake a sleeping device. Late alerts are shown for up to 10 minutes.",
     understood: "Got it",
     footer: "Umm Al-Qura · date and coordinates checked before display",
     verseNumber: "Verse",

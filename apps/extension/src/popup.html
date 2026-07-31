@@ -119,6 +119,61 @@
       <p class="accuracy-note" data-i18n="accuracyNote">
         قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.
       </p>
+      <section class="notification-settings" aria-labelledby="notifications-title">
+        <div class="notification-heading">
+          <div>
+            <h3 id="notifications-title" data-i18n="notificationsTitle">تنبيهات الصلاة</h3>
+            <p data-i18n="notificationsDescription">
+              إشعار عند دخول وقت كل صلاة، حتى عندما تكون النافذة مغلقة.
+            </p>
+          </div>
+          <label class="switch-control">
+            <span class="sr-only" data-i18n="notificationsToggle">تفعيل تنبيهات الصلاة</span>
+            <input id="notification-toggle" type="checkbox" />
+            <span aria-hidden="true"></span>
+          </label>
+        </div>
+        <p class="permission-status" id="notification-permission" role="status"></p>
+        <fieldset id="prayer-notification-options">
+          <legend data-i18n="prayerNotifications">الصلوات التي تريد تنبيهًا لها</legend>
+          <div class="prayer-toggle-grid">
+            <label
+              ><input id="prayer-toggle-Fajr" type="checkbox" /><span
+                data-prayer-label="Fajr"
+              ></span
+            ></label>
+            <label
+              ><input id="prayer-toggle-Dhuhr" type="checkbox" /><span
+                data-prayer-label="Dhuhr"
+              ></span
+            ></label>
+            <label
+              ><input id="prayer-toggle-Asr" type="checkbox" /><span data-prayer-label="Asr"></span
+            ></label>
+            <label
+              ><input id="prayer-toggle-Maghrib" type="checkbox" /><span
+                data-prayer-label="Maghrib"
+              ></span
+            ></label>
+            <label
+              ><input id="prayer-toggle-Isha" type="checkbox" /><span
+                data-prayer-label="Isha"
+              ></span
+            ></label>
+          </div>
+        </fieldset>
+        <button
+          class="secondary-button"
+          id="test-notification"
+          type="button"
+          data-i18n="testNotification"
+        >
+          إرسال إشعار تجريبي
+        </button>
+        <p class="notification-note" data-i18n="notificationTimingNote">
+          لا يستطيع المتصفح إيقاظ الجهاز من السكون. يظهر التنبيه المتأخر خلال ١٠ دقائق فقط.
+        </p>
+      </section>
       <button
         class="primary-button"
         id="close-settings-primary"

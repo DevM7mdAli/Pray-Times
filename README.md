@@ -5,10 +5,11 @@ A browser extension and landing page that show the next prayer in a selected Sau
 ## What is included
 
 - A Manifest V3 browser extension written in TypeScript, with loading, error, and clearly labelled cached-result states.
+- Opt-in prayer notifications scheduled by a background service worker, with per-prayer controls and duplicate protection.
 - A curated Saudi city catalog with fixed coordinates rather than ambiguous name searches.
 - The declared Umm Al-Qura, Makkah calculation method.
 - A `quran-uthmani` verse with the correct verse-in-surah reference.
-- A React, Vite, and TypeScript landing page that shares the same data logic.
+- A React, Vite, and TypeScript landing page plus a standalone `/today/` prayer dashboard for users who do not want to install the extension.
 - Arabic and English interfaces, with a persistent language switch and the correct reading direction for each language.
 - Deterministic extension packaging with SHA-256 verification, tests, and CI.
 
@@ -52,7 +53,7 @@ The archive and checksum are written to `artifacts/`.
 pnpm build:landing
 ```
 
-The deployable site is written to `apps/landing-page/dist`. Vite is configured for the GitHub Pages base path `/Pray-Times/`.
+The deployable site is written to `apps/landing-page/dist`. Vite is configured for the GitHub Pages base path `/Pray-Times/`; the no-install daily prayer experience is available at `/Pray-Times/today/`.
 
 ## Continuous deployment
 

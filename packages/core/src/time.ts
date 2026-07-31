@@ -6,6 +6,7 @@ import {
   type PrayerDay,
   type PrayerKey,
   type PrayerMethod,
+  type PrayerScheduleEntry,
 } from "./types.js";
 
 const TIME_PATTERN = /^(?<hour>[01]?\d|2[0-3]):(?<minute>[0-5]\d)/;
@@ -90,21 +91,121 @@ export function localMinutesFor(timeZone: string, now = new Date()): number {
   return Number(hour) * 60 + Number(minute);
 }
 
+function dateParts(value: string): { day: number; month: number; year: number } {
+  const match = /^(?<day>\d{2})-(?<month>\d{2})-(?<year>\d{4})$/.exec(value);
+  if (!match?.groups) throw new Error(`Invalid local date: ${value}`);
+  const day = Number(match.groups.day);
+  const month = Number(match.groups.month);
+  const year = Number(match.groups.year);
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    candidate.getUTCFullYear() !== year ||
+    candidate.getUTCMonth() !== month - 1 ||
+    candidate.getUTCDate() !== day
+  ) {
+    throw new Error(`Invalid local date: ${value}`);
+  }
+  return { day, month, year };
+}
+
+export function addDaysToLocalDate(value: string, days: number): string {
+  if (!Number.isInteger(days)) throw new Error("Days must be an integer");
+  const { day, month, year } = dateParts(value);
+  const result = new Date(Date.UTC(year, month - 1, day + days));
+  return `${String(result.getUTCDate()).padStart(2, "0")}-${String(result.getUTCMonth() + 1).padStart(2, "0")}-${result.getUTCFullYear()}`;
+}
+
+function zonedParts(timeZone: string, timestamp: number): Record<string, number> {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(timestamp));
+  return Object.fromEntries(
+    parts.filter((part) => part.type !== "literal").map((part) => [part.type, Number(part.value)])
+  );
+}
+
+export function timestampForLocalTime(date: string, time: string, timeZone: string): number {
+  const { day, month, year } = dateParts(date);
+  const { hour, minute } = parseTime(time);
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute);
+  const first = zonedParts(timeZone, utcGuess);
+  const firstAsUtc = Date.UTC(
+    first.year ?? year,
+    (first.month ?? month) - 1,
+    first.day ?? day,
+    first.hour ?? hour,
+    first.minute ?? minute,
+    first.second ?? 0
+  );
+  const firstResult = utcGuess - (firstAsUtc - utcGuess);
+  const second = zonedParts(timeZone, firstResult);
+  const secondAsUtc = Date.UTC(
+    second.year ?? year,
+    (second.month ?? month) - 1,
+    second.day ?? day,
+    second.hour ?? hour,
+    second.minute ?? minute,
+    second.second ?? 0
+  );
+  return firstResult - (secondAsUtc - utcGuess);
+}
+
+export function prayerTimestamp(day: PrayerDay, key: PrayerKey): number {
+  return timestampForLocalTime(day.requestedDate, day.timings[key], day.city.timeZone);
+}
+
+export function prayerAlarmId(day: PrayerDay, key: PrayerKey): string {
+  return `pray-times:prayer:${day.city.id}:${day.requestedDate}:${key}`;
+}
+
+export function buildPrayerSchedule(
+  days: readonly PrayerDay[],
+  enabledPrayers: Readonly<Record<PrayerKey, boolean>>,
+  now = new Date()
+): PrayerScheduleEntry[] {
+  return days
+    .flatMap((day) =>
+      PRAYER_KEYS.filter((key) => enabledPrayers[key]).map((key) => ({
+        id: prayerAlarmId(day, key),
+        key,
+        cityId: day.city.id,
+        requestedDate: day.requestedDate,
+        time: day.timings[key],
+        scheduledTime: prayerTimestamp(day, key),
+      }))
+    )
+    .filter((entry) => entry.scheduledTime > now.getTime())
+    .sort((left, right) => left.scheduledTime - right.scheduledTime);
+}
+
 export function nextPrayerFor(day: PrayerDay, now = new Date()): NextPrayer {
-  const currentMinute = localMinutesFor(day.city.timeZone, now);
   for (const key of PRAYER_KEYS) {
     const time = day.timings[key];
-    const target = minutesSinceMidnight(time);
-    if (target >= currentMinute) {
-      return { key, time, minutesUntil: target - currentMinute, isTomorrow: false };
+    const target = prayerTimestamp(day, key);
+    if (target >= now.getTime()) {
+      return {
+        key,
+        time,
+        minutesUntil: Math.ceil((target - now.getTime()) / 60_000),
+        isTomorrow: false,
+      };
     }
   }
   const firstKey: PrayerKey = PRAYER_KEYS[0];
   const firstTime = day.timings[firstKey];
+  const nextDate = addDaysToLocalDate(day.requestedDate, 1);
+  const target = timestampForLocalTime(nextDate, firstTime, day.city.timeZone);
   return {
     key: firstKey,
     time: firstTime,
-    minutesUntil: 24 * 60 - currentMinute + minutesSinceMidnight(firstTime),
+    minutesUntil: Math.ceil((target - now.getTime()) / 60_000),
     isTomorrow: true,
   };
 }

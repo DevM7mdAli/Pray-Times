@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   CITIES,
+  addDaysToLocalDate,
   assertCityCatalog,
+  buildPrayerSchedule,
   cityById,
   fetchAyah,
   fetchPrayerDay,
@@ -14,6 +16,8 @@ import {
   parseAyahResponse,
   parsePrayerDayResponse,
   prayerName,
+  prayerTimestamp,
+  timestampForLocalTime,
   type City,
 } from "../src/index.ts";
 
@@ -123,6 +127,39 @@ test("Arabic time keeps leading-zero minutes and identifies the next prayer", ()
   const next = nextPrayerFor(day, new Date("2026-07-31T11:30:00+03:00"));
   assert.equal(next.key, "Dhuhr");
   assert.equal(next.minutesUntil, 30);
+});
+
+test("prayer timestamps and schedules are independent of the machine timezone", () => {
+  const day = parsePrayerDayResponse(prayerPayload(), riyadh, "31-07-2026");
+  assert.equal(new Date(prayerTimestamp(day, "Fajr")).toISOString(), "2026-07-31T00:54:00.000Z");
+  assert.equal(
+    timestampForLocalTime("31-07-2026", "18:38", "Asia/Riyadh"),
+    Date.parse("2026-07-31T15:38:00.000Z")
+  );
+  assert.equal(addDaysToLocalDate("31-12-2026", 1), "01-01-2027");
+
+  const enabled = {
+    Fajr: true,
+    Dhuhr: false,
+    Asr: true,
+    Maghrib: false,
+    Isha: false,
+  } as const;
+  const schedule = buildPrayerSchedule([day], enabled, new Date("2026-07-31T08:00:00.000Z"));
+  assert.deepEqual(
+    schedule.map((entry) => entry.key),
+    ["Asr"]
+  );
+  assert.equal(schedule[0]?.id, "pray-times:prayer:riyadh:31-07-2026:Asr");
+});
+
+test("next prayer advances immediately after a prayer timestamp", () => {
+  const day = parsePrayerDayResponse(prayerPayload(), riyadh, "31-07-2026");
+  assert.equal(nextPrayerFor(day, new Date("2026-07-31T00:54:01.000Z")).key, "Dhuhr");
+  const afterIsha = nextPrayerFor(day, new Date("2026-07-31T18:00:00.000Z"));
+  assert.equal(afterIsha.key, "Fajr");
+  assert.equal(afterIsha.isTomorrow, true);
+  assert.equal(afterIsha.minutesUntil, 414);
 });
 
 test("Qur'an verse labels use numberInSurah and require the requested edition", () => {
