@@ -1,4 +1,11 @@
-import { PRAYER_KEYS, UMM_AL_QURA, type Ayah, type City, type PrayerDay, type PrayerKey } from "./types.js";
+import {
+  PRAYER_KEYS,
+  UMM_AL_QURA,
+  type Ayah,
+  type City,
+  type PrayerDay,
+  type PrayerKey,
+} from "./types.js";
 import { parseTime } from "./time.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -9,20 +16,23 @@ function isRecord(value: unknown): value is UnknownRecord {
 
 function stringField(source: UnknownRecord, field: string): string {
   const value = source[field];
-  if (typeof value !== "string" || value.trim() === "") throw new Error(`Missing ${field} in API response`);
+  if (typeof value !== "string" || value.trim() === "")
+    throw new Error(`Missing ${field} in API response`);
   return value;
 }
 
 function optionalStringField(source: UnknownRecord, field: string): string | undefined {
   const value = source[field];
   if (value === undefined) return undefined;
-  if (typeof value !== "string" || value.trim() === "") throw new Error(`Invalid ${field} in API response`);
+  if (typeof value !== "string" || value.trim() === "")
+    throw new Error(`Invalid ${field} in API response`);
   return value;
 }
 
 function numberField(source: UnknownRecord, field: string): number {
   const value = source[field];
-  if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`Missing ${field} in API response`);
+  if (typeof value !== "number" || !Number.isFinite(value))
+    throw new Error(`Missing ${field} in API response`);
   return value;
 }
 
@@ -34,7 +44,8 @@ function recordField(source: UnknownRecord, field: string): UnknownRecord {
 
 function assertApiSuccess(payload: unknown): UnknownRecord {
   if (!isRecord(payload)) throw new Error("Malformed API response");
-  if (payload.code !== 200 || payload.status !== "OK") throw new Error("Provider did not confirm a successful response");
+  if (payload.code !== 200 || payload.status !== "OK")
+    throw new Error("Provider did not confirm a successful response");
   return recordField(payload, "data");
 }
 
@@ -67,14 +78,20 @@ export function parsePrayerDayResponse(
   const hijriMonth = recordField(hijri, "month");
 
   const meta = recordField(data, "meta");
-  if (!closeEnough(numberField(meta, "latitude"), city.latitude) || !closeEnough(numberField(meta, "longitude"), city.longitude)) {
+  if (
+    !closeEnough(numberField(meta, "latitude"), city.latitude) ||
+    !closeEnough(numberField(meta, "longitude"), city.longitude)
+  ) {
     throw new Error("Provider coordinates do not match the selected city");
   }
   if (stringField(meta, "timezone") !== city.timeZone) {
     throw new Error("Provider timezone does not match the selected city");
   }
   const method = recordField(meta, "method");
-  if (numberField(method, "id") !== UMM_AL_QURA.id || stringField(method, "name") !== UMM_AL_QURA.name) {
+  if (
+    numberField(method, "id") !== UMM_AL_QURA.id ||
+    stringField(method, "name") !== UMM_AL_QURA.name
+  ) {
     throw new Error("Provider calculation method does not match Umm Al-Qura");
   }
 
@@ -87,9 +104,9 @@ export function parsePrayerDayResponse(
       day: stringField(hijri, "day"),
       monthAr: stringField(hijriMonth, "ar"),
       monthEn: stringField(hijriMonth, "en"),
-      year: stringField(hijri, "year")
+      year: stringField(hijri, "year"),
     },
-    fetchedAt
+    fetchedAt,
   };
 }
 
@@ -106,7 +123,8 @@ export function parseAyahResponse(payload: unknown, requestedNumber: number): Ay
   }
   const surah = recordField(data, "surah");
   const numberInSurah = numberField(data, "numberInSurah");
-  if (!Number.isInteger(numberInSurah) || numberInSurah < 1) throw new Error("Invalid verse number in surah");
+  if (!Number.isInteger(numberInSurah) || numberInSurah < 1)
+    throw new Error("Invalid verse number in surah");
 
   return {
     number,
@@ -115,8 +133,8 @@ export function parseAyahResponse(payload: unknown, requestedNumber: number): Ay
     surah: {
       number: numberField(surah, "number"),
       name: stringField(surah, "name"),
-      englishName: optionalStringField(surah, "englishName")
+      englishName: optionalStringField(surah, "englishName"),
     },
-    numberInSurah
+    numberInSurah,
   };
 }

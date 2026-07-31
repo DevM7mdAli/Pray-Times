@@ -1,0 +1,5 @@
+artifacts/
+CSS/
+JS/
+**/dist/
+pnpm-lock.yaml

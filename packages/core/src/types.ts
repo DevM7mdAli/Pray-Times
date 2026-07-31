@@ -20,7 +20,7 @@ export type PrayerMethod = {
 export const UMM_AL_QURA: PrayerMethod = {
   id: 4,
   name: "Umm Al-Qura University, Makkah",
-  nameAr: "أم القرى، مكة المكرمة"
+  nameAr: "أم القرى، مكة المكرمة",
 };
 
 export type HijriDate = {

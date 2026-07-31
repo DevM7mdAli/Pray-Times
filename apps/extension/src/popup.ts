@@ -19,7 +19,7 @@ import {
   type Ayah,
   type City,
   type PrayerDay,
-  type SupportedLocale
+  type SupportedLocale,
 } from "@pray-times/core";
 import { EXTENSION_COPY, type ExtensionCopyKey } from "./copy.js";
 
@@ -27,7 +27,8 @@ const CITY_STORAGE_KEY = "pray-times:city-id";
 const LOCALE_STORAGE_KEY = "pray-times:extension-locale";
 
 type Status = { key?: "verifying" | "stale" | "unavailable"; state?: "info" | "error" };
-type ViewState = { kind: "no-city" } | { kind: "loading"; city: City } | { kind: "error"; city: City };
+type ViewState =
+  { kind: "no-city" } | { kind: "loading"; city: City } | { kind: "error"; city: City };
 type AyahState = "waiting" | "loading" | "error";
 
 function initialLocale(): SupportedLocale {
@@ -37,7 +38,9 @@ function initialLocale(): SupportedLocale {
   } catch {
     // Storage is optional; browser preference remains a useful default.
   }
-  return navigator.languages.some((language) => language.toLowerCase().startsWith("ar")) ? "ar" : "en";
+  return navigator.languages.some((language) => language.toLowerCase().startsWith("ar"))
+    ? "ar"
+    : "en";
 }
 
 let locale = initialLocale();
@@ -87,9 +90,15 @@ function setStatus(key?: Status["key"], state: Status["state"] = "info"): void {
 }
 
 function populateCities(): void {
-  const selected = citySelect.value || (() => {
-    try { return localStorage.getItem(CITY_STORAGE_KEY) ?? ""; } catch { return ""; }
-  })();
+  const selected =
+    citySelect.value ||
+    (() => {
+      try {
+        return localStorage.getItem(CITY_STORAGE_KEY) ?? "";
+      } catch {
+        return "";
+      }
+    })();
   const placeholder = element("option", undefined, text("chooseCity"));
   placeholder.value = "";
   const fragment = document.createDocumentFragment();
@@ -113,12 +122,24 @@ function renderPrayerDay(day: PrayerDay): void {
   const next = nextPrayerFor(day);
   const fragment = document.createDocumentFragment();
   const summary = element("div", "next-prayer");
-  summary.append(element("p", "next-prayer-label", next.isTomorrow ? text("nextPrayerTomorrow") : text("nextPrayer")));
+  summary.append(
+    element(
+      "p",
+      "next-prayer-label",
+      next.isTomorrow ? text("nextPrayerTomorrow") : text("nextPrayer")
+    )
+  );
   const main = element("div", "next-prayer-main");
   main.append(element("strong", undefined, prayerName(next.key, locale)));
   main.append(element("time", "next-prayer-time", formatPrayerTime(next.time, locale)));
   summary.append(main);
-  summary.append(element("p", "remaining-time", `${text("remaining")} ${formatRemainingTime(next.minutesUntil, locale)}`));
+  summary.append(
+    element(
+      "p",
+      "remaining-time",
+      `${text("remaining")} ${formatRemainingTime(next.minutesUntil, locale)}`
+    )
+  );
   fragment.append(summary);
 
   const path = element("div", "light-path");
@@ -169,16 +190,30 @@ function renderAyah(): void {
     const verse = element("p", "ayah-text", `﴿${currentAyah.text}﴾`);
     verse.lang = "ar";
     verse.dir = "rtl";
-    const reference = locale === "en" && currentAyah.surah.englishName
-      ? currentAyah.surah.englishName
-      : currentAyah.surah.name;
+    const reference =
+      locale === "en" && currentAyah.surah.englishName
+        ? currentAyah.surah.englishName
+        : currentAyah.surah.name;
     fragment.append(verse);
-    fragment.append(element("p", "ayah-reference", `${reference} · ${text("verseNumber")} ${currentAyah.numberInSurah}`));
+    fragment.append(
+      element(
+        "p",
+        "ayah-reference",
+        `${reference} · ${text("verseNumber")} ${currentAyah.numberInSurah}`
+      )
+    );
     ayahContent.replaceChildren(fragment);
     return;
   }
-  const message = ayahState === "waiting" ? text("verseWaiting") : ayahState === "loading" ? text("verseLoading") : text("verseError");
-  ayahContent.replaceChildren(element("span", ayahState === "error" ? "ayah-error" : "ayah-loading", message));
+  const message =
+    ayahState === "waiting"
+      ? text("verseWaiting")
+      : ayahState === "loading"
+        ? text("verseLoading")
+        : text("verseError");
+  ayahContent.replaceChildren(
+    element("span", ayahState === "error" ? "ayah-error" : "ayah-loading", message)
+  );
 }
 
 function renderView(): void {
@@ -188,7 +223,7 @@ function renderView(): void {
   else renderNoCity();
   renderAyah();
   statusLine.textContent = status.key ? text(status.key) : "";
-  statusLine.dataset.state = status.key ? status.state ?? "info" : "";
+  statusLine.dataset.state = status.key ? (status.state ?? "info") : "";
 }
 
 function clearCountdown(): void {
@@ -218,7 +253,11 @@ async function loadSelectedCity(force = false): Promise<void> {
     return;
   }
 
-  try { localStorage.setItem(CITY_STORAGE_KEY, city.id); } catch { /* Selection remains active for this session. */ }
+  try {
+    localStorage.setItem(CITY_STORAGE_KEY, city.id);
+  } catch {
+    /* Selection remains active for this session. */
+  }
   const date = localDateFor(city.timeZone);
   const cached = !force ? readCachedPrayerDay(localStorage, city.id, date) : undefined;
   ayahState = "loading";
@@ -233,7 +272,7 @@ async function loadSelectedCity(force = false): Promise<void> {
 
   const [prayerResult, ayahResult] = await Promise.allSettled([
     fetchPrayerDay(city, { date }),
-    fetchAyah()
+    fetchAyah(),
   ]);
   if (requestId !== requestVersion) return;
   refreshButton.removeAttribute("aria-busy");
@@ -275,11 +314,16 @@ function applyLocale(): void {
   });
   document.querySelectorAll<HTMLElement>("[data-i18n-aria-label]").forEach((node) => {
     const key = node.dataset.i18nAriaLabel;
-    if (key && key in EXTENSION_COPY[locale]) node.setAttribute("aria-label", text(key as ExtensionCopyKey));
+    if (key && key in EXTENSION_COPY[locale])
+      node.setAttribute("aria-label", text(key as ExtensionCopyKey));
   });
   languageButton.textContent = text("languageShort");
   languageButton.setAttribute("aria-label", text("switchLanguage"));
-  try { localStorage.setItem(LOCALE_STORAGE_KEY, locale); } catch { /* Language remains active for this popup session. */ }
+  try {
+    localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  } catch {
+    /* Language remains active for this popup session. */
+  }
   populateCities();
   renderView();
 }
@@ -291,9 +335,14 @@ function installEvents(): void {
     locale = locale === "ar" ? "en" : "ar";
     applyLocale();
   });
-  requiredElement<HTMLButtonElement>("settings-button").addEventListener("click", () => settingsDialog.showModal());
+  requiredElement<HTMLButtonElement>("settings-button").addEventListener("click", () =>
+    settingsDialog.showModal()
+  );
   requiredElement<HTMLButtonElement>("close-settings").addEventListener("click", closeSettings);
-  requiredElement<HTMLButtonElement>("close-settings-primary").addEventListener("click", closeSettings);
+  requiredElement<HTMLButtonElement>("close-settings-primary").addEventListener(
+    "click",
+    closeSettings
+  );
   settingsDialog.addEventListener("click", (event) => {
     if (event.target === settingsDialog) closeSettings();
   });

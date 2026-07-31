@@ -15,12 +15,22 @@
     "build:landing": "pnpm --filter @pray-times/landing-page build",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "commitlint": "commitlint --last --verbose",
     "test": "pnpm -r test",
-    "verify:release": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "prepare": "husky",
+    "verify:release": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "package:extension": "pnpm build:extension && node --import tsx tooling/extension/package.ts",
     "check": "pnpm verify:release && pnpm package:extension",
     "release": "semantic-release"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "prettier --write",
+      "eslint --max-warnings=0"
+    ],
+    "*.{cjs,mjs,css,html,json,md,yml,yaml}": "prettier --write"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
@@ -37,6 +47,9 @@
     "@types/node": "^22.17.2",
     "eslint": "^9.36.0",
     "globals": "^16.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.2.0",
+    "prettier": "^3.9.6",
     "semantic-release": "^25.0.8",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",

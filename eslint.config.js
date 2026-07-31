@@ -11,8 +11,8 @@ export default tseslint.config(
       "CSS/**",
       "JS/**",
       "tailwind.config.js",
-      "**/*.cjs"
-    ]
+      "**/*.cjs",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -21,11 +21,11 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.node
-      }
+        ...globals.node,
+      },
     },
     rules: {
-      "@typescript-eslint/no-explicit-any": "error"
-    }
+      "@typescript-eslint/no-explicit-any": "error",
+    },
   }
 );

@@ -18,8 +18,5 @@
       "32": "icons/icon-32.png"
     }
   },
-  "host_permissions": [
-    "https://api.aladhan.com/*",
-    "https://api.alquran.cloud/*"
-  ]
+  "host_permissions": ["https://api.aladhan.com/*", "https://api.alquran.cloud/*"]
 }

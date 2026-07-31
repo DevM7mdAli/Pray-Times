@@ -36,7 +36,7 @@ async function requestJson(url: URL, fetchImpl: FetchLike, retry = true): Promis
   try {
     const response = await fetchImpl(url, {
       headers: { Accept: "application/json" },
-      signal: controller.signal
+      signal: controller.signal,
     });
     if (!response.ok) {
       const retryable = response.status >= 500;
@@ -47,9 +47,10 @@ async function requestJson(url: URL, fetchImpl: FetchLike, retry = true): Promis
   } catch (error) {
     if (error instanceof ProviderError) throw error;
     if (retry) return requestJson(url, fetchImpl, false);
-    const message = error instanceof DOMException && error.name === "AbortError"
-      ? "The provider did not respond in time"
-      : "Could not reach the provider";
+    const message =
+      error instanceof DOMException && error.name === "AbortError"
+        ? "The provider did not respond in time"
+        : "Could not reach the provider";
     throw new ProviderError(message, true);
   } finally {
     globalThis.clearTimeout(timeout);

@@ -62,12 +62,12 @@ After `Verify` succeeds on `main`, the `Deploy landing page` workflow builds and
 
 Do not create version tags manually. After a Conventional Commit reaches `main`, CI validates the commit history and the code, then determines the version, updates the extension manifest, creates the tag, builds the ZIP and SHA-256 checksum, and publishes the GitHub Release.
 
-| Commit | Release result |
-| --- | --- |
-| `fix: correct prayer time cache` | Patch release |
-| `feat: add a new city` | Minor release |
-| `feat!: change extension storage format` or a `BREAKING CHANGE:` footer | Major release |
-| `docs: clarify installation` / `chore: update tooling` | No release |
+| Commit                                                                  | Release result |
+| ----------------------------------------------------------------------- | -------------- |
+| `fix: correct prayer time cache`                                        | Patch release  |
+| `feat: add a new city`                                                  | Minor release  |
+| `feat!: change extension storage format` or a `BREAKING CHANGE:` footer | Major release  |
+| `docs: clarify installation` / `chore: update tooling`                  | No release     |
 
 Valid types are `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, and `test`. Commit lint runs for every pull request and push; malformed messages fail CI before they can release.
 

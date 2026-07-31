@@ -5,7 +5,7 @@ import {
   type NextPrayer,
   type PrayerDay,
   type PrayerKey,
-  type PrayerMethod
+  type PrayerMethod,
 } from "./types.js";
 
 const TIME_PATTERN = /^(?<hour>[01]?\d|2[0-3]):(?<minute>[0-5]\d)/;
@@ -19,7 +19,7 @@ const PRAYER_NAMES: Record<PrayerKey, Record<SupportedLocale, string>> = {
   Dhuhr: { ar: "الظهر", en: "Dhuhr" },
   Asr: { ar: "العصر", en: "Asr" },
   Maghrib: { ar: "المغرب", en: "Maghrib" },
-  Isha: { ar: "العشاء", en: "Isha" }
+  Isha: { ar: "العشاء", en: "Isha" },
 };
 
 export function isSupportedLocale(value: string | null | undefined): value is SupportedLocale {
@@ -64,9 +64,10 @@ export function localDateFor(timeZone: string, now = new Date()): string {
     timeZone,
     day: "2-digit",
     month: "2-digit",
-    year: "numeric"
+    year: "numeric",
   }).formatToParts(now);
-  const find = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value;
+  const find = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value;
   const day = find("day");
   const month = find("month");
   const year = find("year");
@@ -79,9 +80,10 @@ export function localMinutesFor(timeZone: string, now = new Date()): number {
     timeZone,
     hour: "2-digit",
     minute: "2-digit",
-    hourCycle: "h23"
+    hourCycle: "h23",
   }).formatToParts(now);
-  const find = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value;
+  const find = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value;
   const hour = find("hour");
   const minute = find("minute");
   if (!hour || !minute) throw new Error("Could not determine local time");
@@ -103,7 +105,7 @@ export function nextPrayerFor(day: PrayerDay, now = new Date()): NextPrayer {
     key: firstKey,
     time: firstTime,
     minutesUntil: 24 * 60 - currentMinute + minutesSinceMidnight(firstTime),
-    isTomorrow: true
+    isTomorrow: true,
   };
 }
 
@@ -149,6 +151,6 @@ export function formatUpdatedAt(value: string, timeZone: string, locale: Support
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-    timeZone
+    timeZone,
   }).format(new Date(value));
 }

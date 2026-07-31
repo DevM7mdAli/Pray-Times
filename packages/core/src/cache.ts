@@ -10,7 +10,11 @@ export function prayerCacheKey(cityId: string, date: string): string {
   return `${CACHE_PREFIX}${cityId}:${date}:umm-al-qura-4:v2`;
 }
 
-export function readCachedPrayerDay(storage: StorageLike, cityId: string, date: string): PrayerDay | undefined {
+export function readCachedPrayerDay(
+  storage: StorageLike,
+  cityId: string,
+  date: string
+): PrayerDay | undefined {
   try {
     const raw = storage.getItem(prayerCacheKey(cityId, date));
     if (!raw) return undefined;

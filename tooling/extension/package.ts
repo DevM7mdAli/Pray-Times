@@ -25,7 +25,7 @@ const packageFiles = [
   "icons/icon-16.png",
   "icons/icon-32.png",
   "icons/icon-48.png",
-  "icons/icon-128.png"
+  "icons/icon-128.png",
 ] as const;
 
 type Manifest = { version?: unknown };
@@ -38,14 +38,19 @@ function assertVersion(version: unknown): string {
 }
 
 async function assertRegularFiles(): Promise<void> {
-  await Promise.all(packageFiles.map(async (file) => {
-    const detail = await lstat(path.join(buildRoot, file));
-    if (!detail.isFile() || detail.isSymbolicLink()) throw new Error(`Invalid package file: ${file}`);
-  }));
+  await Promise.all(
+    packageFiles.map(async (file) => {
+      const detail = await lstat(path.join(buildRoot, file));
+      if (!detail.isFile() || detail.isSymbolicLink())
+        throw new Error(`Invalid package file: ${file}`);
+    })
+  );
 }
 
 async function main(): Promise<void> {
-  const manifest = JSON.parse(await readFile(path.join(buildRoot, "manifest.json"), "utf8")) as Manifest;
+  const manifest = JSON.parse(
+    await readFile(path.join(buildRoot, "manifest.json"), "utf8")
+  ) as Manifest;
   const version = assertVersion(manifest.version);
   await assertRegularFiles();
   const artifactRoot = path.join(root, "artifacts");
@@ -53,10 +58,16 @@ async function main(): Promise<void> {
   await mkdir(artifactRoot, { recursive: true });
   await rm(archive, { force: true });
   await rm(`${archive}.sha256`, { force: true });
-  const result = spawnSync("zip", ["-q", "-X", "-9", archive, ...packageFiles], { cwd: buildRoot, encoding: "utf8" });
+  const result = spawnSync("zip", ["-q", "-X", "-9", archive, ...packageFiles], {
+    cwd: buildRoot,
+    encoding: "utf8",
+  });
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`zip failed: ${(result.stderr || result.stdout).trim()}`);
-  const digest = createHash("sha256").update(await readFile(archive)).digest("hex");
+  if (result.status !== 0)
+    throw new Error(`zip failed: ${(result.stderr || result.stdout).trim()}`);
+  const digest = createHash("sha256")
+    .update(await readFile(archive))
+    .digest("hex");
   await writeFile(`${archive}.sha256`, `${digest}  ${path.basename(archive)}\n`, "utf8");
   console.log(`Packaged Pray Times ${version}`);
   console.log(`Archive: ${path.relative(root, archive)}`);
