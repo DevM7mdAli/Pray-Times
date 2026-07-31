@@ -140,6 +140,7 @@
 
 .today-next,
 .today-schedule,
+.today-alerts,
 .today-verification,
 .today-error,
 .today-loading {
@@ -147,6 +148,169 @@
   border-radius: 26px;
   background: rgba(20, 36, 73, 0.72);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.16);
+}
+
+.today-alerts {
+  display: grid;
+  gap: 22px;
+  margin-top: 36px;
+  padding: 27px 30px;
+  background:
+    linear-gradient(120deg, rgba(77, 168, 218, 0.14), transparent 55%), rgba(20, 36, 73, 0.72);
+}
+
+.today-alerts-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.today-alerts-heading h2 {
+  display: inline;
+  margin: 0;
+  font:
+    700 22px "Alexandria",
+    sans-serif;
+}
+
+.today-alerts-heading p,
+.today-alert-status p,
+.today-alert-ios {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.today-alerts-badge {
+  display: inline-flex;
+  margin-inline-end: 10px;
+  padding: 4px 9px;
+  border: 1px solid rgba(105, 212, 162, 0.38);
+  border-radius: 999px;
+  color: #9be5bf;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.today-alert-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 9px;
+}
+
+.today-alert-actions button {
+  min-height: 43px;
+  padding-inline: 17px;
+  cursor: pointer;
+  border: 0;
+  border-radius: 12px;
+  background: var(--raml);
+  color: var(--layl);
+  font: inherit;
+  font-weight: 800;
+}
+
+.today-alert-actions button.is-secondary {
+  border: 1px solid rgba(245, 248, 255, 0.18);
+  background: transparent;
+  color: var(--muted);
+}
+
+.today-alert-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.today-alert-prayers {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px 22px;
+  padding-block: 18px;
+  border-block: 1px solid rgba(245, 248, 255, 0.1);
+}
+
+.today-alert-prayers > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.today-alert-prayers > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.today-alert-prayers label {
+  position: relative;
+  cursor: pointer;
+}
+
+.today-alert-prayers input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.today-alert-prayers label span {
+  display: block;
+  padding: 8px 13px;
+  border: 1px solid rgba(245, 248, 255, 0.13);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.today-alert-prayers input:checked + span {
+  border-color: rgba(242, 214, 162, 0.42);
+  background: rgba(242, 214, 162, 0.1);
+  color: var(--raml);
+}
+
+.today-alert-prayers input:focus-visible + span {
+  outline: 2px solid var(--sama);
+  outline-offset: 2px;
+}
+
+.today-alert-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.today-alert-status > span {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.today-alert-status p {
+  margin: 0;
+}
+
+.today-alerts[data-state="enabled"] .today-alert-status > span,
+.today-alerts[data-state="sent"] .today-alert-status > span {
+  background: #69d4a2;
+  box-shadow: 0 0 10px rgba(105, 212, 162, 0.65);
+}
+
+.today-alerts[data-state="error"] .today-alert-status > span,
+.today-alerts[data-state="denied"] .today-alert-status > span {
+  background: var(--fajr);
+}
+
+.today-alert-ios {
+  margin: -11px 0 0;
+  font-size: 11px;
 }
 
 .today-next {
@@ -476,6 +640,23 @@
 
   .today-dashboard {
     margin-top: 34px;
+  }
+
+  .today-alerts {
+    padding: 22px 19px;
+  }
+
+  .today-alerts-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .today-alert-actions {
+    flex-direction: column;
+  }
+
+  .today-alert-prayers {
+    grid-template-columns: 1fr;
   }
 
   .today-next {

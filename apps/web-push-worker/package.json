@@ -1,0 +1,23 @@
+{
+  "name": "@pray-times/web-push-worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply pray-times-push --local",
+    "db:migrate:remote": "wrangler d1 migrations apply pray-times-push --remote",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@pray-times/core": "workspace:*",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250731.0",
+    "@types/web-push": "^3.6.4",
+    "wrangler": "^4.26.1"
+  }
+}

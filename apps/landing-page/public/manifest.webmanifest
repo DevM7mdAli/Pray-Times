@@ -1,0 +1,18 @@
+{
+  "name": "Pray Times — أوقات الصلاة",
+  "short_name": "Pray Times",
+  "description": "Verified prayer times and prayer alerts for Saudi cities.",
+  "start_url": "/Pray-Times/today/",
+  "scope": "/Pray-Times/",
+  "display": "standalone",
+  "background_color": "#0b1736",
+  "theme_color": "#0b1736",
+  "icons": [
+    {
+      "src": "/Pray-Times/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

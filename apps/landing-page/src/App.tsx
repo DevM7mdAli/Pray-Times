@@ -39,7 +39,7 @@ const COPY = {
     verificationNav: "كيف نتحقق؟",
     privacyNav: "الخصوصية",
     openProject: "افتح المشروع",
-    useOnWeb: "استخدمه على الويب",
+    useOnWeb: "استخدمه على الويب مع التنبيهات",
     getExtension: "احصل على الإضافة",
     heroEyebrow: "لا ينبغي أن يكون وقت الصلاة تخمينًا",
     heroLead:
@@ -80,7 +80,7 @@ const COPY = {
     originalArabic: "النص القرآني بالعربية",
     verseNumber: "الآية",
     closingEyebrow: "وقتك بين يديك",
-    closingLead: "افتح الإضافة. واعرف الوقت القادم.",
+    closingLead: "افتح الويب. وفعّل التنبيهات مجانًا.",
     footer: "مصمم لليوم، من الفجر إلى العشاء.",
     providerError: "تعذّر التحقق من مزود المواقيت الآن.",
   },
@@ -97,7 +97,7 @@ const COPY = {
     verificationNav: "How we verify",
     privacyNav: "Privacy",
     openProject: "View project",
-    useOnWeb: "Use on the web",
+    useOnWeb: "Use on the web with alerts",
     getExtension: "Get the extension",
     heroEyebrow: "Prayer time should not be a guess",
     heroLead:
@@ -141,7 +141,7 @@ const COPY = {
     originalArabic: "Original Arabic Qur’an text",
     verseNumber: "Verse",
     closingEyebrow: "Your time, in your hands",
-    closingLead: "Open the extension. Know the next prayer.",
+    closingLead: "Open the web app. Enable free alerts.",
     footer: "Made for the day, from Fajr to Isha.",
     providerError: "We could not verify prayer times with the provider.",
   },
@@ -507,15 +507,15 @@ export function App() {
           <h2>
             {locale === "ar" ? (
               <>
-                افتح الإضافة.
+                افتح الويب.
                 <br />
-                <em>واعرف الوقت القادم.</em>
+                <em>وفعّل التنبيهات مجانًا.</em>
               </>
             ) : (
               <>
-                Open the extension.
+                Open the web app.
                 <br />
-                <em>Know the next prayer.</em>
+                <em>Enable free alerts.</em>
               </>
             )}
           </h2>

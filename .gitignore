@@ -5,3 +5,11 @@ node_modules
 artifacts/*.zip
 artifacts/*.sha256
 *.DS_Store
+**/.dev.vars
+**/.wrangler
+
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env*.local

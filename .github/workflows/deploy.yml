@@ -41,6 +41,8 @@ jobs:
       - uses: actions/configure-pages@v5
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:landing
+        env:
+          VITE_PUSH_API_URL: ${{ vars.PUSH_API_URL }}
       - uses: actions/upload-pages-artifact@v4
         with:
           path: apps/landing-page/dist

@@ -10,6 +10,7 @@ A browser extension and landing page that show the next prayer in a selected Sau
 - The declared Umm Al-Qura, Makkah calculation method.
 - A `quran-uthmani` verse with the correct verse-in-surah reference.
 - A React, Vite, and TypeScript landing page plus a standalone `/today/` prayer dashboard for users who do not want to install the extension.
+- Free, opt-in Web Push alerts on the dashboard, backed by a Cloudflare Worker, D1, and a one-minute scheduled trigger.
 - Arabic and English interfaces, with a persistent language switch and the correct reading direction for each language.
 - Deterministic extension packaging with SHA-256 verification, tests, and CI.
 
@@ -54,6 +55,27 @@ pnpm build:landing
 ```
 
 The deployable site is written to `apps/landing-page/dist`. Vite is configured for the GitHub Pages base path `/Pray-Times/`; the no-install daily prayer experience is available at `/Pray-Times/today/`.
+
+### Free web notifications
+
+The website uses the browser Push API, so prayer alerts can arrive after the page is closed. The small backend in `apps/web-push-worker` is designed for Cloudflare's free Workers and D1 tiers.
+
+To connect a Cloudflare account:
+
+```bash
+pnpm --filter @pray-times/web-push-worker exec wrangler login
+pnpm --filter @pray-times/web-push-worker exec wrangler d1 create pray-times-push
+pnpm --filter @pray-times/web-push-worker exec web-push generate-vapid-keys
+```
+
+Copy the D1 database ID into `apps/web-push-worker/wrangler.jsonc`. Add both generated keys with `wrangler secret put VAPID_PUBLIC_KEY` and `wrangler secret put VAPID_PRIVATE_KEY`, then run:
+
+```bash
+pnpm --filter @pray-times/web-push-worker db:migrate:remote
+pnpm --filter @pray-times/web-push-worker run deploy
+```
+
+Set the GitHub Actions repository variable `PUSH_API_URL` to the deployed `workers.dev` URL. The next landing-page deployment will enable the notification controls. For local development, copy `.dev.vars.example` to `.dev.vars`, add the generated keys, and set `VITE_PUSH_API_URL` to the local Worker URL.
 
 ## Continuous deployment
 

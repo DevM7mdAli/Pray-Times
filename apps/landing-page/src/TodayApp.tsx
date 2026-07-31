@@ -19,12 +19,31 @@ import {
   prayerName,
   readCachedPrayerDay,
   type PrayerDay,
+  type PrayerKey,
   type SupportedLocale,
 } from "@pray-times/core";
+import {
+  currentWebPushSubscription,
+  disableWebPush,
+  enableWebPush,
+  loadPushApiUrl,
+  supportsWebPush,
+  syncWebPush,
+  testWebPush,
+} from "./web-push";
 
 const CITY_STORAGE_KEY = "pray-times:today-city";
 const LOCALE_STORAGE_KEY = "pray-times:landing-locale";
+const ALERT_PRAYERS_STORAGE_KEY = "pray-times:web-alert-prayers";
 const EXTENSION_URL = "https://github.com/DevM7mdAli/Pray-Times/releases/latest";
+
+const ALL_PRAYERS_ENABLED: Record<PrayerKey, boolean> = {
+  Fajr: true,
+  Dhuhr: true,
+  Asr: true,
+  Maghrib: true,
+  Isha: true,
+};
 
 const COPY = {
   ar: {
@@ -48,7 +67,23 @@ const COPY = {
     retry: "إعادة المحاولة",
     refreshed: "آخر تحديث",
     accuracy: "قد تختلف المواقيت دقائق عن إعلان المسجد أو الجهة المحلية.",
-    footer: "لا يحتاج إلى تثبيت أو حساب. تحفظ مدينتك على هذا الجهاز فقط.",
+    alertsTitle: "تنبيهات الصلاة على الويب",
+    alertsBody: "فعّلها مرة واحدة، وسيصلك التنبيه حتى بعد إغلاق الصفحة.",
+    free: "مجاني",
+    enableAlerts: "تفعيل التنبيهات",
+    disableAlerts: "إيقاف التنبيهات",
+    testAlert: "إرسال تنبيه تجريبي",
+    alertChecking: "نتحقق من حالة التنبيهات…",
+    alertEnabled: "التنبيهات مفعلة لهذا الجهاز",
+    alertDisabled: "التنبيهات متوقفة",
+    alertDenied: "الإشعارات محظورة. اسمح بها من إعدادات المتصفح ثم أعد المحاولة.",
+    alertUnsupported: "هذا المتصفح لا يدعم تنبيهات الويب.",
+    alertUnavailable: "خدمة التنبيهات المجانية تحتاج إلى ربطها قبل النشر.",
+    alertError: "تعذر تحديث التنبيهات. تحقق من الاتصال وحاول مجددًا.",
+    alertSent: "أُرسل التنبيه التجريبي. تحقق من إشعارات جهازك.",
+    choosePrayers: "نبّهني عند",
+    iosHelp: "على iPhone وiPad: أضف الصفحة إلى الشاشة الرئيسية أولًا، ثم افتحها وفعّل التنبيهات.",
+    footer: "لا يحتاج إلى تثبيت أو حساب. لا نحفظ اشتراكًا مجهولًا إلا عند تفعيل التنبيهات.",
   },
   en: {
     title: "Today’s prayer times",
@@ -71,11 +106,38 @@ const COPY = {
     retry: "Try again",
     refreshed: "Last updated",
     accuracy: "Calculated times can differ by minutes from a mosque or local authority.",
-    footer: "No installation or account needed. Your city stays on this device.",
+    alertsTitle: "Web prayer alerts",
+    alertsBody: "Enable once and alerts can arrive even after you close this page.",
+    free: "Free",
+    enableAlerts: "Enable alerts",
+    disableAlerts: "Turn off alerts",
+    testAlert: "Send test alert",
+    alertChecking: "Checking alert status…",
+    alertEnabled: "Alerts are enabled on this device",
+    alertDisabled: "Alerts are off",
+    alertDenied: "Notifications are blocked. Allow them in browser settings, then try again.",
+    alertUnsupported: "This browser does not support web push alerts.",
+    alertUnavailable: "The free alert service must be connected before publishing.",
+    alertError: "Could not update alerts. Check your connection and try again.",
+    alertSent: "Test alert sent. Check your device notifications.",
+    choosePrayers: "Alert me for",
+    iosHelp:
+      "On iPhone and iPad, add this page to your Home Screen first, then open it and enable alerts.",
+    footer:
+      "No installation or account needed. An anonymous subscription is stored only when you enable alerts.",
   },
 } as const;
 
 type LoadStatus = "loading" | "verified" | "cached" | "error";
+type AlertStatus =
+  | "checking"
+  | "unconfigured"
+  | "unsupported"
+  | "denied"
+  | "disabled"
+  | "enabled"
+  | "sent"
+  | "error";
 
 function initialLocale(): SupportedLocale {
   const queryLocale = new URLSearchParams(window.location.search).get("lang");
@@ -101,6 +163,24 @@ function initialCity(): string {
   return "riyadh";
 }
 
+function initialAlertPrayers(): Record<PrayerKey, boolean> {
+  try {
+    const value = JSON.parse(localStorage.getItem(ALERT_PRAYERS_STORAGE_KEY) ?? "null") as unknown;
+    if (value && typeof value === "object") {
+      const candidate = value as Record<string, unknown>;
+      if (PRAYER_KEYS.every((key) => typeof candidate[key] === "boolean")) {
+        return Object.fromEntries(PRAYER_KEYS.map((key) => [key, candidate[key]])) as Record<
+          PrayerKey,
+          boolean
+        >;
+      }
+    }
+  } catch {
+    // All prayers remain enabled when the stored preference is unavailable.
+  }
+  return { ...ALL_PRAYERS_ENABLED };
+}
+
 export function TodayApp() {
   const [locale, setLocale] = useState<SupportedLocale>(initialLocale);
   const [cityId, setCityId] = useState(initialCity);
@@ -109,10 +189,18 @@ export function TodayApp() {
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [now, setNow] = useState(() => new Date());
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [pushApiUrl, setPushApiUrl] = useState<string>();
+  const [alertStatus, setAlertStatus] = useState<AlertStatus>("checking");
+  const [alertBusy, setAlertBusy] = useState(false);
+  const [enabledPrayers, setEnabledPrayers] = useState(initialAlertPrayers);
 
   const city = useMemo(() => cityById(cityId) ?? CITIES[0], [cityId]);
   const copy = COPY[locale];
   const localDate = city ? localDateFor(city.timeZone, now) : "";
+  const alertSettings = useMemo(
+    () => ({ cityId, locale, enabledPrayers }),
+    [cityId, enabledPrayers, locale]
+  );
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
@@ -127,19 +215,58 @@ export function TodayApp() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+    void loadPushApiUrl().then(async (apiUrl) => {
+      if (!active) return;
+      setPushApiUrl(apiUrl);
+      if (!supportsWebPush()) {
+        setAlertStatus("unsupported");
+        return;
+      }
+      if (!apiUrl) {
+        setAlertStatus("unconfigured");
+        return;
+      }
+      if (Notification.permission === "denied") {
+        setAlertStatus("denied");
+        return;
+      }
+      try {
+        const subscription = await currentWebPushSubscription();
+        if (subscription) await syncWebPush(apiUrl, alertSettings);
+        if (active) setAlertStatus(subscription ? "enabled" : "disabled");
+      } catch {
+        if (active) setAlertStatus("error");
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []); // The initial preferences are synchronized once; later changes use the effect below.
+
+  useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = localeDirection(locale);
     document.title = locale === "ar" ? "أوقات الصلاة اليوم" : "Today’s Prayer Times";
     try {
       localStorage.setItem(LOCALE_STORAGE_KEY, locale);
       localStorage.setItem(CITY_STORAGE_KEY, cityId);
+      localStorage.setItem(ALERT_PRAYERS_STORAGE_KEY, JSON.stringify(enabledPrayers));
     } catch {
       // Preferences remain available for this visit.
     }
     const url = new URL(window.location.href);
     url.searchParams.set("lang", locale);
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
-  }, [cityId, locale]);
+  }, [cityId, enabledPrayers, locale]);
+
+  useEffect(() => {
+    if (!pushApiUrl || (alertStatus !== "enabled" && alertStatus !== "sent")) return;
+    const timer = window.setTimeout(() => {
+      void syncWebPush(pushApiUrl, alertSettings).catch(() => setAlertStatus("error"));
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [alertSettings, alertStatus, pushApiUrl]);
 
   useEffect(() => {
     if (!city || !localDate) return;
@@ -188,6 +315,64 @@ export function TodayApp() {
     : todayNext;
   const nextDay = todayNext?.isTomorrow ? tomorrow : day;
 
+  const alertMessage =
+    alertStatus === "checking"
+      ? copy.alertChecking
+      : alertStatus === "unconfigured"
+        ? copy.alertUnavailable
+        : alertStatus === "unsupported"
+          ? copy.alertUnsupported
+          : alertStatus === "denied"
+            ? copy.alertDenied
+            : alertStatus === "enabled"
+              ? copy.alertEnabled
+              : alertStatus === "sent"
+                ? copy.alertSent
+                : alertStatus === "error"
+                  ? copy.alertError
+                  : copy.alertDisabled;
+
+  const enableAlerts = async () => {
+    if (!pushApiUrl) return;
+    setAlertBusy(true);
+    try {
+      await enableWebPush(pushApiUrl, alertSettings);
+      setAlertStatus("enabled");
+    } catch (error) {
+      setAlertStatus(
+        error instanceof DOMException && error.name === "NotAllowedError" ? "denied" : "error"
+      );
+    } finally {
+      setAlertBusy(false);
+    }
+  };
+
+  const disableAlerts = async () => {
+    if (!pushApiUrl) return;
+    setAlertBusy(true);
+    try {
+      await disableWebPush(pushApiUrl);
+      setAlertStatus("disabled");
+    } catch {
+      setAlertStatus("error");
+    } finally {
+      setAlertBusy(false);
+    }
+  };
+
+  const sendTestAlert = async () => {
+    if (!pushApiUrl) return;
+    setAlertBusy(true);
+    try {
+      await testWebPush(pushApiUrl, alertSettings);
+      setAlertStatus("sent");
+    } catch {
+      setAlertStatus("error");
+    } finally {
+      setAlertBusy(false);
+    }
+  };
+
   return (
     <div className="today-shell antialiased">
       <header className="today-header">
@@ -229,6 +414,75 @@ export function TodayApp() {
               ))}
             </select>
           </label>
+        </section>
+
+        <section
+          className="today-alerts"
+          data-state={alertStatus}
+          aria-labelledby="web-alerts-title"
+        >
+          <div className="today-alerts-heading">
+            <div>
+              <span className="today-alerts-badge">{copy.free}</span>
+              <h2 id="web-alerts-title">{copy.alertsTitle}</h2>
+              <p>{copy.alertsBody}</p>
+            </div>
+            <div className="today-alert-actions">
+              {alertStatus === "enabled" || alertStatus === "sent" ? (
+                <>
+                  <button type="button" onClick={() => void sendTestAlert()} disabled={alertBusy}>
+                    {copy.testAlert}
+                  </button>
+                  <button
+                    className="is-secondary"
+                    type="button"
+                    onClick={() => void disableAlerts()}
+                    disabled={alertBusy}
+                  >
+                    {copy.disableAlerts}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void enableAlerts()}
+                  disabled={
+                    alertBusy ||
+                    alertStatus === "checking" ||
+                    alertStatus === "unconfigured" ||
+                    alertStatus === "unsupported" ||
+                    alertStatus === "denied"
+                  }
+                >
+                  {copy.enableAlerts}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="today-alert-prayers" aria-label={copy.choosePrayers}>
+            <span>{copy.choosePrayers}</span>
+            <div>
+              {PRAYER_KEYS.map((key) => (
+                <label key={key}>
+                  <input
+                    type="checkbox"
+                    checked={enabledPrayers[key]}
+                    onChange={(event) =>
+                      setEnabledPrayers((current) => ({ ...current, [key]: event.target.checked }))
+                    }
+                  />
+                  <span>{prayerName(key, locale)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="today-alert-status" role="status" aria-live="polite">
+            <span aria-hidden="true" />
+            <p>{alertMessage}</p>
+          </div>
+          <p className="today-alert-ios">{copy.iosHelp}</p>
         </section>
 
         {day ? (

@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pray-times-push",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": {
+    "VAPID_SUBJECT": "https://devm7mdali.github.io/Pray-Times/",
+    "SITE_ORIGINS": "https://devm7mdali.github.io,http://localhost:5173",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pray-times-push",
+      "database_id": "f1add811-b17f-4e42-8500-4408ef0d2f53",
+      "migrations_dir": "migrations",
+    },
+  ],
+}
