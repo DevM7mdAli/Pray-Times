@@ -26,6 +26,7 @@ export const UMM_AL_QURA: PrayerMethod = {
 export type HijriDate = {
   day: string;
   monthAr: string;
+  monthEn: string;
   year: string;
 };
 
@@ -45,6 +46,7 @@ export type Ayah = {
   surah: {
     number: number;
     name: string;
+    englishName?: string;
   };
   numberInSurah: number;
 };

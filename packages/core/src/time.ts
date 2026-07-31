@@ -1,7 +1,34 @@
-import { PRAYER_KEYS, type NextPrayer, type PrayerDay, type PrayerKey } from "./types.js";
+import {
+  PRAYER_KEYS,
+  type City,
+  type HijriDate,
+  type NextPrayer,
+  type PrayerDay,
+  type PrayerKey,
+  type PrayerMethod
+} from "./types.js";
 
 const TIME_PATTERN = /^(?<hour>[01]?\d|2[0-3]):(?<minute>[0-5]\d)/;
 const ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+
+export const SUPPORTED_LOCALES = ["ar", "en"] as const;
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+
+const PRAYER_NAMES: Record<PrayerKey, Record<SupportedLocale, string>> = {
+  Fajr: { ar: "الفجر", en: "Fajr" },
+  Dhuhr: { ar: "الظهر", en: "Dhuhr" },
+  Asr: { ar: "العصر", en: "Asr" },
+  Maghrib: { ar: "المغرب", en: "Maghrib" },
+  Isha: { ar: "العشاء", en: "Isha" }
+};
+
+export function isSupportedLocale(value: string | null | undefined): value is SupportedLocale {
+  return value === "ar" || value === "en";
+}
+
+export function localeDirection(locale: SupportedLocale): "rtl" | "ltr" {
+  return locale === "ar" ? "rtl" : "ltr";
+}
 
 export function parseTime(value: string): { hour: number; minute: number } {
   const match = TIME_PATTERN.exec(value.trim());
@@ -18,6 +45,13 @@ export function formatArabicTime(value: string): string {
   const period = hour < 12 ? "ص" : "م";
   const twelveHour = hour % 12 || 12;
   return `${arabicNumerals(twelveHour)}:${arabicNumerals(String(minute).padStart(2, "0"))} ${period}`;
+}
+
+export function formatPrayerTime(value: string, locale: SupportedLocale): string {
+  if (locale === "ar") return formatArabicTime(value);
+  const { hour, minute } = parseTime(value);
+  const twelveHour = hour % 12 || 12;
+  return `${twelveHour}:${String(minute).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
 }
 
 export function minutesSinceMidnight(value: string): number {
@@ -80,13 +114,41 @@ export function formatRemainingArabic(minutes: number): string {
   return `${arabicNumerals(hours)} س ${arabicNumerals(String(remainder).padStart(2, "0"))} د`;
 }
 
+export function formatRemainingTime(minutes: number, locale: SupportedLocale): string {
+  if (locale === "ar") return formatRemainingArabic(minutes);
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (hours === 0) return `${remainder} min`;
+  return `${hours} hr ${remainder} min`;
+}
+
 export function prayerNameAr(key: PrayerKey): string {
-  const names: Record<PrayerKey, string> = {
-    Fajr: "الفجر",
-    Dhuhr: "الظهر",
-    Asr: "العصر",
-    Maghrib: "المغرب",
-    Isha: "العشاء"
-  };
-  return names[key];
+  return prayerName(key, "ar");
+}
+
+export function prayerName(key: PrayerKey, locale: SupportedLocale): string {
+  return PRAYER_NAMES[key][locale];
+}
+
+export function cityName(city: City, locale: SupportedLocale): string {
+  return locale === "ar" ? city.nameAr : city.nameEn;
+}
+
+export function prayerMethodName(method: PrayerMethod, locale: SupportedLocale): string {
+  return locale === "ar" ? method.nameAr : method.name;
+}
+
+export function formatHijriDate(hijri: HijriDate, locale: SupportedLocale): string {
+  return locale === "ar"
+    ? `${hijri.day} ${hijri.monthAr} ${hijri.year} هـ`
+    : `${hijri.day} ${hijri.monthEn} ${hijri.year} AH`;
+}
+
+export function formatUpdatedAt(value: string, timeZone: string, locale: SupportedLocale): string {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone
+  }).format(new Date(value));
 }

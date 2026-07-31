@@ -47,21 +47,23 @@
       radial-gradient(circle at 50% -10%, rgba(77, 168, 218, .22), transparent 35%),
       linear-gradient(160deg, #10234a 0%, var(--layl) 58%);
   }
-  .topbar, .brand-lockup, .location-bar, .section-heading, .settings-head { display: flex; align-items: center; }
+  .topbar, .brand-lockup, .topbar-actions, .location-bar, .section-heading, .settings-head { display: flex; align-items: center; }
   .topbar { justify-content: space-between; gap: 12px; }
   .brand-lockup { gap: 10px; }
+  .topbar-actions { gap: 8px; }
   .brand-mark { width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }
   .brand-kicker { margin: 0 0 1px; color: var(--raml); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
   h1, h2, p { margin-top: 0; }
   h1, h2 { font-family: "Alexandria", "Tahoma", sans-serif; }
   h1 { margin-bottom: 0; font-size: 18px; line-height: 1.2; }
-  .icon-button, .refresh-button {
+  .icon-button, .refresh-button, .language-button {
     display: inline-grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px;
     cursor: pointer; border: 1px solid rgba(245, 248, 255, .16); border-radius: 14px;
     background: rgba(245, 248, 255, .06); transition: background .2s ease, transform .2s ease;
   }
-  .icon-button:hover, .refresh-button:hover { background: rgba(245, 248, 255, .12); transform: translateY(-1px); }
+  .icon-button:hover, .refresh-button:hover, .language-button:hover { background: rgba(245, 248, 255, .12); transform: translateY(-1px); }
   .icon-button svg, .refresh-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+  .language-button { width: 40px; height: 40px; border-radius: 12px; font-family: "Alexandria", "Tahoma", sans-serif; font-size: 12px; font-weight: 700; }
   .location-bar {
     gap: 8px; margin-top: 20px; padding: 9px 10px 9px 7px; border: 1px solid rgba(245, 248, 255, .12); border-radius: 15px;
     background: rgba(20, 36, 73, .68);

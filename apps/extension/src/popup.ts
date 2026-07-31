@@ -2,19 +2,52 @@ import {
   CITIES,
   cachePrayerDay,
   cityById,
+  cityName,
   fetchAyah,
   fetchPrayerDay,
-  formatArabicTime,
-  formatRemainingArabic,
+  formatHijriDate,
+  formatPrayerTime,
+  formatRemainingTime,
+  formatUpdatedAt,
+  isSupportedLocale,
+  localeDirection,
   localDateFor,
   nextPrayerFor,
-  prayerNameAr,
+  prayerMethodName,
+  prayerName,
   readCachedPrayerDay,
   type Ayah,
-  type PrayerDay
+  type City,
+  type PrayerDay,
+  type SupportedLocale
 } from "@pray-times/core";
+import { EXTENSION_COPY, type ExtensionCopyKey } from "./copy.js";
 
 const CITY_STORAGE_KEY = "pray-times:city-id";
+const LOCALE_STORAGE_KEY = "pray-times:extension-locale";
+
+type Status = { key?: "verifying" | "stale" | "unavailable"; state?: "info" | "error" };
+type ViewState = { kind: "no-city" } | { kind: "loading"; city: City } | { kind: "error"; city: City };
+type AyahState = "waiting" | "loading" | "error";
+
+function initialLocale(): SupportedLocale {
+  try {
+    const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (isSupportedLocale(stored)) return stored;
+  } catch {
+    // Storage is optional; browser preference remains a useful default.
+  }
+  return navigator.languages.some((language) => language.toLowerCase().startsWith("ar")) ? "ar" : "en";
+}
+
+let locale = initialLocale();
+let currentDay: PrayerDay | undefined;
+let currentAyah: Ayah | undefined;
+let countdownTimer: number | undefined;
+let requestVersion = 0;
+let viewState: ViewState = { kind: "no-city" };
+let ayahState: AyahState = "waiting";
+let status: Status = {};
 
 const citySelect = requiredElement<HTMLSelectElement>("city-select");
 const prayerPanel = requiredElement<HTMLElement>("prayer-panel");
@@ -23,10 +56,8 @@ const dateLine = requiredElement<HTMLElement>("date-line");
 const statusLine = requiredElement<HTMLElement>("status-line");
 const sourceLine = requiredElement<HTMLElement>("source-line");
 const refreshButton = requiredElement<HTMLButtonElement>("refresh-button");
+const languageButton = requiredElement<HTMLButtonElement>("language-button");
 const settingsDialog = requiredElement<HTMLDialogElement>("settings-dialog");
-
-let currentDay: PrayerDay | undefined;
-let countdownTimer: number | undefined;
 
 function requiredElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -34,80 +65,130 @@ function requiredElement<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
+function text(key: ExtensionCopyKey): string {
+  return EXTENSION_COPY[locale][key];
+}
+
 function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className?: string,
-  text?: string
+  content?: string
 ): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
   if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
+  if (content !== undefined) node.textContent = content;
   return node;
 }
 
-function setStatus(message = "", state: "info" | "error" = "info"): void {
-  statusLine.textContent = message;
-  statusLine.dataset.state = message ? state : "";
+function setStatus(key?: Status["key"], state: Status["state"] = "info"): void {
+  status = { key, state };
+  statusLine.textContent = key ? text(key) : "";
+  statusLine.dataset.state = key ? state : "";
 }
 
 function populateCities(): void {
-  const selected = localStorage.getItem(CITY_STORAGE_KEY) ?? "";
+  const selected = citySelect.value || (() => {
+    try { return localStorage.getItem(CITY_STORAGE_KEY) ?? ""; } catch { return ""; }
+  })();
+  const placeholder = element("option", undefined, text("chooseCity"));
+  placeholder.value = "";
   const fragment = document.createDocumentFragment();
   CITIES.forEach((city) => {
     const option = document.createElement("option");
     option.value = city.id;
-    option.textContent = city.nameAr;
+    option.textContent = cityName(city, locale);
     fragment.append(option);
   });
-  citySelect.append(fragment);
+  citySelect.replaceChildren(placeholder, fragment);
   citySelect.value = cityById(selected) ? selected : "";
 }
 
 function renderDate(day: PrayerDay): void {
-  dateLine.textContent = `${day.city.nameAr} · ${day.hijri.day} ${day.hijri.monthAr} ${day.hijri.year} هـ`;
-  sourceLine.textContent = `${day.method.nameAr} · حُدّث ${new Intl.DateTimeFormat("ar-SA", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: day.city.timeZone
-  }).format(new Date(day.fetchedAt))}`;
+  dateLine.textContent = `${cityName(day.city, locale)} · ${formatHijriDate(day.hijri, locale)}`;
+  sourceLine.textContent = `${prayerMethodName(day.method, locale)} · ${text("updated")} ${formatUpdatedAt(day.fetchedAt, day.city.timeZone, locale)}`;
 }
 
 function renderPrayerDay(day: PrayerDay): void {
-  currentDay = day;
   renderDate(day);
   const next = nextPrayerFor(day);
   const fragment = document.createDocumentFragment();
   const summary = element("div", "next-prayer");
-  summary.append(element("p", "next-prayer-label", next.isTomorrow ? "الصلاة القادمة غدًا" : "الصلاة القادمة"));
+  summary.append(element("p", "next-prayer-label", next.isTomorrow ? text("nextPrayerTomorrow") : text("nextPrayer")));
   const main = element("div", "next-prayer-main");
-  main.append(element("strong", undefined, prayerNameAr(next.key)));
-  main.append(element("time", "next-prayer-time", formatArabicTime(next.time)));
+  main.append(element("strong", undefined, prayerName(next.key, locale)));
+  main.append(element("time", "next-prayer-time", formatPrayerTime(next.time, locale)));
   summary.append(main);
-  summary.append(element("p", "remaining-time", `متبقٍ ${formatRemainingArabic(next.minutesUntil)}`));
+  summary.append(element("p", "remaining-time", `${text("remaining")} ${formatRemainingTime(next.minutesUntil, locale)}`));
   fragment.append(summary);
 
   const path = element("div", "light-path");
   for (const key of ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const) {
     const node = element("div", `prayer-node${key === next.key ? " is-next" : ""}`);
     if (key === next.key) node.setAttribute("aria-current", "time");
-    node.append(element("span", undefined, prayerNameAr(key)));
-    node.append(element("time", undefined, formatArabicTime(day.timings[key])));
+    node.append(element("span", undefined, prayerName(key, locale)));
+    node.append(element("time", undefined, formatPrayerTime(day.timings[key], locale)));
     path.append(node);
   }
   fragment.append(path);
   prayerPanel.replaceChildren(fragment);
 }
 
-function renderAyah(ayah: Ayah): void {
-  const fragment = document.createDocumentFragment();
-  fragment.append(element("p", "ayah-text", `﴿${ayah.text}﴾`));
-  fragment.append(element("p", "ayah-reference", `${ayah.surah.name} · ${ayah.numberInSurah}`));
-  ayahContent.replaceChildren(fragment);
+function renderNoCity(): void {
+  dateLine.textContent = text("noCityDate");
+  sourceLine.textContent = text("noCitySource");
+  const empty = element("div", "empty-state");
+  empty.append(element("span", "empty-orb"));
+  empty.append(element("p", undefined, text("noCityTitle")));
+  empty.append(element("span", undefined, text("noCityBody")));
+  prayerPanel.replaceChildren(empty);
 }
 
-function renderAyahError(): void {
-  ayahContent.replaceChildren(element("span", "ayah-error", "تعذّر جلب الآية الآن."));
+function renderLoading(city: City): void {
+  dateLine.textContent = `${cityName(city, locale)} · ${text("loadingDate")}`;
+  sourceLine.textContent = text("pendingSource");
+  const empty = element("div", "empty-state");
+  empty.append(element("span", "empty-orb"));
+  empty.append(element("p", undefined, text("loadingTitle")));
+  empty.append(element("span", undefined, text("loadingBody")));
+  prayerPanel.replaceChildren(empty);
+}
+
+function renderError(city: City): void {
+  dateLine.textContent = `${cityName(city, locale)} · ${text("unavailableDate")}`;
+  sourceLine.textContent = text("pendingSource");
+  const empty = element("div", "empty-state");
+  empty.append(element("span", "empty-orb"));
+  empty.append(element("p", undefined, text("errorTitle")));
+  empty.append(element("span", undefined, text("errorBody")));
+  prayerPanel.replaceChildren(empty);
+}
+
+function renderAyah(): void {
+  if (currentAyah) {
+    const fragment = document.createDocumentFragment();
+    const verse = element("p", "ayah-text", `﴿${currentAyah.text}﴾`);
+    verse.lang = "ar";
+    verse.dir = "rtl";
+    const reference = locale === "en" && currentAyah.surah.englishName
+      ? currentAyah.surah.englishName
+      : currentAyah.surah.name;
+    fragment.append(verse);
+    fragment.append(element("p", "ayah-reference", `${reference} · ${text("verseNumber")} ${currentAyah.numberInSurah}`));
+    ayahContent.replaceChildren(fragment);
+    return;
+  }
+  const message = ayahState === "waiting" ? text("verseWaiting") : ayahState === "loading" ? text("verseLoading") : text("verseError");
+  ayahContent.replaceChildren(element("span", ayahState === "error" ? "ayah-error" : "ayah-loading", message));
+}
+
+function renderView(): void {
+  if (currentDay) renderPrayerDay(currentDay);
+  else if (viewState.kind === "loading") renderLoading(viewState.city);
+  else if (viewState.kind === "error") renderError(viewState.city);
+  else renderNoCity();
+  renderAyah();
+  statusLine.textContent = status.key ? text(status.key) : "";
+  statusLine.dataset.state = status.key ? status.state ?? "info" : "";
 }
 
 function clearCountdown(): void {
@@ -123,73 +204,93 @@ function startCountdown(): void {
 }
 
 async function loadSelectedCity(force = false): Promise<void> {
+  const requestId = ++requestVersion;
   const city = cityById(citySelect.value);
   clearCountdown();
   currentDay = undefined;
+  currentAyah = undefined;
+  status = {};
 
   if (!city) {
-    dateLine.textContent = "اختر مدينة لعرض مواقيت اليوم";
-    sourceLine.textContent = "اختر مدينة لعرض طريقة الحساب";
-    setStatus("");
-    prayerPanel.replaceChildren(
-      element("div", "empty-state", "")
-    );
-    const empty = prayerPanel.firstElementChild;
-    empty?.append(element("span", "empty-orb"));
-    empty?.append(element("p", undefined, "اختر مدينتك أولًا"));
-    empty?.append(element("span", undefined, "سنستخدم إحداثياتها للتحقق من المواقيت."));
-    ayahContent.replaceChildren(element("span", "ayah-loading", "تظهر الآية بعد اختيار المدينة."));
+    viewState = { kind: "no-city" };
+    ayahState = "waiting";
+    renderView();
     return;
   }
 
-  localStorage.setItem(CITY_STORAGE_KEY, city.id);
+  try { localStorage.setItem(CITY_STORAGE_KEY, city.id); } catch { /* Selection remains active for this session. */ }
   const date = localDateFor(city.timeZone);
   const cached = !force ? readCachedPrayerDay(localStorage, city.id, date) : undefined;
+  ayahState = "loading";
   if (cached) {
-    renderPrayerDay(cached);
-    setStatus("يتم التحقق من أحدث البيانات…");
+    currentDay = cached;
+    setStatus("verifying");
   } else {
-    dateLine.textContent = `${city.nameAr} · جارٍ التحقق من المواقيت`;
-    prayerPanel.replaceChildren(element("div", "empty-state", ""));
-    prayerPanel.firstElementChild?.append(element("span", "empty-orb"));
-    prayerPanel.firstElementChild?.append(element("p", undefined, "نُحضّر مسار اليوم"));
-    setStatus("نستخدم إحداثيات المدينة وطريقة أم القرى.");
+    viewState = { kind: "loading", city };
   }
+  renderView();
   refreshButton.setAttribute("aria-busy", "true");
 
-  const prayerPromise = fetchPrayerDay(city, { date });
-  const ayahPromise = fetchAyah();
-  const [prayerResult, ayahResult] = await Promise.allSettled([prayerPromise, ayahPromise]);
+  const [prayerResult, ayahResult] = await Promise.allSettled([
+    fetchPrayerDay(city, { date }),
+    fetchAyah()
+  ]);
+  if (requestId !== requestVersion) return;
   refreshButton.removeAttribute("aria-busy");
 
   if (prayerResult.status === "fulfilled") {
     cachePrayerDay(localStorage, prayerResult.value);
-    renderPrayerDay(prayerResult.value);
-    setStatus("");
+    currentDay = prayerResult.value;
+    status = {};
     startCountdown();
   } else if (cached) {
-    renderPrayerDay(cached);
-    setStatus("تعذّر التحقق الآن. نعرض آخر نتيجة محفوظة بتاريخ اليوم.", "error");
+    currentDay = cached;
+    setStatus("stale", "error");
     startCountdown();
   } else {
-    setStatus("تعذّر جلب المواقيت. تحقق من الاتصال ثم حدّث الصفحة.", "error");
-    prayerPanel.replaceChildren(element("div", "empty-state", ""));
-    prayerPanel.firstElementChild?.append(element("span", "empty-orb"));
-    prayerPanel.firstElementChild?.append(element("p", undefined, "لم نعرض وقتًا غير متحقق"));
-    prayerPanel.firstElementChild?.append(element("span", undefined, "حاول التحديث عند توفر الاتصال."));
+    currentDay = undefined;
+    viewState = { kind: "error", city };
+    setStatus("unavailable", "error");
   }
 
-  if (ayahResult.status === "fulfilled") renderAyah(ayahResult.value);
-  else renderAyahError();
+  if (ayahResult.status === "fulfilled") {
+    currentAyah = ayahResult.value;
+  } else {
+    ayahState = "error";
+  }
+  renderView();
 }
 
 function closeSettings(): void {
   if (settingsDialog.open) settingsDialog.close();
 }
 
+function applyLocale(): void {
+  document.documentElement.lang = locale;
+  document.documentElement.dir = localeDirection(locale);
+  document.title = text("documentTitle");
+  document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((node) => {
+    const key = node.dataset.i18n;
+    if (key && key in EXTENSION_COPY[locale]) node.textContent = text(key as ExtensionCopyKey);
+  });
+  document.querySelectorAll<HTMLElement>("[data-i18n-aria-label]").forEach((node) => {
+    const key = node.dataset.i18nAriaLabel;
+    if (key && key in EXTENSION_COPY[locale]) node.setAttribute("aria-label", text(key as ExtensionCopyKey));
+  });
+  languageButton.textContent = text("languageShort");
+  languageButton.setAttribute("aria-label", text("switchLanguage"));
+  try { localStorage.setItem(LOCALE_STORAGE_KEY, locale); } catch { /* Language remains active for this popup session. */ }
+  populateCities();
+  renderView();
+}
+
 function installEvents(): void {
   citySelect.addEventListener("change", () => void loadSelectedCity());
   refreshButton.addEventListener("click", () => void loadSelectedCity(true));
+  languageButton.addEventListener("click", () => {
+    locale = locale === "ar" ? "en" : "ar";
+    applyLocale();
+  });
   requiredElement<HTMLButtonElement>("settings-button").addEventListener("click", () => settingsDialog.showModal());
   requiredElement<HTMLButtonElement>("close-settings").addEventListener("click", closeSettings);
   requiredElement<HTMLButtonElement>("close-settings-primary").addEventListener("click", closeSettings);
@@ -198,6 +299,6 @@ function installEvents(): void {
   });
 }
 
-populateCities();
+applyLocale();
 installEvents();
 void loadSelectedCity();

@@ -13,6 +13,13 @@ function stringField(source: UnknownRecord, field: string): string {
   return value;
 }
 
+function optionalStringField(source: UnknownRecord, field: string): string | undefined {
+  const value = source[field];
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || value.trim() === "") throw new Error(`Invalid ${field} in API response`);
+  return value;
+}
+
 function numberField(source: UnknownRecord, field: string): number {
   const value = source[field];
   if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`Missing ${field} in API response`);
@@ -79,6 +86,7 @@ export function parsePrayerDayResponse(
     hijri: {
       day: stringField(hijri, "day"),
       monthAr: stringField(hijriMonth, "ar"),
+      monthEn: stringField(hijriMonth, "en"),
       year: stringField(hijri, "year")
     },
     fetchedAt
@@ -106,7 +114,8 @@ export function parseAyahResponse(payload: unknown, requestedNumber: number): Ay
     edition: "quran-uthmani",
     surah: {
       number: numberField(surah, "number"),
-      name: stringField(surah, "name")
+      name: stringField(surah, "name"),
+      englishName: optionalStringField(surah, "englishName")
     },
     numberInSurah
   };

@@ -1,60 +1,67 @@
-# أوقات الصلاة
+# Pray Times
 
-إضافة متصفح عربية تعرض الصلاة القادمة في مدينتك. قبل أن تعرض المواقيت، تتحقق من إحداثيات المدينة والتاريخ والمنطقة الزمنية وطريقة الحساب.
+English · [العربية](README.md)
 
-## ما تغير
+A browser extension and landing page that show the next prayer in a selected Saudi city. Before a time is displayed, the app verifies the selected city’s coordinates, returned date, time zone, and calculation method.
 
-- واجهة إضافة Manifest V3 مكتوبة بـ TypeScript، مع حالة تحميل وخطأ ونتيجة محفوظة ومعلّمة بوضوح.
-- قائمة مدن سعودية منسقة بإحداثيات ثابتة بدل البحث باسم المدينة.
-- طريقة حساب معلنة: أم القرى، مكة المكرمة.
-- آية قرآنية من إصدار `quran-uthmani` مع رقم الآية الصحيح داخل السورة.
-- صفحة هبوط React + Vite + TypeScript تشترك مع الإضافة في نفس منطق البيانات.
-- بناء وحزمة ZIP محددة الملفات مع SHA-256، واختبارات وCI.
+## What is included
 
-## المتطلبات
+- A Manifest V3 browser extension written in TypeScript, with loading, error, and clearly labelled cached-result states.
+- A curated Saudi city catalog with fixed coordinates rather than ambiguous name searches.
+- The declared Umm Al-Qura, Makkah calculation method.
+- A `quran-uthmani` verse with the correct verse-in-surah reference.
+- A React, Vite, and TypeScript landing page that shares the same data logic.
+- Arabic and English interfaces, with a persistent language switch and the correct reading direction for each language.
+- Deterministic extension packaging with SHA-256 verification, tests, and CI.
 
-- Node.js 20.19 أو أحدث.
+## Requirements
+
+- Node.js 20.19 or later.
 - pnpm 11.18.0.
 
-## البدء
+## Get started
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm dev:landing
 ```
 
-لفحص كل ما يسبق الإصدار:
+Run all release checks:
 
 ```bash
 pnpm check
 ```
 
-## الإضافة
+## Browser extension
 
 ```bash
 pnpm build:extension
 ```
 
-حمّل مجلد `apps/extension/dist` كإضافة غير مضغوطة من صفحة الإضافات في Chrome أو Edge بعد تفعيل وضع المطوّر.
+Load `apps/extension/dist` as an unpacked extension in Chrome or Edge after enabling Developer mode.
 
-لإنشاء ملف المتجر:
+Create the store archive:
 
 ```bash
 pnpm package:extension
 ```
 
-تظهر الحزمة وملف التحقق في `artifacts/`.
+The archive and checksum are written to `artifacts/`.
 
-## صفحة الهبوط
+## Landing page
 
 ```bash
 pnpm build:landing
 ```
 
-تُنشأ ملفات النشر في `apps/landing-page/dist`. إعداد Vite الحالي مناسب لمسار GitHub Pages: `/Pray-Times/`.
+The deployable site is written to `apps/landing-page/dist`. Vite is configured for the GitHub Pages base path `/Pray-Times/`.
 
-## الدقة والخصوصية
+## Continuous deployment
 
-التفاصيل في [سياسة الخصوصية](docs/PRIVACY.md) و[خطة التحديث](docs/FRONTEND_MODERNIZATION_PLAN.md).
+After `Verify` succeeds on `main`, the `Deploy landing page` workflow builds and publishes the landing page to GitHub Pages. Enable **Settings → Pages → Source → GitHub Actions** once for the repository. You can also trigger the workflow manually from the Actions tab.
 
-قد تختلف الأوقات المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.
+## Accuracy and privacy
+
+See the [privacy policy](docs/PRIVACY.en.md), [third-party notices](docs/THIRD_PARTY_NOTICES.md), and [modernization plan](docs/FRONTEND_MODERNIZATION_PLAN.md).
+
+Calculated times can differ by minutes from a local mosque or issuing authority.

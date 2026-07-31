@@ -5,7 +5,9 @@ export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CACHE_PREFIX = "pray-times:prayer-day:";
 
 export function prayerCacheKey(cityId: string, date: string): string {
-  return `${CACHE_PREFIX}${cityId}:${date}:umm-al-qura-4`;
+  // The normalized payload now includes the English Hijri month. Versioning
+  // prevents pre-localization cache entries from producing incomplete English UI.
+  return `${CACHE_PREFIX}${cityId}:${date}:umm-al-qura-4:v2`;
 }
 
 export function readCachedPrayerDay(storage: StorageLike, cityId: string, date: string): PrayerDay | undefined {
@@ -21,5 +23,9 @@ export function readCachedPrayerDay(storage: StorageLike, cityId: string, date: 
 }
 
 export function cachePrayerDay(storage: StorageLike, day: PrayerDay): void {
-  storage.setItem(prayerCacheKey(day.city.id, day.requestedDate), JSON.stringify(day));
+  try {
+    storage.setItem(prayerCacheKey(day.city.id, day.requestedDate), JSON.stringify(day));
+  } catch {
+    // A storage quota failure must not prevent a verified result from rendering.
+  }
 }

@@ -26,12 +26,16 @@
   .site-header { position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between; width: min(1160px, calc(100% - 48px)); margin-inline: auto; min-height: 85px; gap: 20px; }
   .site-brand { display: inline-flex; align-items: center; gap: 10px; font-family: "Alexandria", "Tahoma", sans-serif; font-weight: 700; font-size: 16px; }
   .site-brand img { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6px 15px rgba(11, 23, 54, .18); }
-  .site-header nav { display: flex; gap: 24px; color: #425171; font-size: 13px; }
+  .site-header nav, .header-actions { display: flex; align-items: center; gap: 14px; }
+  .site-header nav { gap: 24px; color: #425171; font-size: 13px; }
   .site-header nav a:hover, .text-link:hover { color: #e9806e; }
   .header-cta, .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 15px; border-radius: 13px; font-weight: 800; font-size: 13px; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
   .header-cta { color: #f5f8ff; background: #0b1736; }
+  .language-toggle { display: inline-grid; width: 44px; height: 44px; cursor: pointer; place-items: center; color: #0b1736; border: 1px solid #b9c5dc; border-radius: 13px; background: transparent; font-family: "Alexandria", "Tahoma", sans-serif; font-size: 13px; font-weight: 700; transition: color .2s ease, border-color .2s ease, background .2s ease; }
+  .language-toggle:hover { color: #f5f8ff; border-color: #0b1736; background: #0b1736; }
   .header-cta:hover, .button-primary:hover { transform: translateY(-2px); box-shadow: 0 13px 24px rgba(11, 23, 54, .2); }
   .header-cta svg, .button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+  [dir="rtl"] .header-cta svg, [dir="rtl"] .button svg { transform: rotate(180deg); }
   .hero { display: grid; grid-template-columns: .94fr 1.06fr; align-items: center; gap: clamp(45px, 8vw, 100px); min-height: 650px; padding-block: 65px 85px; }
   .eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 18px; color: #f2d6a2; font-size: 11px; font-weight: 800; letter-spacing: .075em; }
   .eyebrow span { display: block; width: 28px; height: 1px; background: linear-gradient(90deg, transparent, currentColor); }
@@ -56,7 +60,7 @@
   .live-dot { display: inline-flex; align-items: center; gap: 6px; color: #c7d1e8; font-size: 10px; }
   .live-dot::before { width: 6px; height: 6px; content: ""; border-radius: 50%; background: #e9806e; box-shadow: 0 0 0 4px rgba(233, 128, 110, .13); }
   .preview-city { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 20px; padding: 10px 12px; color: #aebbd4; border: 1px solid rgba(245, 248, 255, .12); border-radius: 13px; background: rgba(20, 36, 73, .65); font-size: 11px; }
-  .preview-city select { min-width: 112px; cursor: pointer; color: #f5f8ff; border: 0; background: transparent; font-weight: 800; text-align: left; }
+  .preview-city select { min-width: 112px; cursor: pointer; color: #f5f8ff; border: 0; background: transparent; font-weight: 800; text-align: start; }
   .preview-city option { background: #142449; }
   .preview-empty { display: grid; min-height: 250px; place-content: center; justify-items: center; color: #aebbd4; text-align: center; }
   .preview-empty p { margin: 12px 0 3px; color: #f5f8ff; font-family: "Alexandria", "Tahoma", sans-serif; font-size: 15px; }
@@ -101,8 +105,9 @@
   .privacy-symbol span { width: 11px; height: 11px; border: 3px solid #142449; border-radius: 50%; background: #f2d6a2; box-shadow: 0 0 0 1px #f2d6a2; }
   .privacy-symbol span:nth-child(3) { width: 15px; height: 15px; margin-bottom: 3px; background: #e9806e; box-shadow: 0 0 0 5px rgba(233, 128, 110, .15); }
   .ayah-section { display: grid; grid-template-columns: .8fr 1.2fr; align-items: center; gap: 100px; padding-block: 135px; }
-  blockquote { margin: 0; padding: 0 35px 0 0; border-right: 2px solid #f2d6a2; }
+  blockquote { margin: 0; padding-inline-start: 35px; border-inline-start: 2px solid #f2d6a2; }
   blockquote p { margin: 0; color: #142449; font-family: "Amiri", "Traditional Arabic", serif; font-size: clamp(25px, 3vw, 35px); line-height: 1.9; }
+  blockquote p:not([lang="ar"]) { font-family: "IBM Plex Sans Arabic", "Tahoma", "Arial", sans-serif; font-size: clamp(19px, 2.4vw, 26px); line-height: 1.65; }
   blockquote cite { display: block; margin-top: 12px; color: #e9806e; font-family: "Alexandria", "Tahoma", sans-serif; font-size: 12px; font-style: normal; font-weight: 700; }
   .closing { display: grid; justify-items: center; padding: 125px 25px; color: #f5f8ff; text-align: center; border-radius: 28px 28px 0 0; background: radial-gradient(circle at 50% -50%, rgba(77, 168, 218, .46), transparent 46%), #0b1736; }
   .closing h2 { max-width: 650px; color: #f5f8ff; font-size: clamp(40px, 6vw, 69px); }
@@ -128,7 +133,9 @@
 @media (max-width: 520px) {
   .section-wrap, .site-header { width: min(100% - 32px, 1160px); }
   .site-header { min-height: 72px; }
+  .header-actions { gap: 8px; }
   .header-cta { padding-inline: 12px; font-size: 11px; }
+  .language-toggle { width: 40px; height: 40px; border-radius: 12px; }
   .site-brand span { font-size: 13px; }
   .site-header .site-brand img { width: 29px; height: 29px; }
   .hero h1 { font-size: 40px; }
@@ -140,6 +147,6 @@
   .dayline-track span { font-size: 9px; }
   .method, .ayah-section { padding-block: 70px; }
   .privacy { width: calc(100% - 32px); padding: 35px 24px; border-radius: 21px; }
-  blockquote { padding-right: 22px; }
+  blockquote { padding-inline-start: 22px; }
   .site-footer { flex-wrap: wrap; padding-inline: 16px; }
 }

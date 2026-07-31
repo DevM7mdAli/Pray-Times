@@ -11,6 +11,8 @@ const packageFiles = [
   "popup.html",
   "popup.js",
   "styles.css",
+  "_locales/ar/messages.json",
+  "_locales/en/messages.json",
   "fonts/alexandria-600.woff2",
   "fonts/alexandria-700.woff2",
   "fonts/ibm-plex-sans-arabic-400.woff2",

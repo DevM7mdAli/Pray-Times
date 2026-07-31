@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
-  <title id="title">أوقات الصلاة</title>
-  <desc id="desc">اعرف الصلاة القادمة، بثقة</desc>
+  <title id="title">Pray Times | أوقات الصلاة</title>
+  <desc id="desc">Know the next prayer, with confidence</desc>
   <defs>
     <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#4DA8DA"/><stop offset="1" stop-color="#347FB7"/></linearGradient>
     <radialGradient id="glow" cx="50%" cy="0%" r="75%"><stop stop-color="#4DA8DA" stop-opacity=".42"/><stop offset="1" stop-color="#0B1736" stop-opacity="0"/></radialGradient>
@@ -13,9 +13,10 @@
     <g fill="#F2D6A2"><rect x="52" y="88" width="32" height="14" rx="7" transform="rotate(-38 68 95)"/><rect x="360" y="88" width="32" height="14" rx="7" transform="rotate(38 376 95)"/><rect x="10" y="202" width="32" height="14" rx="7" transform="rotate(10 26 209)"/><rect x="402" y="202" width="32" height="14" rx="7" transform="rotate(-10 418 209)"/></g>
     <rect x="214" y="21" width="16" height="40" rx="8" fill="#E9806E"/>
   </g>
-  <text x="120" y="258" fill="#F2D6A2" font-family="Tahoma, Arial, sans-serif" font-size="26" font-weight="700">مسار اليوم</text>
-  <text x="120" y="350" fill="#F5F8FF" font-family="Tahoma, Arial, sans-serif" font-size="74" font-weight="700">أوقات الصلاة</text>
-  <text x="120" y="416" fill="#BFC9DD" font-family="Tahoma, Arial, sans-serif" font-size="35">اعرف الصلاة القادمة، بثقة.</text>
+  <text x="120" y="230" fill="#F2D6A2" font-family="Tahoma, Arial, sans-serif" font-size="26" font-weight="700">TODAY'S PATH · مسار اليوم</text>
+  <text x="120" y="325" fill="#F5F8FF" font-family="Tahoma, Arial, sans-serif" font-size="70" font-weight="700">Pray Times</text>
+  <text x="120" y="385" fill="#F5F8FF" font-family="Tahoma, Arial, sans-serif" font-size="42" font-weight="700">أوقات الصلاة</text>
+  <text x="120" y="445" fill="#BFC9DD" font-family="Tahoma, Arial, sans-serif" font-size="31">Know the next prayer, with confidence.</text>
   <path d="M120 490H630" stroke="#4DA8DA" stroke-width="2" opacity=".6"/>
   <g fill="#F2D6A2"><circle cx="120" cy="490" r="7"/><circle cx="248" cy="490" r="7"/><circle cx="376" cy="490" r="10" fill="#E9806E"/><circle cx="504" cy="490" r="7"/><circle cx="630" cy="490" r="7"/></g>
 </svg>

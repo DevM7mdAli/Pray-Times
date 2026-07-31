@@ -1,0 +1,22 @@
+export const EXTENSION_COPY = {
+  ar: {
+    extensionName: "أوقات الصلاة", documentTitle: "أوقات الصلاة", brandKicker: "مسار اليوم", languageShort: "EN", switchLanguage: "التبديل إلى الإنجليزية",
+    settingsLabel: "إعدادات المدينة وطريقة الحساب", cityArea: "اختيار المدينة", city: "المدينة", chooseCity: "اختر مدينتك", cityHelp: "اختيار المدينة يحفظ على هذا الجهاز فقط.", refreshTimes: "تحديث المواقيت",
+    noCityDate: "اختر مدينة لعرض مواقيت اليوم", noCitySource: "اختر مدينة لعرض طريقة الحساب", noCityTitle: "اختر مدينتك أولًا", noCityBody: "سنستخدم إحداثياتها للتحقق من المواقيت.",
+    verseTitle: "آية مختارة", verseWaiting: "تظهر الآية بعد اختيار المدينة.", verseLoading: "تُحضّر الآية…", verseError: "تعذّر جلب الآية الآن.",
+    nextPrayer: "الصلاة القادمة", nextPrayerTomorrow: "الصلاة القادمة غدًا", remaining: "متبقٍ", updated: "حُدّث", verifying: "يتم التحقق من أحدث البيانات…", loadingDate: "جارٍ التحقق من المواقيت", loadingTitle: "نُحضّر مسار اليوم", loadingBody: "نستخدم إحداثيات المدينة وطريقة أم القرى.",
+    stale: "تعذّر التحقق الآن. نعرض آخر نتيجة محفوظة بتاريخ اليوم.", unavailable: "تعذّر جلب المواقيت. تحقق من الاتصال ثم حدّث الصفحة.", errorTitle: "لم نعرض وقتًا غير متحقق", errorBody: "حاول التحديث عند توفر الاتصال.", sourceDefault: "اختر مدينة لعرض طريقة الحساب", pendingSource: "سنوضح طريقة الحساب بعد التحقق.", unavailableDate: "تعذّر التحقق من مواقيت اليوم",
+    settingsKicker: "دقة البيانات", settingsTitle: "كيف نعرض الوقت؟", closeSettings: "إغلاق الإعدادات", locationLabel: "الموقع", locationDetail: "إحداثيات ثابتة للمدينة التي تختارها", methodLabel: "طريقة الحساب", methodDetail: "أم القرى، مكة المكرمة", verificationLabel: "التحقق", verificationDetail: "نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية", accuracyNote: "قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.", understood: "فهمت", footer: "أم القرى · يتحقق من التاريخ والإحداثيات قبل العرض", verseNumber: "الآية"
+  },
+  en: {
+    extensionName: "Pray Times", documentTitle: "Pray Times", brandKicker: "TODAY’S PATH", languageShort: "ع", switchLanguage: "Switch to Arabic",
+    settingsLabel: "City and calculation method settings", cityArea: "Choose a city", city: "City", chooseCity: "Choose your city", cityHelp: "Your city choice is stored on this device only.", refreshTimes: "Refresh prayer times",
+    noCityDate: "Choose a city to view today’s prayer times", noCitySource: "Choose a city to view the calculation method", noCityTitle: "Choose your city first", noCityBody: "We will use its coordinates to verify prayer times.",
+    verseTitle: "Selected verse", verseWaiting: "A verse appears after you choose a city.", verseLoading: "Preparing the verse…", verseError: "The verse is unavailable right now.",
+    nextPrayer: "Next prayer", nextPrayerTomorrow: "Next prayer tomorrow", remaining: "Remaining", updated: "Updated", verifying: "Checking the latest data…", loadingDate: "Checking prayer times", loadingTitle: "Preparing today’s path", loadingBody: "Using city coordinates and the Umm Al-Qura method.",
+    stale: "We could not verify now. Showing the last saved result for today.", unavailable: "Prayer times are unavailable. Check your connection, then refresh.", errorTitle: "We did not show an unverified time", errorBody: "Try refreshing when a connection is available.", sourceDefault: "Choose a city to view the calculation method", pendingSource: "The calculation method appears after verification.", unavailableDate: "Prayer times could not be verified today",
+    settingsKicker: "DATA ACCURACY", settingsTitle: "How is the time shown?", closeSettings: "Close settings", locationLabel: "Location", locationDetail: "Fixed coordinates for the city you choose", methodLabel: "Calculation method", methodDetail: "Umm Al-Qura, Makkah", verificationLabel: "Verification", verificationDetail: "We reject a result when its date, coordinates, or time zone do not match", accuracyNote: "Calculated times can differ by minutes from a mosque or local authority announcement.", understood: "Got it", footer: "Umm Al-Qura · date and coordinates checked before display", verseNumber: "Verse"
+  }
+} as const;
+
+export type ExtensionCopyKey = keyof (typeof EXTENSION_COPY)["ar"];

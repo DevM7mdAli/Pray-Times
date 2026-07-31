@@ -7,9 +7,13 @@ import {
   fetchAyah,
   fetchPrayerDay,
   formatArabicTime,
+  formatHijriDate,
+  formatPrayerTime,
+  formatRemainingTime,
   nextPrayerFor,
   parseAyahResponse,
   parsePrayerDayResponse,
+  prayerName,
   type City
 } from "../src/index.ts";
 
@@ -29,7 +33,7 @@ function prayerPayload(overrides: Record<string, unknown> = {}): unknown {
       },
       date: {
         gregorian: { date: "31-07-2026" },
-        hijri: { day: "17", month: { ar: "صفر" }, year: "1448" }
+        hijri: { day: "17", month: { ar: "صفر", en: "Safar" }, year: "1448" }
       },
       meta: {
         latitude: riyadh.latitude,
@@ -74,6 +78,7 @@ test("prayer payload is normalized only after all accuracy checks pass", () => {
   const day = parsePrayerDayResponse(prayerPayload(), riyadh, "31-07-2026", "2026-07-31T08:00:00.000Z");
   assert.equal(day.timings.Asr, "15:26");
   assert.equal(day.hijri.monthAr, "صفر");
+  assert.equal(day.hijri.monthEn, "Safar");
   assert.equal(day.method.id, 4);
 });
 
@@ -101,6 +106,10 @@ test("a provider error encoded in a 200 body is rejected", () => {
 
 test("Arabic time keeps leading-zero minutes and identifies the next prayer", () => {
   assert.equal(formatArabicTime("05:05"), "٥:٠٥ ص");
+  assert.equal(formatPrayerTime("05:05", "en"), "5:05 AM");
+  assert.equal(formatRemainingTime(65, "en"), "1 hr 5 min");
+  assert.equal(prayerName("Dhuhr", "en"), "Dhuhr");
+  assert.equal(formatHijriDate({ day: "17", monthAr: "صفر", monthEn: "Safar", year: "1448" }, "en"), "17 Safar 1448 AH");
   const day = parsePrayerDayResponse(prayerPayload(), riyadh, "31-07-2026");
   const next = nextPrayerFor(day, new Date("2026-07-31T11:30:00+03:00"));
   assert.equal(next.key, "Dhuhr");

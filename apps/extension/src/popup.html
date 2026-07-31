@@ -12,22 +12,23 @@
         <div class="brand-lockup">
           <img class="brand-mark" src="icons/icon-48.png" width="40" height="40" alt="" />
           <div>
-            <p class="brand-kicker">مسار اليوم</p>
-            <h1 id="app-title">أوقات الصلاة</h1>
+            <p class="brand-kicker" data-i18n="brandKicker">مسار اليوم</p>
+            <h1 id="app-title" data-i18n="extensionName">أوقات الصلاة</h1>
           </div>
         </div>
-        <button class="icon-button" id="settings-button" type="button" aria-label="إعدادات المدينة وطريقة الحساب">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.2A3.8 3.8 0 1 0 12 15.8 3.8 3.8 0 0 0 12 8.2Zm8.3 4.55-1.77.73a6.9 6.9 0 0 1-.53 1.27l.71 1.78-1.82 1.82-1.78-.71a6.9 6.9 0 0 1-1.27.53l-.73 1.77h-2.58l-.73-1.77a6.9 6.9 0 0 1-1.27-.53l-1.78.71-1.82-1.82.71-1.78a6.9 6.9 0 0 1-.53-1.27l-1.77-.73v-2.58l1.77-.73c.13-.44.3-.87.53-1.27l-.71-1.78 1.82-1.82 1.78.71c.4-.23.83-.4 1.27-.53l.73-1.77h2.58l.73 1.77c.44.13.87.3 1.27.53l1.78-.71 1.82 1.82-.71 1.78c.23.4.4.83.53 1.27l1.77.73v2.58Z" /></svg>
-        </button>
+        <div class="topbar-actions">
+          <button class="language-button" id="language-button" type="button" aria-label="التبديل إلى الإنجليزية">EN</button>
+          <button class="icon-button" id="settings-button" type="button" data-i18n-aria-label="settingsLabel" aria-label="إعدادات المدينة وطريقة الحساب">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.2A3.8 3.8 0 1 0 12 15.8 3.8 3.8 0 0 0 12 8.2Zm8.3 4.55-1.77.73a6.9 6.9 0 0 1-.53 1.27l.71 1.78-1.82 1.82-1.78-.71a6.9 6.9 0 0 1-1.27.53l-.73 1.77h-2.58l-.73-1.77a6.9 6.9 0 0 1-1.27-.53l-1.78.71-1.82-1.82.71-1.78a6.9 6.9 0 0 1-.53-1.27l-1.77-.73v-2.58l1.77-.73c.13-.44.3-.87.53-1.27l-.71-1.78 1.82-1.82 1.78.71c.4-.23.83-.4 1.27-.53l.73-1.77h2.58l.73 1.77c.44.13.87.3 1.27.53l1.78-.71 1.82 1.82-.71 1.78c.23.4.4.83.53 1.27l1.77.73v2.58Z" /></svg>
+          </button>
+        </div>
       </header>
 
-      <section class="location-bar" aria-label="اختيار المدينة">
-        <label for="city-select">المدينة</label>
-        <select id="city-select" aria-describedby="city-help">
-          <option value="">اختر مدينتك</option>
-        </select>
-        <span id="city-help" class="sr-only">اختيار المدينة يحفظ على هذا الجهاز فقط.</span>
-        <button class="refresh-button" id="refresh-button" type="button" aria-label="تحديث المواقيت">
+      <section class="location-bar" data-i18n-aria-label="cityArea" aria-label="اختيار المدينة">
+        <label for="city-select" data-i18n="city">المدينة</label>
+        <select id="city-select" aria-describedby="city-help"></select>
+        <span id="city-help" class="sr-only" data-i18n="cityHelp">اختيار المدينة يحفظ على هذا الجهاز فقط.</span>
+        <button class="refresh-button" id="refresh-button" type="button" data-i18n-aria-label="refreshTimes" aria-label="تحديث المواقيت">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-4L3 9.1M4 4v5.1h5.1M4 13a8 8 0 0 0 14.9 4l2.1-2.1M20 20v-5.1h-5.1" /></svg>
         </button>
       </section>
@@ -35,44 +36,34 @@
       <p class="date-line" id="date-line" aria-live="polite">اختر مدينة لعرض مواقيت اليوم</p>
       <p class="status-line" id="status-line" role="status" aria-live="polite"></p>
 
-      <section id="prayer-panel" class="prayer-panel" aria-label="مواقيت الصلاة">
-        <div class="empty-state">
-          <span class="empty-orb" aria-hidden="true"></span>
-          <p>اختر مدينتك أولًا</p>
-          <span>سنستخدم إحداثياتها للتحقق من المواقيت.</span>
-        </div>
-      </section>
+      <section id="prayer-panel" class="prayer-panel" aria-live="polite" data-i18n-aria-label="extensionName" aria-label="مواقيت الصلاة"></section>
 
       <section class="ayah-panel" aria-labelledby="ayah-heading">
         <div class="section-heading">
           <span class="section-rule" aria-hidden="true"></span>
-          <h2 id="ayah-heading">آية مختارة</h2>
+          <h2 id="ayah-heading" data-i18n="verseTitle">آية مختارة</h2>
         </div>
-        <div id="ayah-content" class="ayah-content" aria-live="polite">
-          <span class="ayah-loading">تُحضّر الآية…</span>
-        </div>
+        <div id="ayah-content" class="ayah-content" aria-live="polite"></div>
       </section>
 
-      <footer class="popup-footer" id="source-line">
-        اختر مدينة لعرض طريقة الحساب
-      </footer>
+      <footer class="popup-footer" id="source-line">اختر مدينة لعرض طريقة الحساب</footer>
     </main>
 
     <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
       <div class="settings-head">
         <div>
-          <p class="brand-kicker">دقة البيانات</p>
-          <h2 id="settings-title">كيف نعرض الوقت؟</h2>
+          <p class="brand-kicker" data-i18n="settingsKicker">دقة البيانات</p>
+          <h2 id="settings-title" data-i18n="settingsTitle">كيف نعرض الوقت؟</h2>
         </div>
-        <button class="icon-button" id="close-settings" type="button" aria-label="إغلاق الإعدادات">×</button>
+        <button class="icon-button" id="close-settings" type="button" data-i18n-aria-label="closeSettings" aria-label="إغلاق الإعدادات">×</button>
       </div>
       <dl class="settings-list">
-        <div><dt>الموقع</dt><dd>إحداثيات ثابتة للمدينة التي تختارها</dd></div>
-        <div><dt>طريقة الحساب</dt><dd>أم القرى، مكة المكرمة</dd></div>
-        <div><dt>التحقق</dt><dd>نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية</dd></div>
+        <div><dt data-i18n="locationLabel">الموقع</dt><dd data-i18n="locationDetail">إحداثيات ثابتة للمدينة التي تختارها</dd></div>
+        <div><dt data-i18n="methodLabel">طريقة الحساب</dt><dd data-i18n="methodDetail">أم القرى، مكة المكرمة</dd></div>
+        <div><dt data-i18n="verificationLabel">التحقق</dt><dd data-i18n="verificationDetail">نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية</dd></div>
       </dl>
-      <p class="accuracy-note">قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.</p>
-      <button class="primary-button" id="close-settings-primary" type="button">فهمت</button>
+      <p class="accuracy-note" data-i18n="accuracyNote">قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.</p>
+      <button class="primary-button" id="close-settings-primary" type="button" data-i18n="understood">فهمت</button>
     </dialog>
 
     <script type="module" src="popup.js"></script>
