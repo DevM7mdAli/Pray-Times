@@ -90,7 +90,7 @@ jobs:
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          VERSION="$(node -p \"JSON.parse(require('node:fs').readFileSync('apps/extension/manifest.json', 'utf8')).version\")"
+          VERSION="$(node -p 'JSON.parse(require("node:fs").readFileSync("apps/extension/manifest.json", "utf8")).version')"
           node --import tsx tooling/release/set-version.ts "$VERSION"
           pnpm package:extension
           git config user.name "github-actions[bot]"
