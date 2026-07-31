@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@11.18.0",
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.14.0"
   },
   "scripts": {
     "dev:landing": "pnpm --filter @pray-times/landing-page dev",
@@ -15,18 +15,29 @@
     "build:landing": "pnpm --filter @pray-times/landing-page build",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
+    "commitlint": "commitlint --last --verbose",
     "test": "pnpm -r test",
+    "verify:release": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "package:extension": "pnpm build:extension && node --import tsx tooling/extension/package.ts",
-    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm package:extension"
+    "check": "pnpm verify:release && pnpm package:extension",
+    "release": "semantic-release"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^9.36.0",
     "@fontsource/alexandria": "^5.3.0",
     "@fontsource/amiri": "^5.3.0",
     "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^11.0.1",
+    "@semantic-release/github": "^12.0.9",
+    "@semantic-release/release-notes-generator": "^14.1.1",
     "@types/node": "^22.17.2",
     "eslint": "^9.36.0",
     "globals": "^16.3.0",
+    "semantic-release": "^25.0.8",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.1"

@@ -8,6 +8,30 @@ permissions:
   contents: read
 
 jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint pull request commits
+        if: github.event_name == 'pull_request'
+        run: pnpm exec commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
+      - name: Lint pushed commits
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: pnpm exec commitlint --from "${{ github.event.before }}" --to "${{ github.sha }}" --verbose
+      - name: Lint an initial push
+        if: github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000'
+        run: pnpm exec commitlint --from "$(git rev-list --max-parents=0 HEAD)" --to "${{ github.sha }}" --verbose
+
   verify:
     runs-on: ubuntu-latest
     steps:
@@ -21,3 +45,68 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+
+  release:
+    needs: [commitlint, verify]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    concurrency:
+      group: semantic-release-main
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+      - name: Confirm this verified commit is current
+        id: current
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.current.outputs.release == 'true'
+      - run: pnpm verify:release
+        if: steps.current.outputs.release == 'true'
+      - name: Bootstrap the current extension version
+        if: steps.current.outputs.release == 'true'
+        id: bootstrap
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+        run: |
+          if git tag --list 'v[0-9]*' | grep -q .; then
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          VERSION="$(node -p \"JSON.parse(require('node:fs').readFileSync('apps/extension/manifest.json', 'utf8')).version\")"
+          node --import tsx tooling/release/set-version.ts "$VERSION"
+          pnpm package:extension
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/extension/manifest.json apps/extension/package.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(release): $VERSION [skip ci]"
+          fi
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin HEAD:main "v$VERSION"
+          gh release create "v$VERSION" "artifacts/pray-times-$VERSION.zip" "artifacts/pray-times-$VERSION.zip.sha256" \
+            --title "Pray Times $VERSION" \
+            --generate-notes
+          echo "created=true" >> "$GITHUB_OUTPUT"
+      - name: Create semantic release
+        if: steps.current.outputs.release == 'true' && steps.bootstrap.outputs.created != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+        run: pnpm release

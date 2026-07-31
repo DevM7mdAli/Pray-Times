@@ -14,7 +14,7 @@ A browser extension and landing page that show the next prayer in a selected Sau
 
 ## Requirements
 
-- Node.js 20.19 or later.
+- Node.js 22.14 or later (CI uses Node.js 24).
 - pnpm 11.18.0.
 
 ## Get started
@@ -58,16 +58,28 @@ The deployable site is written to `apps/landing-page/dist`. Vite is configured f
 
 After `Verify` succeeds on `main`, the `Deploy landing page` workflow builds and publishes the landing page to GitHub Pages. Enable **Settings → Pages → Source → GitHub Actions** once for the repository. You can also trigger the workflow manually from the Actions tab.
 
-## Extension releases
+## Automated releases
 
-After updating the version in `apps/extension/manifest.json`, push a matching tag to build the extension archive, verify its SHA-256 checksum, and attach both files to a GitHub Release:
+Do not create version tags manually. After a Conventional Commit reaches `main`, CI validates the commit history and the code, then determines the version, updates the extension manifest, creates the tag, builds the ZIP and SHA-256 checksum, and publishes the GitHub Release.
+
+| Commit | Release result |
+| --- | --- |
+| `fix: correct prayer time cache` | Patch release |
+| `feat: add a new city` | Minor release |
+| `feat!: change extension storage format` or a `BREAKING CHANGE:` footer | Major release |
+| `docs: clarify installation` / `chore: update tooling` | No release |
+
+Valid types are `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, and `test`. Commit lint runs for every pull request and push; malformed messages fail CI before they can release.
+
+Check your most recent local commit before pushing:
 
 ```bash
-git tag v1.1.0
-git push origin v1.1.0
+pnpm commitlint
 ```
 
-The workflow stops if the tag does not match the manifest version, the verification gate fails, or the archive checksum is invalid.
+Protect `main` by requiring the `Verify` workflow before merging pull requests.
+
+The built-in `GITHUB_TOKEN` is used by default. If branch protection prevents the release commit from being pushed, add a fine-grained `RELEASE_TOKEN` repository secret with Contents read/write access and authorize that account to bypass the applicable rule.
 
 ## Accuracy and privacy
 
