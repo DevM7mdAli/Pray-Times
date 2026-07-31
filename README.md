@@ -1,7 +1,5 @@
 # Pray Times
 
-English · [العربية](README.md)
-
 A browser extension and landing page that show the next prayer in a selected Saudi city. Before a time is displayed, the app verifies the selected city’s coordinates, returned date, time zone, and calculation method.
 
 ## What is included
@@ -59,6 +57,17 @@ The deployable site is written to `apps/landing-page/dist`. Vite is configured f
 ## Continuous deployment
 
 After `Verify` succeeds on `main`, the `Deploy landing page` workflow builds and publishes the landing page to GitHub Pages. Enable **Settings → Pages → Source → GitHub Actions** once for the repository. You can also trigger the workflow manually from the Actions tab.
+
+## Extension releases
+
+After updating the version in `apps/extension/manifest.json`, push a matching tag to build the extension archive, verify its SHA-256 checksum, and attach both files to a GitHub Release:
+
+```bash
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+The workflow stops if the tag does not match the manifest version, the verification gate fails, or the archive checksum is invalid.
 
 ## Accuracy and privacy
 
