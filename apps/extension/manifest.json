@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "أوقات الصلاة",
+  "version": "1.1.0",
+  "description": "اعرف الصلاة القادمة في مدينتك، مع مصدر وطريقة حساب واضحة.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "أوقات الصلاة",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "host_permissions": [
+    "https://api.aladhan.com/*",
+    "https://api.alquran.cloud/*"
+  ]
+}

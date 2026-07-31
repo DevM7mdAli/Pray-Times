@@ -1,1 +1,7 @@
 node_modules
+**/node_modules
+.pnpm-store
+**/dist
+artifacts/*.zip
+artifacts/*.sha256
+*.DS_Store

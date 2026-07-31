@@ -1,0 +1,19 @@
+{
+  "name": "@pray-times/extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm exec tailwindcss -c tailwind.config.cjs -i src/input.css -o dist/styles.css --watch",
+    "build": "node --import tsx ../../tooling/extension/build.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@pray-times/core": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.9",
+    "tailwindcss": "^3.4.17"
+  }
+}

@@ -1,38 +1,60 @@
-### <div align = center> <img src ="./icon.png" align = center width =100> <br> <p>اوقات الصلاة</p> </div>
+# أوقات الصلاة
 
-# Pray Times Extension
+إضافة متصفح عربية تعرض الصلاة القادمة في مدينتك. قبل أن تعرض المواقيت، تتحقق من إحداثيات المدينة والتاريخ والمنطقة الزمنية وطريقة الحساب.
 
-It is a web browser extension that lets you see the pray time by choosing your city and giving you random ayah every time you open the extension.
+## ما تغير
 
-## Features
+- واجهة إضافة Manifest V3 مكتوبة بـ TypeScript، مع حالة تحميل وخطأ ونتيجة محفوظة ومعلّمة بوضوح.
+- قائمة مدن سعودية منسقة بإحداثيات ثابتة بدل البحث باسم المدينة.
+- طريقة حساب معلنة: أم القرى، مكة المكرمة.
+- آية قرآنية من إصدار `quran-uthmani` مع رقم الآية الصحيح داخل السورة.
+- صفحة هبوط React + Vite + TypeScript تشترك مع الإضافة في نفس منطق البيانات.
+- بناء وحزمة ZIP محددة الملفات مع SHA-256، واختبارات وCI.
 
-1. **Prayer Times:** Choose your city and access accurate prayer times directly from your browser toolbar.
-2. **Random Ayah:** Every time you open the extension to check time a random ayah from the Quran will show under the time.
+## المتطلبات
 
-## How to Use
+- Node.js 20.19 أو أحدث.
+- pnpm 11.18.0.
 
-1. **Installation:** Simply clone the repo or download it as a zip folder and then unzip it after that go to the extensions page in your browser enable the developer option and then upload the folder make sure it is unzipped.
-2. **City Selection:** After installation, select your city to customize prayer times according to your location by pressing the setting icon.
+## البدء
 
-## Using the website version
+```bash
+pnpm install --frozen-lockfile
+pnpm dev:landing
+```
 
-**[Website URL](https://devm7mdali.github.io/Pray-Times/)**
+لفحص كل ما يسبق الإصدار:
 
-## Some pictures of the extension
+```bash
+pnpm check
+```
 
-<div align = center>
-<img src="./assets/popup picture.png">
-<img src="./assets/settings popup.png">
-</div>
+## الإضافة
 
-## Why Pray Times Extension?
+```bash
+pnpm build:extension
+```
 
-- **Convenience:** Access prayer times conveniently from your browser without needing to navigate to external websites or even check your phone.
-- **You have the source code:** You can enhance the extension or even redesign the whole extension and upload your changes to the repo.
+حمّل مجلد `apps/extension/dist` كإضافة غير مضغوطة من صفحة الإضافات في Chrome أو Edge بعد تفعيل وضع المطوّر.
 
-## API used in the extension
+لإنشاء ملف المتجر:
 
-- **For the ayah [alquran cloud](https://alquran.cloud/api)**
-- **For the pray time [aladhan](https://aladhan.com/prayer-times-api)**
+```bash
+pnpm package:extension
+```
 
-### _the extension under MIT License_
+تظهر الحزمة وملف التحقق في `artifacts/`.
+
+## صفحة الهبوط
+
+```bash
+pnpm build:landing
+```
+
+تُنشأ ملفات النشر في `apps/landing-page/dist`. إعداد Vite الحالي مناسب لمسار GitHub Pages: `/Pray-Times/`.
+
+## الدقة والخصوصية
+
+التفاصيل في [سياسة الخصوصية](docs/PRIVACY.md) و[خطة التحديث](docs/FRONTEND_MODERNIZATION_PLAN.md).
+
+قد تختلف الأوقات المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.
