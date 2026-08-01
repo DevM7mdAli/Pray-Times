@@ -4,6 +4,8 @@ import {
   cachePrayerDay,
   cityById,
   cityName,
+  dayTimeline,
+  fastingStatusFor,
   fetchAyah,
   fetchPrayerDay,
   formatHijriDate,
@@ -20,6 +22,7 @@ import {
   prayerName,
   prayerNameForCity,
   readCachedPrayerDay,
+  sunriseName,
   type Ayah,
   type City,
   type PrayerDay,
@@ -146,10 +149,40 @@ function renderDate(day: PrayerDay): void {
   sourceLine.textContent = `${prayerMethodName(day.method, locale)} · ${text("updated")} ${formatUpdatedAt(day.fetchedAt, day.city.timeZone, locale)}`;
 }
 
+/** The suhoor or iftar countdown, shown only during Ramadan. */
+function ramadanPanel(day: PrayerDay): HTMLElement | undefined {
+  const status = fastingStatusFor(day);
+  if (!status) return undefined;
+  const panel = element("div", "ramadan-panel");
+  panel.append(element("p", "ramadan-kicker", text("ramadanKicker")));
+  const main = element("div", "ramadan-main");
+  if (status.phase === "completed") {
+    main.append(element("strong", undefined, text("fastCompleted")));
+    main.append(
+      element(
+        "span",
+        "ramadan-detail",
+        `${text("fastCompletedDetail")} ${formatPrayerTime(day.timings.Maghrib, locale)}`
+      )
+    );
+  } else {
+    const label = status.phase === "suhoor" ? text("suhoorLabel") : text("iftarLabel");
+    main.append(element("span", "ramadan-detail", label));
+    main.append(
+      element("strong", undefined, formatRemainingTime(status.minutesUntil ?? 0, locale))
+    );
+    main.append(element("time", "ramadan-time", formatPrayerTime(status.time ?? "", locale)));
+  }
+  panel.append(main);
+  return panel;
+}
+
 function renderPrayerDay(day: PrayerDay): void {
   renderDate(day);
   const next = nextPrayerFor(day);
   const fragment = document.createDocumentFragment();
+  const ramadan = ramadanPanel(day);
+  if (ramadan) fragment.append(ramadan);
   const summary = element("div", "next-prayer");
   summary.append(
     element(
@@ -172,11 +205,24 @@ function renderPrayerDay(day: PrayerDay): void {
   fragment.append(summary);
 
   const path = element("div", "light-path");
-  for (const key of prayerKeysForCity(day.city)) {
-    const node = element("div", `prayer-node${key === next.key ? " is-next" : ""}`);
-    if (key === next.key) node.setAttribute("aria-current", "time");
-    node.append(element("span", undefined, prayerNameForCity(key, day.city, locale)));
-    node.append(element("time", undefined, formatPrayerTime(day.timings[key], locale)));
+  for (const entry of dayTimeline(day)) {
+    const isNext = entry.kind === "prayer" && entry.key === next.key;
+    const classes = ["prayer-node"];
+    if (isNext) classes.push("is-next");
+    // Sunrise divides the day without being a prayer, so it reads as a marker.
+    if (entry.kind === "sunrise") classes.push("is-marker");
+    const node = element("div", classes.join(" "));
+    if (isNext) node.setAttribute("aria-current", "time");
+    node.append(
+      element(
+        "span",
+        undefined,
+        entry.kind === "sunrise"
+          ? sunriseName(locale)
+          : prayerNameForCity(entry.key, day.city, locale)
+      )
+    );
+    node.append(element("time", undefined, formatPrayerTime(entry.time, locale)));
     path.append(node);
   }
   fragment.append(path);

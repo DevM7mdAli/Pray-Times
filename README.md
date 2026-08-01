@@ -7,6 +7,9 @@ A browser extension and landing page that show the next prayer in a selected Sau
 - A Manifest V3 browser extension written in TypeScript for Chrome, Edge, Firefox, and Safari, with loading, error, and clearly labelled cached-result states.
 - A toolbar countdown to the next prayer on the extension icon, readable without opening the popup and available on every supported browser.
 - Opt-in prayer notifications scheduled by a background service worker, with per-prayer controls and duplicate protection.
+- Sunrise shown alongside the prayers, marking where the Fajr window closes.
+- A Ramadan mode that appears on its own, counting down to imsak and then to iftar.
+- A qibla compass on the dashboard, computed from fixed coordinates without asking for your location.
 - A curated Saudi city catalog with fixed coordinates rather than ambiguous name searches.
 - The declared Umm Al-Qura, Makkah calculation method.
 - A `quran-uthmani` verse with the correct verse-in-surah reference.
@@ -92,6 +95,16 @@ Validate the Firefox build against the add-on policies:
 ```bash
 pnpm lint:firefox
 ```
+
+## Sunrise, Ramadan, and the qibla
+
+Three things are derived rather than displayed verbatim, and all three live in `@pray-times/core` so the extension and the dashboard cannot disagree.
+
+**Sunrise** closes the Fajr window. The provider already returns it, and `dayTimeline` places it by its own clock time rather than assuming it follows Fajr. It is deliberately not a `PrayerKey`, so it never becomes notifiable or enters a notification schedule. Sunrise and imsak are both parsed leniently: a provider that omits or mangles them loses only that row, never the verified prayer times.
+
+**Ramadan mode** is decided by the Hijri month _number_, never the month name, so it does not depend on the provider's transliteration. `fastingStatusFor` reports suhoor until imsak, fasting until Maghrib, and completed after that. Once the fast is complete no countdown to tomorrow's suhoor is shown, because that time is not in the day the app has verified. When the provider omits imsak, Fajr closes suhoor instead.
+
+**The qibla** is the initial great-circle bearing from the city's fixed coordinates to the Kaaba — no provider call, no geolocation prompt, no permission. The compass is north-up by default; "Align with my device" asks for device-orientation access, which iOS grants only from that tap. Standing at the Haram reports no bearing at all, since a direction there would be noise.
 
 ## Landing page
 

@@ -40,18 +40,43 @@ export const CUSTOM_PRAYER_METHOD: PrayerMethod = {
 
 export type HijriDate = {
   day: string;
+  /** 1-12, where 9 is Ramadan. Absent from days cached before it was parsed. */
+  month?: number;
   monthAr: string;
   monthEn: string;
   year: string;
 };
+
+/** The ninth Hijri month. */
+export const RAMADAN_MONTH = 9;
 
 export type PrayerDay = {
   requestedDate: string;
   city: City;
   method: PrayerMethod;
   timings: Record<PrayerKey, string>;
+  /**
+   * Solar sunrise, which closes the Fajr window. Not a prayer, and optional so
+   * that a provider omitting it never invalidates the prayer times themselves.
+   * Days cached before this was parsed also arrive without it.
+   */
+  sunrise?: string;
+  /**
+   * The end of suhoor, shortly before Fajr. Optional for the same reason as
+   * sunrise: it enriches Ramadan but must never block a verified day.
+   */
+  imsak?: string;
   hijri: HijriDate;
   fetchedAt: string;
+};
+
+export type FastingPhase = "suhoor" | "fasting" | "completed";
+
+export type FastingStatus = {
+  phase: FastingPhase;
+  /** The moment the current phase ends; absent once the fast is complete. */
+  time?: string;
+  minutesUntil?: number;
 };
 
 export type Ayah = {

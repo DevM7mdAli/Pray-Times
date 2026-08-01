@@ -44,6 +44,11 @@ export const EXTENSION_COPY = {
     verificationLabel: "التحقق",
     verificationDetail: "نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية",
     accuracyNote: "قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.",
+    ramadanKicker: "رمضان",
+    suhoorLabel: "يتبقى على الإمساك",
+    iftarLabel: "يتبقى على الإفطار",
+    fastCompleted: "تقبل الله صيامكم",
+    fastCompletedDetail: "كان الإفطار عند",
     badgeTitle: "العد التنازلي على الأيقونة",
     badgeDescription: "يظهر الوقت المتبقي للصلاة القادمة على أيقونة الإضافة دون فتح النافذة.",
     badgeToggle: "تفعيل العد التنازلي على الأيقونة",
@@ -112,6 +117,11 @@ export const EXTENSION_COPY = {
     verificationDetail: "We reject a result when its date, coordinates, or time zone do not match",
     accuracyNote:
       "Calculated times can differ by minutes from a mosque or local authority announcement.",
+    ramadanKicker: "RAMADAN",
+    suhoorLabel: "Until imsak",
+    iftarLabel: "Until iftar",
+    fastCompleted: "May your fast be accepted",
+    fastCompletedDetail: "Iftar was at",
     badgeTitle: "Icon countdown",
     badgeDescription:
       "Shows the time left before the next prayer on the toolbar icon, without opening the popup.",

@@ -6,6 +6,8 @@ import {
   cachePrayerDay,
   cityById,
   cityName,
+  dayTimeline,
+  fastingStatusFor,
   fetchPrayerDay,
   formatHijriDate,
   formatPrayerTime,
@@ -19,10 +21,12 @@ import {
   prayerMethodName,
   prayerNameForCity,
   readCachedPrayerDay,
+  sunriseName,
   type PrayerDay,
   type PrayerKey,
   type SupportedLocale,
 } from "@pray-times/core";
+import { QiblaCompass } from "./QiblaCompass";
 import {
   currentWebPushSubscription,
   disableWebPush,
@@ -60,6 +64,12 @@ const COPY = {
     nextPrayerTomorrow: "الصلاة القادمة غدًا",
     remaining: "متبقٍ",
     schedule: "مواقيت اليوم",
+    sunriseNote: "نهاية وقت الفجر",
+    ramadanKicker: "رمضان",
+    suhoorLabel: "يتبقى على الإمساك",
+    iftarLabel: "يتبقى على الإفطار",
+    fastCompleted: "تقبل الله صيامكم",
+    fastCompletedDetail: "كان الإفطار عند",
     refreshing: "نتحقق من أحدث المواقيت…",
     verified: "تم التحقق من مواقيت اليوم",
     cached: "تعذر التحقق الآن — نعرض نسخة محفوظة ومتحققًا منها لهذا اليوم.",
@@ -99,6 +109,12 @@ const COPY = {
     nextPrayerTomorrow: "Next prayer tomorrow",
     remaining: "Remaining",
     schedule: "Today’s schedule",
+    sunriseNote: "Fajr window ends",
+    ramadanKicker: "RAMADAN",
+    suhoorLabel: "Until imsak",
+    iftarLabel: "Until iftar",
+    fastCompleted: "May your fast be accepted",
+    fastCompletedDetail: "Iftar was at",
     refreshing: "Checking the latest prayer times…",
     verified: "Today’s prayer times are verified",
     cached: "Verification is unavailable — showing a verified copy saved for today.",
@@ -309,6 +325,7 @@ export function TodayApp() {
     };
   }, [city, localDate, refreshVersion]);
 
+  const fasting = day ? fastingStatusFor(day, now) : undefined;
   const todayNext = day ? nextPrayerFor(day, now) : undefined;
   const next = todayNext?.isTomorrow
     ? tomorrow
@@ -487,6 +504,26 @@ export function TodayApp() {
           <p className="today-alert-ios">{copy.iosHelp}</p>
         </section>
 
+        {day && fasting ? (
+          <section className="today-ramadan" data-phase={fasting.phase} aria-live="polite">
+            <p className="today-ramadan-kicker">{copy.ramadanKicker}</p>
+            {fasting.phase === "completed" ? (
+              <div>
+                <strong>{copy.fastCompleted}</strong>
+                <span>
+                  {copy.fastCompletedDetail} {formatPrayerTime(day.timings.Maghrib, locale)}
+                </span>
+              </div>
+            ) : (
+              <div>
+                <span>{fasting.phase === "suhoor" ? copy.suhoorLabel : copy.iftarLabel}</span>
+                <strong>{formatRemainingTime(fasting.minutesUntil ?? 0, locale)}</strong>
+                <time dateTime={fasting.time}>{formatPrayerTime(fasting.time ?? "", locale)}</time>
+              </div>
+            )}
+          </section>
+        ) : null}
+
         {day ? (
           <div className="today-dashboard">
             <section className="today-next" aria-labelledby="next-prayer-title">
@@ -524,15 +561,27 @@ export function TodayApp() {
                 <span>{formatHijriDate(day.hijri, locale)}</span>
               </div>
               <div className="today-prayer-list">
-                {prayerKeysForCity(day.city).map((key) => (
-                  <div className={key === next?.key && nextDay === day ? "is-next" : ""} key={key}>
-                    <span className="prayer-marker" aria-hidden="true" />
-                    <strong>{prayerNameForCity(key, day.city, locale)}</strong>
-                    <time dateTime={day.timings[key]}>
-                      {formatPrayerTime(day.timings[key], locale)}
-                    </time>
-                  </div>
-                ))}
+                {dayTimeline(day).map((entry) => {
+                  const isNext =
+                    entry.kind === "prayer" && entry.key === next?.key && nextDay === day;
+                  return (
+                    <div
+                      className={`${isNext ? "is-next" : ""}${entry.kind === "sunrise" ? " is-marker" : ""}`}
+                      key={entry.kind === "sunrise" ? "sunrise" : entry.key}
+                    >
+                      <span className="prayer-marker" aria-hidden="true" />
+                      <div className="today-prayer-label">
+                        <strong>
+                          {entry.kind === "sunrise"
+                            ? sunriseName(locale)
+                            : prayerNameForCity(entry.key, day.city, locale)}
+                        </strong>
+                        {entry.kind === "sunrise" ? <span>{copy.sunriseNote}</span> : null}
+                      </div>
+                      <time dateTime={entry.time}>{formatPrayerTime(entry.time, locale)}</time>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           </div>
@@ -551,6 +600,8 @@ export function TodayApp() {
             <p>{copy.refreshing}</p>
           </section>
         )}
+
+        <QiblaCompass city={city} locale={locale} />
 
         {day ? (
           <section className="today-verification" data-state={status} aria-live="polite">

@@ -1,5 +1,7 @@
 import {
+  RAMADAN_MONTH,
   type City,
+  type FastingStatus,
   type HijriDate,
   type NextPrayer,
   type PrayerDay,
@@ -231,6 +233,77 @@ export function formatRemainingTime(minutes: number, locale: SupportedLocale): s
   const remainder = minutes % 60;
   if (hours === 0) return `${remainder} min`;
   return `${hours} hr ${remainder} min`;
+}
+
+/**
+ * Whether the day falls in Ramadan.
+ *
+ * Decided on the Hijri month number, never the month name, so it does not
+ * depend on the provider's spelling or transliteration. A day cached before the
+ * number was parsed simply reports false until it is refetched.
+ */
+export function isRamadan(day: PrayerDay): boolean {
+  return day.hijri.month === RAMADAN_MONTH;
+}
+
+/**
+ * Where the day stands against the fast.
+ *
+ * Suhoor runs until imsak, the fast until Maghrib, and after Maghrib the day is
+ * complete. Tomorrow's suhoor is deliberately not counted down here, because
+ * that would mean showing a time this day's verified data does not contain.
+ */
+export function fastingStatusFor(day: PrayerDay, now = new Date()): FastingStatus | undefined {
+  if (!isRamadan(day)) return undefined;
+  const current = now.getTime();
+  const maghribAt = prayerTimestamp(day, "Maghrib");
+  if (current >= maghribAt) return { phase: "completed" };
+
+  // Imsak is optional, so Fajr closes suhoor whenever it is missing.
+  const suhoorEnd = day.imsak ?? day.timings.Fajr;
+  const suhoorEndsAt = timestampForLocalTime(day.requestedDate, suhoorEnd, day.city.timeZone);
+  if (current < suhoorEndsAt) {
+    return {
+      phase: "suhoor",
+      time: suhoorEnd,
+      minutesUntil: Math.ceil((suhoorEndsAt - current) / 60_000),
+    };
+  }
+  return {
+    phase: "fasting",
+    time: day.timings.Maghrib,
+    minutesUntil: Math.ceil((maghribAt - current) / 60_000),
+  };
+}
+
+const SUNRISE_NAMES: Record<SupportedLocale, string> = { ar: "الشروق", en: "Sunrise" };
+
+export function sunriseName(locale: SupportedLocale): string {
+  return SUNRISE_NAMES[locale];
+}
+
+/** A prayer, or a marker such as sunrise that only divides the day. */
+export type DayTimelineEntry =
+  { kind: "prayer"; key: PrayerKey; time: string } | { kind: "sunrise"; time: string };
+
+/**
+ * The day's rows in clock order, with sunrise placed by its own time rather
+ * than assumed to follow Fajr. Both the popup and the dashboard read this so a
+ * single rule decides what a day looks like.
+ */
+export function dayTimeline(day: PrayerDay): DayTimelineEntry[] {
+  const entries: DayTimelineEntry[] = prayerKeysForCity(day.city).map((key) => ({
+    kind: "prayer",
+    key,
+    time: day.timings[key],
+  }));
+  if (!day.sunrise) return entries;
+  const sunrise: DayTimelineEntry = { kind: "sunrise", time: day.sunrise };
+  const minutes = minutesSinceMidnight(day.sunrise);
+  const index = entries.findIndex((entry) => minutesSinceMidnight(entry.time) > minutes);
+  if (index === -1) entries.push(sunrise);
+  else entries.splice(index, 0, sunrise);
+  return entries;
 }
 
 /** Roughly what a toolbar badge can show before the engine truncates it. */

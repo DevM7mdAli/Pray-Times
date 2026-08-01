@@ -36,6 +36,31 @@ function recordField(source: UnknownRecord, field: string): UnknownRecord {
   return value;
 }
 
+/**
+ * Reads a time that enriches the day without being a prayer, such as sunrise.
+ * A missing or malformed value is dropped rather than thrown, because these
+ * must never stop verified prayer times from being shown.
+ */
+function supplementaryTime(source: UnknownRecord, field: string): string | undefined {
+  const value = source[field];
+  if (typeof value !== "string" || value.trim() === "") return undefined;
+  try {
+    parseTime(value);
+    return value;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The Hijri month number, dropped unless it is a real 1-12 month. */
+function supplementaryMonth(source: UnknownRecord, field: string): number | undefined {
+  const value = source[field];
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 12) {
+    return undefined;
+  }
+  return value;
+}
+
 function assertApiSuccess(payload: unknown): UnknownRecord {
   if (!isRecord(payload)) throw new Error("Malformed API response");
   if (payload.code !== 200 || payload.status !== "OK")
@@ -63,6 +88,9 @@ export function parsePrayerDayResponse(
     timings[key] = value;
   }
 
+  const sunrise = supplementaryTime(timingsSource, "Sunrise");
+  const imsak = supplementaryTime(timingsSource, "Imsak");
+
   const date = recordField(data, "date");
   const gregorian = recordField(date, "gregorian");
   if (stringField(gregorian, "date") !== requestedDate) {
@@ -70,6 +98,7 @@ export function parsePrayerDayResponse(
   }
   const hijri = recordField(date, "hijri");
   const hijriMonth = recordField(hijri, "month");
+  const hijriMonthNumber = supplementaryMonth(hijriMonth, "number");
 
   const meta = recordField(data, "meta");
   if (
@@ -92,8 +121,12 @@ export function parsePrayerDayResponse(
     city,
     method: expectedMethod,
     timings,
+    ...(sunrise ? { sunrise } : {}),
+    ...(imsak ? { imsak } : {}),
     hijri: {
       day: stringField(hijri, "day"),
+      // Ramadan is detected by number, so the month names stay display-only.
+      ...(hijriMonthNumber ? { month: hijriMonthNumber } : {}),
       monthAr: stringField(hijriMonth, "ar"),
       monthEn: stringField(hijriMonth, "en"),
       year: stringField(hijri, "year"),
