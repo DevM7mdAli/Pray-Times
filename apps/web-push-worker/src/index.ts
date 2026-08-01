@@ -2,9 +2,12 @@ import {
   addDaysToLocalDate,
   cityById,
   fetchPrayerDay,
+  isUsablePrayerDay,
   localDateFor,
   prayerKeysForCity,
   prayerMethodForCity,
+  trustedCity,
+  type City,
   type PrayerDay,
   type PrayerKey,
   type SupportedLocale,
@@ -35,6 +38,7 @@ type SubscriptionRow = {
   p256dh: string;
   auth: string;
   city_id: string;
+  place: string | null;
   locale: SupportedLocale;
   enabled_prayers: string;
   next_prayer_key: PrayerKey | null;
@@ -92,50 +96,80 @@ async function requestBody(request: Request): Promise<unknown> {
   return JSON.parse(body) as unknown;
 }
 
-async function prayerDay(env: Env, cityId: string, date: string): Promise<PrayerDay> {
-  const city = cityById(cityId);
-  if (!city) throw new Error("Unsupported city");
+/**
+ * The place a subscription is for.
+ *
+ * Rows written before places were stored carry only a catalog id, so they keep
+ * resolving from the catalog.
+ */
+function subscriptionPlace(row: Pick<SubscriptionRow, "place" | "city_id">): City | undefined {
+  if (row.place) {
+    try {
+      return trustedCity(JSON.parse(row.place));
+    } catch {
+      // A row that cannot be read falls through to the catalog id below.
+    }
+  }
+  return cityById(row.city_id);
+}
+
+async function prayerDay(env: Env, city: City, date: string): Promise<PrayerDay> {
+  const methodId = prayerMethodForCity(city).id;
   const cached = await env.DB.prepare(
-    "SELECT payload FROM prayer_days WHERE city_id = ?1 AND requested_date = ?2"
+    `SELECT payload FROM prayer_day_cache
+      WHERE latitude = ?1 AND longitude = ?2 AND time_zone = ?3
+        AND method_id = ?4 AND requested_date = ?5`
   )
-    .bind(cityId, date)
+    .bind(city.latitude, city.longitude, city.timeZone, methodId, date)
     .first<{ payload: string }>();
   if (cached) {
-    const day = JSON.parse(cached.payload) as PrayerDay;
-    if (day.method?.id === prayerMethodForCity(city).id) return day;
+    const stored: unknown = JSON.parse(cached.payload);
+    // The row may have been written by any place at this position, so its shape
+    // is checked rather than assumed; anything unusable falls through to a
+    // fetch instead of failing the delivery.
+    if (isUsablePrayerDay(stored)) {
+      // Everything that made the day valid is in the key, so only the place's
+      // own identity — its names and prayer profile — is reattached.
+      return { ...stored, city };
+    }
   }
 
   const day = await fetchPrayerDay(city, { date });
   await env.DB.prepare(
-    `INSERT INTO prayer_days (city_id, requested_date, payload, fetched_at)
-     VALUES (?1, ?2, ?3, ?4)
-     ON CONFLICT(city_id, requested_date) DO UPDATE SET payload = excluded.payload, fetched_at = excluded.fetched_at`
+    `INSERT INTO prayer_day_cache
+       (latitude, longitude, time_zone, method_id, requested_date, payload, fetched_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+     ON CONFLICT(latitude, longitude, time_zone, method_id, requested_date)
+       DO UPDATE SET payload = excluded.payload, fetched_at = excluded.fetched_at`
   )
-    .bind(cityId, date, JSON.stringify(day), Date.now())
+    .bind(
+      city.latitude,
+      city.longitude,
+      city.timeZone,
+      methodId,
+      date,
+      JSON.stringify(day),
+      Date.now()
+    )
     .run();
   return day;
 }
 
-async function nextSchedule(env: Env, cityId: string, enabledPrayers: EnabledPrayers, now: Date) {
-  const city = cityById(cityId);
-  if (!city) throw new Error("Unsupported city");
+async function nextSchedule(env: Env, city: City, enabledPrayers: EnabledPrayers, now: Date) {
   const today = localDateFor(city.timeZone, now);
   const tomorrow = addDaysToLocalDate(today, 1);
-  const days = await Promise.all([
-    prayerDay(env, city.id, today),
-    prayerDay(env, city.id, tomorrow),
-  ]);
+  const days = await Promise.all([prayerDay(env, city, today), prayerDay(env, city, tomorrow)]);
   return nextEnabledPrayer(days, enabledPrayers, now);
 }
 
 async function updateNextSchedule(
   env: Env,
   endpointHashValue: string,
-  cityId: string,
+  city: City,
   enabledPrayers: EnabledPrayers,
   now: Date
 ): Promise<void> {
-  const next = await nextSchedule(env, cityId, enabledPrayers, now);
+  const next = await nextSchedule(env, city, enabledPrayers, now);
   await env.DB.prepare(
     `UPDATE push_subscriptions
        SET next_prayer_key = ?1,
@@ -156,18 +190,18 @@ async function updateNextSchedule(
 }
 
 async function saveSubscription(env: Env, input: SubscriptionInput): Promise<string> {
-  if (!cityById(input.cityId)) throw new Error("Unsupported city");
   const hash = await endpointHash(input.subscription.endpoint);
   const now = Date.now();
   await env.DB.prepare(
     `INSERT INTO push_subscriptions (
-       endpoint_hash, endpoint, p256dh, auth, city_id, locale, enabled_prayers, created_at, updated_at
-     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)
+       endpoint_hash, endpoint, p256dh, auth, city_id, place, locale, enabled_prayers, created_at, updated_at
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
      ON CONFLICT(endpoint_hash) DO UPDATE SET
        endpoint = excluded.endpoint,
        p256dh = excluded.p256dh,
        auth = excluded.auth,
        city_id = excluded.city_id,
+       place = excluded.place,
        locale = excluded.locale,
        enabled_prayers = excluded.enabled_prayers,
        delivery_claimed_at = NULL,
@@ -178,13 +212,14 @@ async function saveSubscription(env: Env, input: SubscriptionInput): Promise<str
       input.subscription.endpoint,
       input.subscription.keys.p256dh,
       input.subscription.keys.auth,
-      input.cityId,
+      input.place.id,
+      JSON.stringify(input.place),
       input.locale,
       JSON.stringify(input.enabledPrayers),
       now
     )
     .run();
-  await updateNextSchedule(env, hash, input.cityId, input.enabledPrayers, new Date(now));
+  await updateNextSchedule(env, hash, input.place, input.enabledPrayers, new Date(now));
   return hash;
 }
 
@@ -215,11 +250,16 @@ function pushStatus(error: unknown): number | undefined {
 
 async function deliverDueSubscription(env: Env, row: SubscriptionRow, now: number): Promise<void> {
   const enabledPrayers = parseEnabledPrayers(JSON.parse(row.enabled_prayers));
+  const city = subscriptionPlace(row);
+  // A place that no longer resolves cannot be rescheduled either, so the row is
+  // left for the next sync from the browser rather than looping on it.
+  if (!city) return;
+
   if (!enabledPrayers || !row.next_prayer_key || !row.next_prayer_date || !row.next_fire_at) {
     await updateNextSchedule(
       env,
       row.endpoint_hash,
-      row.city_id,
+      city,
       enabledPrayers ?? {
         Fajr: true,
         Dhuhr: true,
@@ -232,14 +272,13 @@ async function deliverDueSubscription(env: Env, row: SubscriptionRow, now: numbe
     return;
   }
 
-  const city = cityById(row.city_id);
-  if (!city || !prayerKeysForCity(city).includes(row.next_prayer_key)) {
-    await updateNextSchedule(env, row.endpoint_hash, row.city_id, enabledPrayers, new Date(now));
+  if (!prayerKeysForCity(city).includes(row.next_prayer_key)) {
+    await updateNextSchedule(env, row.endpoint_hash, city, enabledPrayers, new Date(now));
     return;
   }
 
   if (row.next_fire_at < now - DELIVERY_GRACE_MS) {
-    await updateNextSchedule(env, row.endpoint_hash, row.city_id, enabledPrayers, new Date(now));
+    await updateNextSchedule(env, row.endpoint_hash, city, enabledPrayers, new Date(now));
     return;
   }
 
@@ -260,12 +299,12 @@ async function deliverDueSubscription(env: Env, row: SubscriptionRow, now: numbe
     .bind(row.endpoint_hash, row.next_prayer_date, row.next_prayer_key)
     .first();
   if (previous) {
-    await updateNextSchedule(env, row.endpoint_hash, row.city_id, enabledPrayers, new Date(now));
+    await updateNextSchedule(env, row.endpoint_hash, city, enabledPrayers, new Date(now));
     return;
   }
 
   try {
-    const day = await prayerDay(env, row.city_id, row.next_prayer_date);
+    const day = await prayerDay(env, city, row.next_prayer_date);
     const payload = notificationPayload(
       day,
       row.next_prayer_key,
@@ -280,7 +319,7 @@ async function deliverDueSubscription(env: Env, row: SubscriptionRow, now: numbe
     )
       .bind(row.endpoint_hash, row.next_prayer_date, row.next_prayer_key, now)
       .run();
-    await updateNextSchedule(env, row.endpoint_hash, row.city_id, enabledPrayers, new Date(now));
+    await updateNextSchedule(env, row.endpoint_hash, city, enabledPrayers, new Date(now));
   } catch (error) {
     if ([404, 410].includes(pushStatus(error) ?? 0)) {
       await env.DB.prepare("DELETE FROM push_subscriptions WHERE endpoint_hash = ?1")
@@ -319,7 +358,9 @@ async function deliverDue(env: Env): Promise<void> {
   const date = new Date(now);
   if (date.getUTCHours() === 0 && date.getUTCMinutes() === 0) {
     await env.DB.batch([
-      env.DB.prepare("DELETE FROM prayer_days WHERE fetched_at < ?1").bind(now - 4 * 86_400_000),
+      env.DB.prepare("DELETE FROM prayer_day_cache WHERE fetched_at < ?1").bind(
+        now - 4 * 86_400_000
+      ),
       env.DB.prepare("DELETE FROM notification_deliveries WHERE delivered_at < ?1").bind(
         now - 8 * 86_400_000
       ),
@@ -367,9 +408,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     if (url.pathname === "/v1/notifications/test" && request.method === "POST") {
       const input = parseSubscriptionInput(await requestBody(request));
-      if (!input || !cityById(input.cityId)) {
-        return json({ error: "Invalid subscription" }, 400, cors(origin));
-      }
+      if (!input) return json({ error: "Invalid subscription" }, 400, cors(origin));
       await saveSubscription(env, input);
       await sendPush(
         env,

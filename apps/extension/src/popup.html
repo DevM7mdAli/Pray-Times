@@ -60,6 +60,28 @@
             />
           </svg>
         </button>
+        <div class="city-search">
+          <label class="sr-only" for="city-search" data-i18n="searchCity"
+            >ابحث عن مدينة في أي مكان</label
+          >
+          <input
+            id="city-search"
+            type="search"
+            autocomplete="off"
+            data-i18n-placeholder="searchPlaceholder"
+            placeholder="ابحث عن مدينة…"
+          />
+          <p
+            class="city-search-status"
+            id="city-search-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <ul class="city-search-results" id="city-search-results" hidden></ul>
+          <button class="detect-button" id="detect-button" type="button" data-i18n="detectLocation">
+            استخدم موقعي الحالي
+          </button>
+        </div>
       </section>
 
       <p class="date-line" id="date-line" aria-live="polite">اختر مدينة لعرض مواقيت اليوم</p>
@@ -106,8 +128,11 @@
           <dd data-i18n="locationDetail">إحداثيات ثابتة للمدينة التي تختارها</dd>
         </div>
         <div>
-          <dt data-i18n="methodLabel">طريقة الحساب</dt>
-          <dd data-i18n="methodDetail">أم القرى، مكة المكرمة</dd>
+          <dt><label for="method-select" data-i18n="methodLabel">طريقة الحساب</label></dt>
+          <dd>
+            <select id="method-select"></select>
+            <span class="method-hint" id="method-hint"></span>
+          </dd>
         </div>
         <div>
           <dt data-i18n="verificationLabel">التحقق</dt>

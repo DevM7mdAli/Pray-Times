@@ -1,9 +1,11 @@
 import {
   CITIES,
   PRAYER_KEYS,
+  allPrayerMethods,
   cachePrayerDay,
-  cityById,
+  cityFromCoordinates,
   cityName,
+  cityWithMethod,
   dayTimeline,
   fastingStatusFor,
   fetchAyah,
@@ -12,6 +14,7 @@ import {
   formatPrayerTime,
   formatRemainingTime,
   formatUpdatedAt,
+  isPrayerMethodId,
   isSupportedLocale,
   localeDirection,
   localDateFor,
@@ -22,9 +25,13 @@ import {
   prayerName,
   prayerNameForCity,
   readCachedPrayerDay,
+  resolveCity,
+  searchPlaces,
   sunriseName,
+  VerificationError,
   type Ayah,
   type City,
+  type PlaceSuggestion,
   type PrayerDay,
   type PrayerKey,
   type SupportedLocale,
@@ -48,7 +55,10 @@ import {
 const CITY_STORAGE_KEY = "pray-times:city-id";
 const LOCALE_STORAGE_KEY = "pray-times:extension-locale";
 
-type Status = { key?: "verifying" | "stale" | "unavailable"; state?: "info" | "error" };
+type Status = {
+  key?: "verifying" | "stale" | "unavailable" | "zoneMismatch";
+  state?: "info" | "error";
+};
 type ViewState =
   { kind: "no-city" } | { kind: "loading"; city: City } | { kind: "error"; city: City };
 type AyahState = "waiting" | "loading" | "error";
@@ -78,6 +88,10 @@ let permissionWasDenied = false;
 let settingsWriteQueue: Promise<void> = Promise.resolve();
 
 const citySelect = requiredElement<HTMLSelectElement>("city-select");
+const citySearch = requiredElement<HTMLInputElement>("city-search");
+const searchResults = requiredElement<HTMLUListElement>("city-search-results");
+const searchStatus = requiredElement<HTMLElement>("city-search-status");
+const detectButton = requiredElement<HTMLButtonElement>("detect-button");
 const prayerPanel = requiredElement<HTMLElement>("prayer-panel");
 const ayahContent = requiredElement<HTMLElement>("ayah-content");
 const dateLine = requiredElement<HTMLElement>("date-line");
@@ -86,6 +100,8 @@ const sourceLine = requiredElement<HTMLElement>("source-line");
 const refreshButton = requiredElement<HTMLButtonElement>("refresh-button");
 const languageButton = requiredElement<HTMLButtonElement>("language-button");
 const settingsDialog = requiredElement<HTMLDialogElement>("settings-dialog");
+const methodSelect = requiredElement<HTMLSelectElement>("method-select");
+const methodHint = requiredElement<HTMLElement>("method-hint");
 const badgeToggle = requiredElement<HTMLInputElement>("badge-toggle");
 const notificationToggle = requiredElement<HTMLInputElement>("notification-toggle");
 const notificationPermission = requiredElement<HTMLElement>("notification-permission");
@@ -98,6 +114,20 @@ function requiredElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
   if (!(element instanceof HTMLElement)) throw new Error(`Missing #${id}`);
   return element as T;
+}
+
+/**
+ * A place with the reader's chosen authority applied. Everything that fetches
+ * or displays goes through here, so an override reaches the request itself and
+ * not just the settings dialog.
+ */
+function cityFor(id: string | null | undefined): City | undefined {
+  const base = resolveCity(id, extensionSettings.savedCities);
+  return base ? cityWithMethod(base, extensionSettings.methodOverrides[base.id]) : undefined;
+}
+
+function currentCity(): City | undefined {
+  return cityFor(extensionSettings.cityId);
 }
 
 function text(key: ExtensionCopyKey): string {
@@ -134,14 +164,126 @@ function populateCities(): void {
   const placeholder = element("option", undefined, text("chooseCity"));
   placeholder.value = "";
   const fragment = document.createDocumentFragment();
-  CITIES.forEach((city) => {
-    const option = document.createElement("option");
-    option.value = city.id;
-    option.textContent = cityName(city, locale);
-    fragment.append(option);
-  });
+  const addGroup = (label: string, cities: readonly City[]) => {
+    if (cities.length === 0) return;
+    const group = document.createElement("optgroup");
+    group.label = label;
+    cities.forEach((city) => {
+      const option = document.createElement("option");
+      option.value = city.id;
+      option.textContent = cityName(city, locale);
+      group.append(option);
+    });
+    fragment.append(group);
+  };
+  addGroup(text("presetCities"), CITIES);
+  addGroup(text("savedCities"), extensionSettings.savedCities);
   citySelect.replaceChildren(placeholder, fragment);
-  citySelect.value = cityById(selected) ? selected : "";
+  citySelect.value = resolveCity(selected, extensionSettings.savedCities) ? selected : "";
+}
+
+let searchVersion = 0;
+
+function renderSearchResults(suggestions: readonly PlaceSuggestion[]): void {
+  if (suggestions.length === 0) {
+    searchResults.replaceChildren();
+    searchResults.hidden = true;
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  for (const suggestion of suggestions) {
+    const item = document.createElement("li");
+    const button = element("button", "city-result");
+    button.type = "button";
+    button.append(element("strong", undefined, cityName(suggestion.city, locale)));
+    button.append(
+      element("span", undefined, locale === "ar" ? suggestion.contextAr : suggestion.contextEn)
+    );
+    button.addEventListener("click", () => void selectPlace(suggestion.city));
+    item.append(button);
+    fragment.append(item);
+  }
+  searchResults.replaceChildren(fragment);
+  searchResults.hidden = false;
+}
+
+function setSearchStatus(key?: ExtensionCopyKey): void {
+  searchStatus.textContent = key ? text(key) : "";
+}
+
+/** Saves a place, replacing an entry that already holds the same id. */
+async function selectPlace(place: City): Promise<void> {
+  const index = extensionSettings.savedCities.findIndex((entry) => entry.id === place.id);
+  const saved = [...extensionSettings.savedCities];
+  // A detected place keeps one id as the reader moves, so it is replaced.
+  if (index === -1) saved.push(place);
+  else saved[index] = place;
+  await persistSettings({ ...extensionSettings, cityId: place.id, savedCities: saved });
+  citySearch.value = "";
+  renderSearchResults([]);
+  setSearchStatus();
+  populateCities();
+  citySelect.value = place.id;
+  renderMethodSettings();
+  await renderNotificationSettings();
+  await loadSelectedCity();
+}
+
+function detectLocation(): void {
+  if (!("geolocation" in navigator)) {
+    setSearchStatus("detectUnsupported");
+    return;
+  }
+  detectButton.disabled = true;
+  setSearchStatus("detecting");
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      detectButton.disabled = false;
+      try {
+        void selectPlace(
+          cityFromCoordinates({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            // The device zone is the anchor; the provider must agree with it or
+            // the response is rejected like any other.
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            nameAr: EXTENSION_COPY.ar.detectedName,
+            nameEn: EXTENSION_COPY.en.detectedName,
+          })
+        );
+      } catch {
+        setSearchStatus("detectFailed");
+      }
+    },
+    (error) => {
+      detectButton.disabled = false;
+      setSearchStatus(error.code === error.PERMISSION_DENIED ? "detectDenied" : "detectFailed");
+    },
+    { timeout: 10_000, maximumAge: 5 * 60_000 }
+  );
+}
+
+function runSearch(): void {
+  const query = citySearch.value.trim();
+  const version = ++searchVersion;
+  if (query.length < 2) {
+    renderSearchResults([]);
+    setSearchStatus();
+    return;
+  }
+  setSearchStatus("searching");
+  void searchPlaces(query, { limit: 5 })
+    .then((found) => {
+      // Only the newest query may draw, so a slow reply cannot overwrite it.
+      if (version !== searchVersion) return;
+      renderSearchResults(found);
+      setSearchStatus(found.length === 0 ? "searchEmpty" : undefined);
+    })
+    .catch(() => {
+      if (version !== searchVersion) return;
+      renderSearchResults([]);
+      setSearchStatus("searchFailed");
+    });
 }
 
 function renderDate(day: PrayerDay): void {
@@ -311,6 +453,38 @@ async function persistSettings(settings: ExtensionSettings): Promise<void> {
   await settingsWriteQueue;
 }
 
+/**
+ * The authority selector, defaulting to whatever the place's country follows.
+ * Choosing one pins it for that place only.
+ */
+function renderMethodSettings(): void {
+  const base = resolveCity(extensionSettings.cityId, extensionSettings.savedCities);
+  methodSelect.disabled = !base;
+  if (!base) {
+    methodSelect.replaceChildren();
+    methodHint.textContent = "";
+    return;
+  }
+  const override = extensionSettings.methodOverrides[base.id];
+  const auto = prayerMethodForCity(base);
+  const fragment = document.createDocumentFragment();
+  const automatic = element(
+    "option",
+    undefined,
+    `${text("methodAuto")} — ${prayerMethodName(auto, locale)}`
+  );
+  automatic.value = "";
+  fragment.append(automatic);
+  for (const method of allPrayerMethods()) {
+    const option = element("option", undefined, prayerMethodName(method, locale));
+    option.value = String(method.id);
+    fragment.append(option);
+  }
+  methodSelect.replaceChildren(fragment);
+  methodSelect.value = override === undefined ? "" : String(override);
+  methodHint.textContent = override === undefined ? "" : text("methodOverridden");
+}
+
 function renderBadgeSettings(): void {
   badgeToggle.checked = extensionSettings.badgeEnabled && supportsBadge;
   badgeToggle.disabled = !supportsBadge;
@@ -321,9 +495,8 @@ async function renderNotificationSettings(messageKey?: ExtensionCopyKey): Promis
   notificationToggle.checked = extensionSettings.notificationsEnabled && permitted;
   notificationToggle.disabled = !supportsNotifications;
   prayerNotificationOptions.disabled = !notificationToggle.checked;
-  testNotificationButton.disabled =
-    !notificationToggle.checked || !cityById(extensionSettings.cityId);
-  const city = cityById(extensionSettings.cityId);
+  testNotificationButton.disabled = !notificationToggle.checked || !currentCity();
+  const city = currentCity();
   const activeKeys = city ? prayerKeysForCity(city) : PRAYER_KEYS;
   const methodDetail = document.querySelector<HTMLElement>("[data-i18n='methodDetail']");
   if (methodDetail) {
@@ -368,7 +541,7 @@ function startCountdown(): void {
 
 async function loadSelectedCity(force = false): Promise<void> {
   const requestId = ++requestVersion;
-  const city = cityById(citySelect.value);
+  const city = cityFor(citySelect.value);
   clearCountdown();
   currentDay = undefined;
   currentAyah = undefined;
@@ -387,7 +560,7 @@ async function loadSelectedCity(force = false): Promise<void> {
     /* Selection remains active for this session. */
   }
   const date = localDateFor(city.timeZone);
-  const cached = !force ? readCachedPrayerDay(localStorage, city.id, date) : undefined;
+  const cached = !force ? readCachedPrayerDay(localStorage, city, date) : undefined;
   ayahState = "loading";
   if (cached) {
     currentDay = cached;
@@ -418,7 +591,15 @@ async function loadSelectedCity(force = false): Promise<void> {
   } else {
     currentDay = undefined;
     viewState = { kind: "error", city };
-    setStatus("unavailable", "error");
+    // A zone that disagrees with the coordinates is not a network problem, and
+    // saying so would send the reader chasing the wrong fix.
+    const reason: unknown = prayerResult.reason;
+    setStatus(
+      reason instanceof VerificationError && reason.field === "timeZone"
+        ? "zoneMismatch"
+        : "unavailable",
+      "error"
+    );
   }
 
   if (ayahResult.status === "fulfilled") {
@@ -441,6 +622,10 @@ function applyLocale(): void {
     const key = node.dataset.i18n;
     if (key && key in EXTENSION_COPY[locale]) node.textContent = text(key as ExtensionCopyKey);
   });
+  document.querySelectorAll<HTMLInputElement>("[data-i18n-placeholder]").forEach((node) => {
+    const key = node.dataset.i18nPlaceholder;
+    if (key && key in EXTENSION_COPY[locale]) node.placeholder = text(key as ExtensionCopyKey);
+  });
   document.querySelectorAll<HTMLElement>("[data-i18n-aria-label]").forEach((node) => {
     const key = node.dataset.i18nAriaLabel;
     if (key && key in EXTENSION_COPY[locale])
@@ -454,7 +639,7 @@ function applyLocale(): void {
     /* Language remains active for this popup session. */
   }
   populateCities();
-  const selectedCity = cityById(citySelect.value || extensionSettings.cityId);
+  const selectedCity = cityFor(citySelect.value || extensionSettings.cityId);
   const methodDetail = document.querySelector<HTMLElement>("[data-i18n='methodDetail']");
   if (methodDetail && selectedCity) {
     methodDetail.textContent = prayerMethodName(prayerMethodForCity(selectedCity), locale);
@@ -462,13 +647,14 @@ function applyLocale(): void {
   document.querySelectorAll<HTMLElement>("[data-prayer-label]").forEach((node) => {
     const key = node.dataset.prayerLabel;
     if (key && PRAYER_KEYS.includes(key as PrayerKey)) {
-      const city = cityById(extensionSettings.cityId);
+      const city = currentCity();
       node.textContent = city
         ? prayerNameForCity(key as PrayerKey, city, locale)
         : prayerName(key as PrayerKey, locale);
     }
   });
   renderView();
+  renderMethodSettings();
   renderBadgeSettings();
   void renderNotificationSettings();
 }
@@ -481,11 +667,32 @@ function installEvents(): void {
       await loadSelectedCity();
     })();
   });
+  detectButton.addEventListener("click", detectLocation);
+  let searchTimer: number | undefined;
+  citySearch.addEventListener("input", () => {
+    if (searchTimer !== undefined) window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(runSearch, 300);
+  });
   refreshButton.addEventListener("click", () => void loadSelectedCity(true));
   languageButton.addEventListener("click", () => {
     locale = locale === "ar" ? "en" : "ar";
     void persistSettings({ ...extensionSettings, locale });
     applyLocale();
+  });
+  methodSelect.addEventListener("change", () => {
+    void (async () => {
+      const base = resolveCity(extensionSettings.cityId, extensionSettings.savedCities);
+      if (!base) return;
+      const overrides = { ...extensionSettings.methodOverrides };
+      const chosen = Number(methodSelect.value);
+      // An empty choice returns the place to its country default.
+      if (methodSelect.value === "" || !isPrayerMethodId(chosen)) delete overrides[base.id];
+      else overrides[base.id] = chosen;
+      await persistSettings({ ...extensionSettings, methodOverrides: overrides });
+      renderMethodSettings();
+      // The stored day was calculated by the old authority, so it is refetched.
+      await loadSelectedCity(true);
+    })();
   });
   badgeToggle.addEventListener("change", () => {
     // The service worker redraws the icon when the stored settings change.
@@ -547,8 +754,12 @@ async function initialize(): Promise<void> {
   extensionSettings = await migrateLegacySettings(legacyCity, locale);
   locale = extensionSettings.locale;
   applyLocale();
-  citySelect.value = cityById(extensionSettings.cityId) ? extensionSettings.cityId : "";
+  populateCities();
+  citySelect.value = resolveCity(extensionSettings.cityId, extensionSettings.savedCities)
+    ? extensionSettings.cityId
+    : "";
   installEvents();
+  renderMethodSettings();
   renderBadgeSettings();
   await renderNotificationSettings();
   await loadSelectedCity();

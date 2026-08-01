@@ -1,7 +1,8 @@
-import { PRAYER_KEYS, type PrayerKey, type SupportedLocale } from "@pray-times/core";
+import { PRAYER_KEYS, type City, type PrayerKey, type SupportedLocale } from "@pray-times/core";
 
 export type WebAlertSettings = {
-  cityId: string;
+  /** The whole place, since a searched or detected one is not in the catalog. */
+  place: City;
   locale: SupportedLocale;
   enabledPrayers: Record<PrayerKey, boolean>;
 };
@@ -70,7 +71,9 @@ function subscriptionBody(subscription: PushSubscription, settings: WebAlertSett
   ) as Record<PrayerKey, boolean>;
   return {
     subscription: value,
-    cityId: settings.cityId,
+    // `cityId` stays for a worker deployed before places were sent.
+    cityId: settings.place.id,
+    place: settings.place,
     locale: settings.locale,
     enabledPrayers,
   };

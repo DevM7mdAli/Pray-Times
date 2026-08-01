@@ -1,7 +1,10 @@
 import {
   PRAYER_KEYS,
   buildPrayerSchedule,
+  cityById,
   prayerNameForCity,
+  trustedCity,
+  type City,
   type PrayerDay,
   type PrayerKey,
   type SupportedLocale,
@@ -18,7 +21,11 @@ export type SubscriptionInput = {
     expirationTime?: number | null;
     keys: { p256dh: string; auth: string };
   };
-  cityId: string;
+  /**
+   * The whole place, not an id: a searched or detected place is not in the
+   * bundled catalog, so the server cannot look it up later.
+   */
+  place: City;
   locale: SupportedLocale;
   enabledPrayers: EnabledPrayers;
 };
@@ -60,19 +67,25 @@ export function parseSubscriptionInput(value: unknown): SubscriptionInput | unde
     pushKeys.p256dh.length > 512 ||
     typeof pushKeys.auth !== "string" ||
     pushKeys.auth.length > 256 ||
-    typeof candidate.cityId !== "string" ||
     (candidate.locale !== "ar" && candidate.locale !== "en") ||
     !enabledPrayers
   ) {
     return undefined;
   }
+  // The sender is not trusted with a place: a known id resolves to the catalog
+  // entry, anything else is validated and a detected position re-rounded. A
+  // browser that predates the place field still sends only an id.
+  const place =
+    trustedCity(candidate.place) ??
+    (typeof candidate.cityId === "string" ? cityById(candidate.cityId) : undefined);
+  if (!place) return undefined;
   return {
     subscription: {
       endpoint: push.endpoint,
       expirationTime: typeof push.expirationTime === "number" ? push.expirationTime : null,
       keys: { p256dh: pushKeys.p256dh, auth: pushKeys.auth },
     },
-    cityId: candidate.cityId,
+    place,
     locale: candidate.locale,
     enabledPrayers,
   };

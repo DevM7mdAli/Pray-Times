@@ -4,8 +4,9 @@ import {
   PRAYER_KEYS,
   addDaysToLocalDate,
   cachePrayerDay,
-  cityById,
+  allPrayerMethods,
   cityName,
+  cityWithMethod,
   dayTimeline,
   fastingStatusFor,
   fetchPrayerDay,
@@ -18,14 +19,23 @@ import {
   localeDirection,
   nextPrayerFor,
   prayerKeysForCity,
+  prayerMethodForCity,
   prayerMethodName,
   prayerNameForCity,
+  isPrayerMethodId,
+  parseMethodOverrides,
+  parseSavedCities,
   readCachedPrayerDay,
+  resolveCity,
+  VerificationError,
   sunriseName,
+  type City,
   type PrayerDay,
   type PrayerKey,
+  type PrayerMethodId,
   type SupportedLocale,
 } from "@pray-times/core";
+import { LocationPicker } from "./LocationPicker";
 import { QiblaCompass } from "./QiblaCompass";
 import {
   currentWebPushSubscription,
@@ -40,6 +50,8 @@ import {
 const CITY_STORAGE_KEY = "pray-times:today-city";
 const LOCALE_STORAGE_KEY = "pray-times:landing-locale";
 const ALERT_PRAYERS_STORAGE_KEY = "pray-times:web-alert-prayers";
+const SAVED_CITIES_STORAGE_KEY = "pray-times:saved-places:v1";
+const METHOD_OVERRIDES_STORAGE_KEY = "pray-times:method-overrides:v1";
 const EXTENSION_URL = "https://github.com/DevM7mdAli/Pray-Times/releases/latest";
 
 const ALL_PRAYERS_ENABLED: Record<PrayerKey, boolean> = {
@@ -65,6 +77,8 @@ const COPY = {
     remaining: "متبقٍ",
     schedule: "مواقيت اليوم",
     sunriseNote: "نهاية وقت الفجر",
+    methodAuto: "الافتراضي للدولة",
+    methodOverridden: "اختيارك، بدل الافتراضي للدولة",
     ramadanKicker: "رمضان",
     suhoorLabel: "يتبقى على الإمساك",
     iftarLabel: "يتبقى على الإفطار",
@@ -75,6 +89,9 @@ const COPY = {
     cached: "تعذر التحقق الآن — نعرض نسخة محفوظة ومتحققًا منها لهذا اليوم.",
     errorTitle: "تعذر عرض مواقيت اليوم",
     errorBody: "تحقق من الاتصال وحاول مجددًا. لن نعرض مواقيت غير متحققة.",
+    errorZoneTitle: "المنطقة الزمنية لجهازك لا توافق موقعك",
+    errorZoneBody:
+      "يقول جهازك إنه في منطقة زمنية أخرى غير إحداثياته، فلم نعرض مواقيت غير متحققة. صحّح المنطقة الزمنية للجهاز، أو اختر مدينتك من القائمة.",
     retry: "إعادة المحاولة",
     refreshed: "آخر تحديث",
     accuracy: "قد تختلف المواقيت دقائق عن إعلان المسجد أو الجهة المحلية.",
@@ -110,6 +127,8 @@ const COPY = {
     remaining: "Remaining",
     schedule: "Today’s schedule",
     sunriseNote: "Fajr window ends",
+    methodAuto: "Default for this country",
+    methodOverridden: "Your choice, replacing the country default",
     ramadanKicker: "RAMADAN",
     suhoorLabel: "Until imsak",
     iftarLabel: "Until iftar",
@@ -120,6 +139,9 @@ const COPY = {
     cached: "Verification is unavailable — showing a verified copy saved for today.",
     errorTitle: "Today’s prayer times are unavailable",
     errorBody: "Check your connection and try again. We won’t show unverified times.",
+    errorZoneTitle: "Your device’s time zone doesn’t match where it is",
+    errorZoneBody:
+      "Your device reports a time zone that disagrees with its coordinates, so we did not show unverified times. Correct the device time zone, or pick your city from the list instead.",
     retry: "Try again",
     refreshed: "Last updated",
     accuracy: "Calculated times can differ by minutes from a mosque or local authority.",
@@ -145,7 +167,7 @@ const COPY = {
   },
 } as const;
 
-type LoadStatus = "loading" | "verified" | "cached" | "error";
+type LoadStatus = "loading" | "verified" | "cached" | "error" | "zone-mismatch";
 type AlertStatus =
   | "checking"
   | "unconfigured"
@@ -172,8 +194,10 @@ function initialLocale(): SupportedLocale {
 
 function initialCity(): string {
   try {
+    // A saved place is resolved later against the stored list, so any id is
+    // accepted here and falls back to the default if it no longer resolves.
     const stored = localStorage.getItem(CITY_STORAGE_KEY);
-    if (cityById(stored)) return stored ?? "riyadh";
+    if (stored) return stored;
   } catch {
     // Riyadh remains the visible default.
   }
@@ -198,9 +222,32 @@ function initialAlertPrayers(): Record<PrayerKey, boolean> {
   return { ...ALL_PRAYERS_ENABLED };
 }
 
+function initialMethodOverrides(): Record<string, PrayerMethodId> {
+  try {
+    return parseMethodOverrides(
+      JSON.parse(localStorage.getItem(METHOD_OVERRIDES_STORAGE_KEY) ?? "null")
+    );
+  } catch {
+    // Country defaults apply when the stored choice cannot be read.
+    return {};
+  }
+}
+
+function initialSavedCities(): City[] {
+  try {
+    return parseSavedCities(JSON.parse(localStorage.getItem(SAVED_CITIES_STORAGE_KEY) ?? "null"));
+  } catch {
+    // Built-in cities remain available when storage cannot be read.
+    return [];
+  }
+}
+
 export function TodayApp() {
   const [locale, setLocale] = useState<SupportedLocale>(initialLocale);
   const [cityId, setCityId] = useState(initialCity);
+  const [savedCities, setSavedCities] = useState<City[]>(initialSavedCities);
+  const [methodOverrides, setMethodOverrides] =
+    useState<Record<string, PrayerMethodId>>(initialMethodOverrides);
   const [day, setDay] = useState<PrayerDay>();
   const [tomorrow, setTomorrow] = useState<PrayerDay>();
   const [status, setStatus] = useState<LoadStatus>("loading");
@@ -211,13 +258,18 @@ export function TodayApp() {
   const [alertBusy, setAlertBusy] = useState(false);
   const [enabledPrayers, setEnabledPrayers] = useState(initialAlertPrayers);
 
-  const city = useMemo(() => cityById(cityId) ?? CITIES[0]!, [cityId]);
+  const city = useMemo(() => {
+    const base = resolveCity(cityId, savedCities) ?? CITIES[0]!;
+    // Layered on here so the override reaches the request and the cache check,
+    // not only the selector.
+    return cityWithMethod(base, methodOverrides[base.id]);
+  }, [cityId, methodOverrides, savedCities]);
   const visiblePrayerKeys = prayerKeysForCity(city);
   const copy = COPY[locale];
   const localDate = city ? localDateFor(city.timeZone, now) : "";
   const alertSettings = useMemo(
-    () => ({ cityId, locale, enabledPrayers }),
-    [cityId, enabledPrayers, locale]
+    () => ({ place: city, locale, enabledPrayers }),
+    [city, enabledPrayers, locale]
   );
 
   useEffect(() => {
@@ -270,13 +322,15 @@ export function TodayApp() {
       localStorage.setItem(LOCALE_STORAGE_KEY, locale);
       localStorage.setItem(CITY_STORAGE_KEY, cityId);
       localStorage.setItem(ALERT_PRAYERS_STORAGE_KEY, JSON.stringify(enabledPrayers));
+      localStorage.setItem(SAVED_CITIES_STORAGE_KEY, JSON.stringify(savedCities));
+      localStorage.setItem(METHOD_OVERRIDES_STORAGE_KEY, JSON.stringify(methodOverrides));
     } catch {
       // Preferences remain available for this visit.
     }
     const url = new URL(window.location.href);
     url.searchParams.set("lang", locale);
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
-  }, [cityId, enabledPrayers, locale]);
+  }, [cityId, enabledPrayers, locale, methodOverrides, savedCities]);
 
   useEffect(() => {
     if (!pushApiUrl || (alertStatus !== "enabled" && alertStatus !== "sent")) return;
@@ -293,8 +347,8 @@ export function TodayApp() {
     let cached: PrayerDay | undefined;
     let cachedTomorrow: PrayerDay | undefined;
     try {
-      cached = readCachedPrayerDay(localStorage, city.id, localDate);
-      cachedTomorrow = readCachedPrayerDay(localStorage, city.id, tomorrowDate);
+      cached = readCachedPrayerDay(localStorage, city, localDate);
+      cachedTomorrow = readCachedPrayerDay(localStorage, city, tomorrowDate);
     } catch {
       cached = undefined;
       cachedTomorrow = undefined;
@@ -312,8 +366,17 @@ export function TodayApp() {
         cachePrayerDay(localStorage, todayResult.value);
         setDay(todayResult.value);
         setStatus("verified");
+      } else if (cached) {
+        setStatus("cached");
       } else {
-        setStatus(cached ? "cached" : "error");
+        // A zone that disagrees with the coordinates is not a network problem,
+        // and saying so would send the reader chasing the wrong fix.
+        const reason = todayResult.reason;
+        setStatus(
+          reason instanceof VerificationError && reason.field === "timeZone"
+            ? "zone-mismatch"
+            : "error"
+        );
       }
       if (tomorrowResult.status === "fulfilled") {
         cachePrayerDay(localStorage, tomorrowResult.value);
@@ -419,20 +482,23 @@ export function TodayApp() {
           <p className="today-kicker">{locale === "ar" ? "مسار يومك" : "YOUR DAILY PATH"}</p>
           <h1>{copy.title}</h1>
           <p>{copy.subtitle}</p>
-          <label className="today-city-picker">
-            <span>{copy.city}</span>
-            <select
-              value={cityId}
-              onChange={(event) => setCityId(event.target.value)}
-              aria-label={copy.selectCity}
-            >
-              {CITIES.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {cityName(option, locale)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <LocationPicker
+            cityId={cityId}
+            savedCities={savedCities}
+            locale={locale}
+            onSelect={setCityId}
+            onSave={(place) =>
+              setSavedCities((current) => {
+                const index = current.findIndex((entry) => entry.id === place.id);
+                if (index === -1) return [...current, place];
+                // A detected place keeps one id as the reader moves, so a fresh
+                // reading replaces the stored one rather than being ignored.
+                const next = [...current];
+                next[index] = place;
+                return next;
+              })
+            }
+          />
         </section>
 
         <section
@@ -585,11 +651,11 @@ export function TodayApp() {
               </div>
             </section>
           </div>
-        ) : status === "error" ? (
+        ) : status === "error" || status === "zone-mismatch" ? (
           <section className="today-error" role="alert">
             <span aria-hidden="true">!</span>
-            <h2>{copy.errorTitle}</h2>
-            <p>{copy.errorBody}</p>
+            <h2>{status === "zone-mismatch" ? copy.errorZoneTitle : copy.errorTitle}</h2>
+            <p>{status === "zone-mismatch" ? copy.errorZoneBody : copy.errorBody}</p>
             <button type="button" onClick={() => setRefreshVersion((value) => value + 1)}>
               {copy.retry}
             </button>
@@ -621,8 +687,47 @@ export function TodayApp() {
                 <dd>{formatUpdatedAt(day.fetchedAt, day.city.timeZone, locale)}</dd>
               </div>
               <div>
-                <dt>{locale === "ar" ? "طريقة الحساب" : "Calculation"}</dt>
-                <dd>{prayerMethodName(day.method, locale)}</dd>
+                <dt>
+                  <label htmlFor="method-select">
+                    {locale === "ar" ? "طريقة الحساب" : "Calculation"}
+                  </label>
+                </dt>
+                <dd>
+                  <select
+                    id="method-select"
+                    className="today-method-select"
+                    value={
+                      methodOverrides[city.id] === undefined ? "" : String(methodOverrides[city.id])
+                    }
+                    onChange={(event) => {
+                      const chosen = Number(event.target.value);
+                      setMethodOverrides((current) => {
+                        const next = { ...current };
+                        // An empty choice returns the place to its country default.
+                        if (event.target.value === "" || !isPrayerMethodId(chosen))
+                          delete next[city.id];
+                        else next[city.id] = chosen;
+                        return next;
+                      });
+                    }}
+                  >
+                    <option value="">
+                      {copy.methodAuto} —{" "}
+                      {prayerMethodName(
+                        prayerMethodForCity(resolveCity(cityId, savedCities) ?? CITIES[0]!),
+                        locale
+                      )}
+                    </option>
+                    {allPrayerMethods().map((method) => (
+                      <option key={method.id} value={method.id}>
+                        {prayerMethodName(method, locale)}
+                      </option>
+                    ))}
+                  </select>
+                  {methodOverrides[city.id] === undefined ? null : (
+                    <span className="today-method-hint">{copy.methodOverridden}</span>
+                  )}
+                </dd>
               </div>
             </dl>
             <p>{copy.accuracy}</p>

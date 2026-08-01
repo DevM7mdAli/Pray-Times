@@ -1,8 +1,16 @@
+import type { PrayerMethod, PrayerMethodId } from "./methods.js";
+
 export const PRAYER_KEYS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 
 export type PrayerKey = (typeof PRAYER_KEYS)[number];
 
-export type PrayerProfile = "default-five" | "custom-three";
+/**
+ * Where a place came from.
+ *
+ * Only the origin differs: a searched or detected place is pinned exactly like a
+ * bundled one, and every response is checked against it the same way.
+ */
+export type CitySource = "preset" | "searched" | "detected";
 
 export type City = {
   id: string;
@@ -10,32 +18,17 @@ export type City = {
   nameEn: string;
   latitude: number;
   longitude: number;
-  timeZone: "Asia/Riyadh";
-  prayerProfile?: PrayerProfile;
-};
-
-export type PrayerMethod =
-  | {
-      id: 4;
-      name: "Umm Al-Qura University, Makkah";
-      nameAr: "أم القرى، مكة المكرمة";
-    }
-  | {
-      id: 0;
-      name: "Custom time";
-      nameAr: "توقيت مخصص";
-    };
-
-export const UMM_AL_QURA: PrayerMethod = {
-  id: 4,
-  name: "Umm Al-Qura University, Makkah",
-  nameAr: "أم القرى، مكة المكرمة",
-};
-
-export const CUSTOM_PRAYER_METHOD: PrayerMethod = {
-  id: 0,
-  name: "Custom time",
-  nameAr: "توقيت مخصص",
+  /** IANA zone, verified against the one the provider returns. */
+  timeZone: string;
+  /** ISO 3166-1 alpha-2, which decides the default calculation method. */
+  countryCode?: string;
+  /**
+   * Pins the calculation method, overriding the country default. Set when a
+   * place follows an authority other than its country's, and whenever a reader
+   * chooses one explicitly.
+   */
+  methodId?: PrayerMethodId;
+  source?: CitySource;
 };
 
 export type HijriDate = {

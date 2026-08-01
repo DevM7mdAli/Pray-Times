@@ -1,23 +1,11 @@
 import { parseAyahResponse, parsePrayerDayResponse } from "./schemas.js";
 import { prayerMethodForCity } from "./cities.js";
+import { requestJson, type FetchLike } from "./request.js";
 import { localDateFor } from "./time.js";
 import type { Ayah, City, PrayerDay } from "./types.js";
 
 const PRAYER_API_ORIGIN = "https://api.aladhan.com";
 const QURAN_API_ORIGIN = "https://api.alquran.cloud";
-const REQUEST_TIMEOUT_MS = 7000;
-
-type FetchLike = typeof fetch;
-
-export class ProviderError extends Error {
-  readonly retryable: boolean;
-
-  constructor(message: string, retryable = false) {
-    super(message);
-    this.name = "ProviderError";
-    this.retryable = retryable;
-  }
-}
 
 function createPrayerUrl(city: City, date: string): URL {
   const url = new URL(`/v1/timings/${date}`, PRAYER_API_ORIGIN);
@@ -29,33 +17,6 @@ function createPrayerUrl(city: City, date: string): URL {
 
 function createAyahUrl(number: number): URL {
   return new URL(`/v1/ayah/${number}/quran-uthmani`, QURAN_API_ORIGIN);
-}
-
-async function requestJson(url: URL, fetchImpl: FetchLike, retry = true): Promise<unknown> {
-  const controller = new AbortController();
-  const timeout = globalThis.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    const response = await fetchImpl(url, {
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      const retryable = response.status >= 500;
-      if (retry && retryable) return requestJson(url, fetchImpl, false);
-      throw new ProviderError(`Provider request failed (${response.status})`, retryable);
-    }
-    return await response.json();
-  } catch (error) {
-    if (error instanceof ProviderError) throw error;
-    if (retry) return requestJson(url, fetchImpl, false);
-    const message =
-      error instanceof DOMException && error.name === "AbortError"
-        ? "The provider did not respond in time"
-        : "Could not reach the provider";
-    throw new ProviderError(message, true);
-  } finally {
-    globalThis.clearTimeout(timeout);
-  }
 }
 
 export async function fetchPrayerDay(

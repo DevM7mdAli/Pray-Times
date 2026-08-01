@@ -1,9 +1,15 @@
 import {
   PRAYER_KEYS,
-  cityById,
+  cityWithMethod,
   isSupportedLocale,
+  isUsablePrayerDay,
+  parseMethodOverrides,
+  parseSavedCities,
   prayerMethodForCity,
+  resolveCity,
+  type City,
   type PrayerDay,
+  type PrayerMethodId,
   type PrayerKey,
   type PrayerScheduleEntry,
   type SupportedLocale,
@@ -22,6 +28,10 @@ export type ExtensionSettings = {
   notificationsEnabled: boolean;
   badgeEnabled: boolean;
   enabledPrayers: Record<PrayerKey, boolean>;
+  /** Places found by search, which are not in the bundled catalog. */
+  savedCities: City[];
+  /** Per-place authority chosen by the reader, overriding the country default. */
+  methodOverrides: Record<string, PrayerMethodId>;
 };
 
 export const ALL_PRAYERS_ENABLED: Record<PrayerKey, boolean> = {
@@ -40,6 +50,8 @@ export function defaultExtensionSettings(locale: SupportedLocale = "en"): Extens
     notificationsEnabled: false,
     badgeEnabled: true,
     enabledPrayers: { ...ALL_PRAYERS_ENABLED },
+    savedCities: [],
+    methodOverrides: {},
   };
 }
 
@@ -63,6 +75,9 @@ function normalizeSettings(value: unknown): ExtensionSettings {
     // badge is on by default, so only an explicit false turns it off.
     badgeEnabled: candidate.badgeEnabled !== false,
     enabledPrayers,
+    // Stored places are re-validated on every read rather than trusted.
+    savedCities: parseSavedCities(candidate.savedCities),
+    methodOverrides: parseMethodOverrides(candidate.methodOverrides),
   };
 }
 
@@ -100,24 +115,32 @@ function prayerDayStorageKey(cityId: string, date: string): string {
 }
 
 export async function readStoredPrayerDay(
-  cityId: string,
+  city: City,
   date: string
 ): Promise<PrayerDay | undefined> {
-  const key = prayerDayStorageKey(cityId, date);
+  const key = prayerDayStorageKey(city.id, date);
   const result = await browserApi.storage.local.get(key);
   const candidate = result[key];
-  if (!candidate || typeof candidate !== "object") return undefined;
-  const day = candidate as PrayerDay;
-  const city = cityById(cityId);
+  if (!isUsablePrayerDay(candidate)) return undefined;
+  const day = candidate;
   if (
-    day.city?.id !== cityId ||
+    day.city?.id !== city.id ||
     day.requestedDate !== date ||
-    !city ||
+    // A detected place keeps one id as the reader moves, so the coordinates are
+    // checked too rather than trusting the id alone.
+    day.city?.latitude !== city.latitude ||
+    day.city?.longitude !== city.longitude ||
     day.method?.id !== prayerMethodForCity(city).id
   ) {
     return undefined;
   }
   return day;
+}
+
+/** The place the reader has chosen, whether bundled or saved by search. */
+export function selectedCity(settings: ExtensionSettings): City | undefined {
+  const city = resolveCity(settings.cityId, settings.savedCities);
+  return city ? cityWithMethod(city, settings.methodOverrides[city.id]) : undefined;
 }
 
 export async function writeStoredPrayerDay(day: PrayerDay): Promise<void> {

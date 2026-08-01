@@ -2,7 +2,6 @@ import {
   addDaysToLocalDate,
   badgeRefreshAt,
   buildPrayerSchedule,
-  cityById,
   cityName,
   fetchPrayerDay,
   formatBadgeCountdown,
@@ -13,6 +12,7 @@ import {
   prayerKeysForCity,
   prayerMethodName,
   prayerNameForCity,
+  type City,
   type PrayerDay,
   type PrayerScheduleEntry,
   type SupportedLocale,
@@ -26,6 +26,7 @@ import {
 import {
   SETTINGS_STORAGE_KEY,
   markDelivered,
+  selectedCity,
   readExtensionSettings,
   readStoredPrayerDay,
   readStoredSchedule,
@@ -52,11 +53,9 @@ async function clearPrayerAlarms(except = new Set<string>()): Promise<void> {
   );
 }
 
-async function verifiedDay(cityId: string, date: string): Promise<PrayerDay> {
-  const cached = await readStoredPrayerDay(cityId, date);
+async function verifiedDay(city: City, date: string): Promise<PrayerDay> {
+  const cached = await readStoredPrayerDay(city, date);
   if (cached) return cached;
-  const city = cityById(cityId);
-  if (!city) throw new Error("Unknown notification city");
   const day = await fetchPrayerDay(city, { date });
   await writeStoredPrayerDay(day);
   return day;
@@ -75,7 +74,7 @@ async function ensureReconcileAlarm(): Promise<void> {
 async function reconcileSchedule(): Promise<void> {
   await ensureReconcileAlarm();
   const settings = await readExtensionSettings();
-  const city = cityById(settings.cityId);
+  const city = selectedCity(settings);
   if (!settings.notificationsEnabled || !city || !(await hasNotificationPermission())) {
     await clearPrayerAlarms();
     await browserApi.alarms.clear(RETRY_ALARM);
@@ -96,18 +95,23 @@ async function reconcileSchedule(): Promise<void> {
   const tomorrow = addDaysToLocalDate(today, 1);
   try {
     const results = await Promise.allSettled([
-      verifiedDay(city.id, today),
-      verifiedDay(city.id, tomorrow),
+      verifiedDay(city, today),
+      verifiedDay(city, tomorrow),
     ]);
     const days = results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
     if (days.length === 0) throw new Error("No verified prayer days are available");
     const schedule = buildPrayerSchedule(days, settings.enabledPrayers);
     const expected = new Set(schedule.map((entry) => entry.id));
     await clearPrayerAlarms(expected);
-    const existing = new Set((await browserApi.alarms.getAll()).map((alarm) => alarm.name));
+    // Compared by time, not just by name: an alarm keeps its id when the times
+    // move, which is what happens when the calculation method changes, so a
+    // name-only check would leave it firing at the old minute.
+    const existing = new Map(
+      (await browserApi.alarms.getAll()).map((alarm) => [alarm.name, alarm.scheduledTime])
+    );
     await Promise.all(
       schedule
-        .filter((entry) => !existing.has(entry.id))
+        .filter((entry) => existing.get(entry.id) !== entry.scheduledTime)
         .map((entry) => browserApi.alarms.create(entry.id, { when: entry.scheduledTime }))
     );
     await writeStoredSchedule(schedule);
@@ -138,7 +142,7 @@ async function refreshBadge(): Promise<void> {
   const action = browserApi.action;
   if (!action) return;
   const settings = await readExtensionSettings();
-  const city = cityById(settings.cityId);
+  const city = selectedCity(settings);
   if (!settings.badgeEnabled || !city) {
     await clearBadge();
     return;
@@ -146,7 +150,7 @@ async function refreshBadge(): Promise<void> {
 
   let day: PrayerDay;
   try {
-    day = await verifiedDay(city.id, localDateFor(city.timeZone));
+    day = await verifiedDay(city, localDateFor(city.timeZone));
   } catch (error) {
     // Leave whatever the badge already shows rather than blanking it on a
     // transient network failure, and try again on the next tick.
@@ -223,7 +227,7 @@ function notificationOptions(copy: {
 
 async function deliverPrayer(entry: PrayerScheduleEntry): Promise<void> {
   const settings = await readExtensionSettings();
-  const city = cityById(entry.cityId);
+  const city = selectedCity(settings);
   if (
     !settings.notificationsEnabled ||
     settings.cityId !== entry.cityId ||
@@ -237,7 +241,7 @@ async function deliverPrayer(entry: PrayerScheduleEntry): Promise<void> {
   }
   const lateness = Date.now() - entry.scheduledTime;
   if (lateness < -30_000 || lateness > LATE_GRACE_MS) return;
-  const day = await readStoredPrayerDay(entry.cityId, entry.requestedDate);
+  const day = await readStoredPrayerDay(city, entry.requestedDate);
   if (!day) return;
   const notifications = browserApi.notifications;
   if (!notifications) return;
@@ -272,7 +276,7 @@ async function handleAlarm(name: string): Promise<void> {
 
 async function sendTestNotification(): Promise<void> {
   const settings = await readExtensionSettings();
-  const city = cityById(settings.cityId);
+  const city = selectedCity(settings);
   const notifications = browserApi.notifications;
   if (!city || !notifications || !(await hasNotificationPermission())) return;
   const locale = settings.locale;

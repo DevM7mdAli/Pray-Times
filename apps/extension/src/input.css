@@ -184,6 +184,7 @@
     font-weight: 700;
   }
   .location-bar {
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 20px;
     padding: 9px 10px 9px 7px;
@@ -270,6 +271,111 @@
     margin: 13px 0 0;
     color: var(--muted);
     font-size: 12px;
+  }
+  #method-select {
+    width: 100%;
+    min-height: 34px;
+    padding-inline: 9px;
+    border: 1px solid rgba(245, 248, 255, 0.18);
+    border-radius: 10px;
+    background: var(--layl-raised);
+    color: var(--nur);
+    font-size: 12px;
+  }
+  .method-hint {
+    display: block;
+    margin-top: 4px;
+    color: var(--raml);
+    font-size: 10px;
+  }
+  .city-search {
+    position: relative;
+    /* Its own row beneath the picker, which is a flex container. */
+    flex: 1 0 100%;
+    display: grid;
+    gap: 5px;
+  }
+  .city-search input {
+    width: 100%;
+    min-height: 36px;
+    padding-inline: 12px;
+    border: 1px solid rgba(245, 248, 255, 0.16);
+    border-radius: 11px;
+    background: rgba(11, 23, 54, 0.55);
+    color: var(--nur);
+    font: inherit;
+    font-size: 12px;
+  }
+  .city-search input:focus-visible {
+    outline: 2px solid var(--raml);
+    outline-offset: 2px;
+  }
+  .city-search-status:empty {
+    display: none;
+  }
+  .city-search-status {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .city-search-results {
+    position: absolute;
+    z-index: 6;
+    inset-inline: 0;
+    top: 100%;
+    max-height: 190px;
+    margin: 4px 0 0;
+    padding: 4px;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid rgba(77, 168, 218, 0.34);
+    border-radius: 12px;
+    background: var(--layl-raised);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+  }
+  .detect-button {
+    justify-self: start;
+    padding: 6px 11px;
+    cursor: pointer;
+    border: 1px solid rgba(245, 248, 255, 0.18);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .detect-button:hover:not(:disabled) {
+    color: var(--nur);
+    background: rgba(245, 248, 255, 0.08);
+  }
+  .detect-button:disabled {
+    cursor: progress;
+    opacity: 0.6;
+  }
+  .city-result {
+    display: grid;
+    gap: 1px;
+    width: 100%;
+    padding: 7px 9px;
+    cursor: pointer;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+  }
+  .city-result strong {
+    font-size: 12px;
+  }
+  .city-result span {
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .city-result:hover,
+  .city-result:focus-visible {
+    background: rgba(77, 168, 218, 0.18);
+    outline: none;
   }
   .ramadan-panel {
     margin-bottom: 14px;

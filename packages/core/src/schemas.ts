@@ -1,3 +1,4 @@
+import { VerificationError } from "./request.js";
 import { PRAYER_KEYS, type Ayah, type City, type PrayerDay, type PrayerKey } from "./types.js";
 import { prayerMethodForCity } from "./cities.js";
 import { parseTime } from "./time.js";
@@ -94,7 +95,7 @@ export function parsePrayerDayResponse(
   const date = recordField(data, "date");
   const gregorian = recordField(date, "gregorian");
   if (stringField(gregorian, "date") !== requestedDate) {
-    throw new Error("Provider returned a different Gregorian date");
+    throw new VerificationError("date", "Provider returned a different Gregorian date");
   }
   const hijri = recordField(date, "hijri");
   const hijriMonth = recordField(hijri, "month");
@@ -105,15 +106,21 @@ export function parsePrayerDayResponse(
     !closeEnough(numberField(meta, "latitude"), city.latitude) ||
     !closeEnough(numberField(meta, "longitude"), city.longitude)
   ) {
-    throw new Error("Provider coordinates do not match the selected city");
+    throw new VerificationError(
+      "coordinates",
+      "Provider coordinates do not match the selected city"
+    );
   }
   if (stringField(meta, "timezone") !== city.timeZone) {
-    throw new Error("Provider timezone does not match the selected city");
+    throw new VerificationError("timeZone", "Provider timezone does not match the selected city");
   }
   const method = recordField(meta, "method");
   const expectedMethod = prayerMethodForCity(city);
   if (numberField(method, "id") !== expectedMethod.id) {
-    throw new Error("Provider calculation method does not match the selected city profile");
+    throw new VerificationError(
+      "method",
+      "Provider calculation method does not match the selected city profile"
+    );
   }
 
   return {

@@ -1,3 +1,4 @@
+import type { PrayerMethod } from "./methods.js";
 import {
   RAMADAN_MONTH,
   type City,
@@ -6,10 +7,9 @@ import {
   type NextPrayer,
   type PrayerDay,
   type PrayerKey,
-  type PrayerMethod,
   type PrayerScheduleEntry,
 } from "./types.js";
-import { prayerKeysForCity } from "./cities.js";
+import { prayerKeysForCity, prayerMethodForCity } from "./cities.js";
 
 const TIME_PATTERN = /^(?<hour>[01]?\d|2[0-3]):(?<minute>[0-5]\d)/;
 const ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -25,7 +25,8 @@ const PRAYER_NAMES: Record<PrayerKey, Record<SupportedLocale, string>> = {
   Isha: { ar: "العشاء", en: "Isha" },
 };
 
-const CUSTOM_WINDOW_NAMES: Partial<Record<PrayerKey, Record<SupportedLocale, string>>> = {
+/** Shown by any method that combines the two pairs. */
+const COMBINED_WINDOW_NAMES: Partial<Record<PrayerKey, Record<SupportedLocale, string>>> = {
   Dhuhr: { ar: "الظهر والعصر", en: "Dhuhr & Asr" },
   Maghrib: { ar: "المغرب والعشاء", en: "Maghrib & Isha" },
 };
@@ -344,8 +345,8 @@ export function prayerName(key: PrayerKey, locale: SupportedLocale): string {
 }
 
 export function prayerNameForCity(key: PrayerKey, city: City, locale: SupportedLocale): string {
-  if (city.prayerProfile === "custom-three") {
-    return CUSTOM_WINDOW_NAMES[key]?.[locale] ?? PRAYER_NAMES[key][locale];
+  if (prayerMethodForCity(city).combinesPrayers) {
+    return COMBINED_WINDOW_NAMES[key]?.[locale] ?? PRAYER_NAMES[key][locale];
   }
   return prayerName(key, locale);
 }

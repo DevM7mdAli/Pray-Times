@@ -10,8 +10,8 @@ A browser extension and landing page that show the next prayer in a selected Sau
 - Sunrise shown alongside the prayers, marking where the Fajr window closes.
 - A Ramadan mode that appears on its own, counting down to imsak and then to iftar.
 - A qibla compass on the dashboard, computed from fixed coordinates without asking for your location.
-- A curated Saudi city catalog with fixed coordinates rather than ambiguous name searches.
-- The declared Umm Al-Qura, Makkah calculation method.
+- Any city in the world: a curated offline catalog of Saudi cities, place search, and opt-in location detection — each pinned to fixed coordinates before a time is shown.
+- The calculation authority a country follows, chosen automatically and overridable per place.
 - A `quran-uthmani` verse with the correct verse-in-surah reference.
 - A React, Vite, and TypeScript landing page plus a standalone `/today/` prayer dashboard for users who do not want to install the extension.
 - Free, opt-in Web Push alerts on the dashboard, backed by a Cloudflare Worker, D1, and a one-minute scheduled trigger.
@@ -96,6 +96,30 @@ Validate the Firefox build against the add-on policies:
 pnpm lint:firefox
 ```
 
+## Choosing a place anywhere
+
+A place reaches the app three ways, and all three end up as the same thing: a
+pinned `City` carrying fixed coordinates, an IANA zone, and a country. Every
+provider response is then checked against that anchor exactly as it always was —
+the verification model did not change, its anchor just stopped being limited to
+the bundled catalog.
+
+| Source     | Coordinates from                     | Zone from                | Country from            |
+| ---------- | ------------------------------------ | ------------------------ | ----------------------- |
+| `preset`   | the bundled catalog                  | the catalog              | the catalog             |
+| `searched` | Open-Meteo geocoding, rounded to 4dp | the geocoder             | the geocoder            |
+| `detected` | the device, rounded to 2dp           | the device's `Intl` zone | inferred from that zone |
+
+The country picks the calculation authority — Umm Al-Qura in Saudi Arabia, ISNA
+in North America, Diyanet in Turkey, and so on, falling back to the Muslim World
+League where no local authority is listed. Any place can be pinned to a different
+authority in settings; the choice is stored per place and invalidates that
+place's cached times, since they were produced by the old one.
+
+A detected place keeps a single id as you move, so the caches compare
+coordinates as well as the id. Moving invalidates yesterday's times rather than
+serving them for the wrong city.
+
 ## Sunrise, Ramadan, and the qibla
 
 Three things are derived rather than displayed verbatim, and all three live in `@pray-times/core` so the extension and the dashboard cannot disagree.
@@ -133,6 +157,8 @@ pnpm --filter @pray-times/web-push-worker db:migrate:remote
 pnpm --filter @pray-times/web-push-worker run deploy
 ```
 
+The push cache is keyed by exactly what a response is verified against — coordinates, time zone, calculation method, and date — rather than by a catalog id. Everyone at the same position shares one upstream fetch, and a place whose zone or authority differs never reads a day that was verified for someone else. Detected coordinates are rounded again on the server rather than trusting the browser to have done it, and a claimed catalog id always resolves to the bundled entry, so a caller cannot relocate a known city.
+
 Set the GitHub Actions repository variable `PUSH_API_URL` to the deployed `workers.dev` URL. The next landing-page deployment will enable the notification controls. For local development, copy `.dev.vars.example` to `.dev.vars`, add the generated keys, and set `VITE_PUSH_API_URL` to the local Worker URL.
 
 ## Continuous deployment
@@ -162,8 +188,132 @@ Protect `main` by requiring the `Verify` workflow before merging pull requests.
 
 The built-in `GITHUB_TOKEN` is used by default. If branch protection prevents the release commit from being pushed, add a fine-grained `RELEASE_TOKEN` repository secret with Contents read/write access and authorize that account to bypass the applicable rule.
 
-## Accuracy and privacy
+# Privacy policy
 
-See the [privacy policy](docs/PRIVACY.en.md), [third-party notices](docs/THIRD_PARTY_NOTICES.md), and [modernization plan](docs/FRONTEND_MODERNIZATION_PLAN.md).
+Pray Times has no accounts, no analytics, and no advertising. There is no server
+that belongs to this project other than the optional web push service described
+below, and nothing you do is tied to an identity.
+
+Last reviewed: 1 August 2026.
+
+## What is stored, and where
+
+Everything below is stored **on your own device** — in extension storage for the
+browser extension, and in `localStorage` for the website. None of it is sent to
+the project.
+
+| Stored                                         | Why                                                   |
+| ---------------------------------------------- | ----------------------------------------------------- |
+| Chosen city or place                           | To show times without asking again                    |
+| Places you added by search or detection        | To list them alongside the built-in cities            |
+| Calculation method override                    | To respect your chosen authority                      |
+| Interface language                             | To open in the language you last used                 |
+| Notification and toolbar-countdown preferences | To honour the switches you set                        |
+| A recent copy of verified prayer times         | To show today's times when the network is unavailable |
+
+Clearing your browser's site data, or removing the extension, removes all of it.
+
+## What leaves your device
+
+Three providers are contacted directly by your browser. The project never sees
+these requests.
+
+| Provider                       | What is sent                                                             | When                                     |
+| ------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------- |
+| `api.aladhan.com`              | Coordinates of the chosen place, the date, and the calculation method id | Whenever prayer times are fetched        |
+| `api.alquran.cloud`            | A verse number                                                           | When the extension popup shows a verse   |
+| `geocoding-api.open-meteo.com` | The text you type into place search                                      | Only while you are searching for a place |
+
+These providers have their own privacy practices, which this project does not
+control.
+
+## Location
+
+The extension and the website both work without any access to your location. A
+city can always be chosen from a list or found by search.
+
+If you press **Use my current location**, the browser asks your permission
+first, and:
+
+- The coordinates are **rounded to two decimal places** — roughly a kilometre —
+  before they are used for anything. The precise position your device reported
+  is discarded and never stored.
+- The rounded coordinates are sent only to the prayer-time provider, in the same
+  request shape used for any other place.
+- The rounded coordinates and your device's time zone are stored on your device
+  so the place can be reopened. They are not sent to the project.
+- Nothing is reverse-geocoded, so no provider is asked to name where you are.
+
+Prayer times change by seconds over a kilometre, so the rounding costs nothing
+in accuracy.
+
+## Optional web prayer alerts
+
+The `/today/` dashboard can send prayer alerts after the page is closed. This is
+off unless you switch it on. When you do, the following is stored in a Cloudflare
+D1 database run for this project:
+
+- The push endpoint your browser generates, and its two encryption keys. This is
+  an anonymous address for your browser, issued by your browser vendor.
+- The city you selected, your interface language, and which prayers you chose.
+
+No name, email, account, or IP log is kept alongside it. Turning alerts off
+deletes the record. The subscription is used only to deliver the prayer alerts
+you asked for.
+
+Alerts currently cover the built-in cities only.
+
+## Children
+
+The app collects nothing, so it is suitable for any age.
+
+## Changes
+
+Material changes to this policy will appear in the repository history alongside
+the release that introduces them.
+
+# Third-party notices
+
+## Data providers
+
+### Aladhan API — `api.aladhan.com`
+
+Prayer times and the Hijri date. Every response is checked against the declared
+coordinates, date, time zone, and calculation method before anything is shown.
+Free to use, no key required. <https://aladhan.com/prayer-times-api>
+
+### AlQuran Cloud API — `api.alquran.cloud`
+
+The `quran-uthmani` verse shown in the extension popup. Free to use, no key
+required. <https://alquran.cloud/api>
+
+### Open-Meteo Geocoding API — `geocoding-api.open-meteo.com`
+
+Place search. Open-Meteo's APIs are offered free for non-commercial use, and the
+geocoding data derives from **GeoNames**, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Attribution is shown
+beside the search field in the app.
+
+- <https://open-meteo.com/en/docs/geocoding-api>
+- <https://www.geonames.org/>
+
+## Fonts
+
+All three are licensed under the SIL Open Font License 1.1. The full licence text
+ships beside each font in `apps/extension/public/fonts/` and
+`apps/landing-page/public/licenses/`.
+
+| Font                 | Used for              | Licence |
+| -------------------- | --------------------- | ------- |
+| Alexandria           | Headings and numerals | OFL 1.1 |
+| IBM Plex Sans Arabic | Interface text        | OFL 1.1 |
+| Amiri                | Qur'anic verse        | OFL 1.1 |
+
+## The Kaaba coordinates
+
+The qibla is computed against 21.4224779°N, 39.8251832°E, the commonly published
+position of the Kaaba. No third-party service is contacted for it.
+
+Location is never required. A city can be chosen from the bundled list or found by search; pressing **Use my current location** asks the browser's permission first, and the coordinates are rounded to two decimal places — roughly a kilometre — before they are used for anything. The precise position is discarded, nothing is reverse-geocoded, and the rounded pair goes only to the prayer-time provider. Prayer times move by seconds over that distance, so the rounding costs no accuracy.
 
 Calculated times can differ by minutes from a local mosque or issuing authority.
