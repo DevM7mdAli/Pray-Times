@@ -3,32 +3,18 @@ import { lstat, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  EXTENSION_PACKAGE_FILES,
+  EXTENSION_TARGET_DEFINITIONS,
+  resolveTargets,
+  type ExtensionTarget,
+} from "./targets.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const buildRoot = path.join(root, "apps", "extension", "dist");
-const packageFiles = [
-  "manifest.json",
-  "popup.html",
-  "popup.js",
-  "styles.css",
-  "_locales/ar/messages.json",
-  "_locales/en/messages.json",
-  "fonts/alexandria-600.woff2",
-  "fonts/alexandria-700.woff2",
-  "fonts/ibm-plex-sans-arabic-400.woff2",
-  "fonts/ibm-plex-sans-arabic-600.woff2",
-  "fonts/ibm-plex-sans-arabic-700.woff2",
-  "fonts/amiri-400.woff2",
-  "fonts/LICENSE-ALEXANDRIA-OFL.txt",
-  "fonts/LICENSE-IBM-PLEX-SANS-ARABIC-OFL.txt",
-  "fonts/LICENSE-AMIRI-OFL.txt",
-  "icons/icon-16.png",
-  "icons/icon-32.png",
-  "icons/icon-48.png",
-  "icons/icon-128.png",
-] as const;
+const distRoot = path.join(root, "apps", "extension", "dist");
+const artifactRoot = path.join(root, "artifacts");
 
-type Manifest = { version?: unknown };
+type Manifest = { version?: unknown; background?: unknown };
 
 function assertVersion(version: unknown): string {
   if (typeof version !== "string" || !/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){0,3}$/.test(version)) {
@@ -37,28 +23,49 @@ function assertVersion(version: unknown): string {
   return version;
 }
 
-async function assertRegularFiles(): Promise<void> {
+/**
+ * A background entry that names a missing or renamed file still loads, and the
+ * extension then silently runs without notifications, so the declared script is
+ * checked against what the archive actually ships.
+ */
+function assertBackgroundEntry(target: ExtensionTarget, background: unknown): void {
+  const declared =
+    background && typeof background === "object"
+      ? ((background as { service_worker?: unknown; scripts?: unknown }).service_worker ??
+        (background as { scripts?: unknown[] }).scripts?.[0])
+      : undefined;
+  if (typeof declared !== "string") {
+    throw new Error(`${target}: the manifest declares no background script`);
+  }
+  if (!(EXTENSION_PACKAGE_FILES as readonly string[]).includes(declared)) {
+    throw new Error(`${target}: the background script "${declared}" is not packaged`);
+  }
+}
+
+async function assertRegularFiles(buildRoot: string, target: ExtensionTarget): Promise<void> {
   await Promise.all(
-    packageFiles.map(async (file) => {
-      const detail = await lstat(path.join(buildRoot, file));
+    EXTENSION_PACKAGE_FILES.map(async (file) => {
+      const detail = await lstat(path.join(buildRoot, file)).catch(() => undefined);
+      if (!detail) throw new Error(`${target}: missing package file: ${file}`);
       if (!detail.isFile() || detail.isSymbolicLink())
-        throw new Error(`Invalid package file: ${file}`);
+        throw new Error(`${target}: invalid package file: ${file}`);
     })
   );
 }
 
-async function main(): Promise<void> {
+async function packageTarget(target: ExtensionTarget): Promise<string> {
+  const buildRoot = path.join(distRoot, target);
   const manifest = JSON.parse(
     await readFile(path.join(buildRoot, "manifest.json"), "utf8")
   ) as Manifest;
   const version = assertVersion(manifest.version);
-  await assertRegularFiles();
-  const artifactRoot = path.join(root, "artifacts");
-  const archive = path.join(artifactRoot, `pray-times-${version}.zip`);
-  await mkdir(artifactRoot, { recursive: true });
+  assertBackgroundEntry(target, manifest.background);
+  await assertRegularFiles(buildRoot, target);
+
+  const archive = path.join(artifactRoot, `pray-times-${target}-${version}.zip`);
   await rm(archive, { force: true });
   await rm(`${archive}.sha256`, { force: true });
-  const result = spawnSync("zip", ["-q", "-X", "-9", archive, ...packageFiles], {
+  const result = spawnSync("zip", ["-q", "-X", "-9", archive, ...EXTENSION_PACKAGE_FILES], {
     cwd: buildRoot,
     encoding: "utf8",
   });
@@ -69,9 +76,20 @@ async function main(): Promise<void> {
     .update(await readFile(archive))
     .digest("hex");
   await writeFile(`${archive}.sha256`, `${digest}  ${path.basename(archive)}\n`, "utf8");
-  console.log(`Packaged Pray Times ${version}`);
-  console.log(`Archive: ${path.relative(root, archive)}`);
-  console.log(`SHA-256: ${digest}`);
+  console.log(`${EXTENSION_TARGET_DEFINITIONS[target].label}: ${path.relative(root, archive)}`);
+  console.log(`  SHA-256: ${digest}`);
+  return version;
+}
+
+async function main(): Promise<void> {
+  const targets = resolveTargets(process.argv.slice(2));
+  await mkdir(artifactRoot, { recursive: true });
+  const versions = new Set<string>();
+  for (const target of targets) versions.add(await packageTarget(target));
+  if (versions.size > 1) {
+    throw new Error(`The target builds disagree on the version: ${[...versions].join(", ")}`);
+  }
+  console.log(`Packaged Pray Times ${[...versions][0]} for ${targets.join(", ")}`);
 }
 
 main().catch((error: unknown) => {

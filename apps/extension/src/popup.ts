@@ -26,6 +26,12 @@ import {
   type PrayerKey,
   type SupportedLocale,
 } from "@pray-times/core";
+import {
+  browserApi,
+  hasNotificationPermission,
+  requestNotificationPermission,
+  supportsNotifications,
+} from "./browser-api.js";
 import { EXTENSION_COPY, type ExtensionCopyKey } from "./copy.js";
 import {
   defaultExtensionSettings,
@@ -258,8 +264,9 @@ async function persistSettings(settings: ExtensionSettings): Promise<void> {
 }
 
 async function renderNotificationSettings(messageKey?: ExtensionCopyKey): Promise<void> {
-  const permitted = await chrome.permissions.contains({ permissions: ["notifications"] });
+  const permitted = await hasNotificationPermission();
   notificationToggle.checked = extensionSettings.notificationsEnabled && permitted;
+  notificationToggle.disabled = !supportsNotifications;
   prayerNotificationOptions.disabled = !notificationToggle.checked;
   testNotificationButton.disabled =
     !notificationToggle.checked || !cityById(extensionSettings.cityId);
@@ -282,9 +289,16 @@ async function renderNotificationSettings(messageKey?: ExtensionCopyKey): Promis
   }
   const key =
     messageKey ??
-    (permissionWasDenied ? "permissionDenied" : permitted ? "permissionReady" : "permissionNeeded");
+    (!supportsNotifications
+      ? "notificationsUnsupported"
+      : permissionWasDenied
+        ? "permissionDenied"
+        : permitted
+          ? "permissionReady"
+          : "permissionNeeded");
   notificationPermission.textContent = text(key);
-  notificationPermission.dataset.state = key === "permissionDenied" ? "error" : "info";
+  notificationPermission.dataset.state =
+    key === "permissionDenied" || key === "testNotificationFailed" ? "error" : "info";
 }
 
 function clearCountdown(): void {
@@ -423,7 +437,7 @@ function installEvents(): void {
     void (async () => {
       let enabled = notificationToggle.checked;
       if (enabled) {
-        enabled = await chrome.permissions.request({ permissions: ["notifications"] });
+        enabled = await requestNotificationPermission();
         permissionWasDenied = !enabled;
       }
       await persistSettings({ ...extensionSettings, notificationsEnabled: enabled });
@@ -445,9 +459,12 @@ function installEvents(): void {
     });
   }
   testNotificationButton.addEventListener("click", () => {
-    void chrome.runtime
+    // Firefox rejects when the event page is not listening yet, so a failure
+    // has to reach the user instead of becoming an unhandled rejection.
+    void browserApi.runtime
       .sendMessage({ type: "test-notification" })
-      .then(() => renderNotificationSettings("testNotificationSent"));
+      .then(() => renderNotificationSettings("testNotificationSent"))
+      .catch(() => renderNotificationSettings("testNotificationFailed"));
   });
   requiredElement<HTMLButtonElement>("settings-button").addEventListener("click", () =>
     settingsDialog.showModal()

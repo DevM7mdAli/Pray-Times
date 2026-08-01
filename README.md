@@ -4,7 +4,7 @@ A browser extension and landing page that show the next prayer in a selected Sau
 
 ## What is included
 
-- A Manifest V3 browser extension written in TypeScript, with loading, error, and clearly labelled cached-result states.
+- A Manifest V3 browser extension written in TypeScript for Chrome, Edge, Firefox, and Safari, with loading, error, and clearly labelled cached-result states.
 - Opt-in prayer notifications scheduled by a background service worker, with per-prayer controls and duplicate protection.
 - A curated Saudi city catalog with fixed coordinates rather than ambiguous name searches.
 - The declared Umm Al-Qura, Makkah calculation method.
@@ -12,7 +12,7 @@ A browser extension and landing page that show the next prayer in a selected Sau
 - A React, Vite, and TypeScript landing page plus a standalone `/today/` prayer dashboard for users who do not want to install the extension.
 - Free, opt-in Web Push alerts on the dashboard, backed by a Cloudflare Worker, D1, and a one-minute scheduled trigger.
 - Arabic and English interfaces, with a persistent language switch and the correct reading direction for each language.
-- Deterministic extension packaging with SHA-256 verification, tests, and CI.
+- Deterministic per-browser extension packaging with SHA-256 verification, tests, and CI.
 
 ## Requirements
 
@@ -34,19 +34,55 @@ pnpm check
 
 ## Browser extension
 
+The extension is built for Chrome and Edge, Firefox, and Safari from one source tree.
+
 ```bash
 pnpm build:extension
 ```
 
-Load `apps/extension/dist` as an unpacked extension in Chrome or Edge after enabling Developer mode.
+That writes `apps/extension/dist/chrome`, `apps/extension/dist/firefox`, and `apps/extension/dist/safari`. Pass a target name to build only one, for example `pnpm build:extension firefox`.
 
-Create the store archive:
+Create the store archives:
 
 ```bash
 pnpm package:extension
 ```
 
-The archive and checksum are written to `artifacts/`.
+Each archive and its checksum are written to `artifacts/` as `pray-times-<browser>-<version>.zip`.
+
+### How the targets differ
+
+`apps/extension/manifest.base.json` holds everything the engines agree on, and `tooling/extension/targets.ts` applies the per-browser keys. Only three things actually differ:
+
+|               | Chrome and Edge                                     | Firefox                              | Safari                               |
+| ------------- | --------------------------------------------------- | ------------------------------------ | ------------------------------------ |
+| Background    | `service_worker`, ES module                         | `scripts` event page, classic bundle | `scripts` event page, classic bundle |
+| Engine keys   | `minimum_chrome_version`                            | `browser_specific_settings.gecko`    | `browser_specific_settings.safari`   |
+| Notifications | `contextMessage`, `eventTime`, `priority`, `silent` | title and message only               | not supported by the engine          |
+
+Firefox has no Manifest V3 `service_worker` support, and Safari only gained it in 16.4, so both run an event page instead. Firefox also rejects notification options it does not implement, so the calculation method is folded into the message body there rather than shown as a separate context line.
+
+Safari implements no extension notifications API at all. The `notifications` permission stays declared so the feature switches itself on if Safari ever ships it, and `supportsNotifications` in `browser-api.ts` gates every call at runtime: on Safari the popup shows prayer times normally and the alert toggle is disabled with an explanation. Prayer alerts on Apple devices are served by the `/today/` dashboard's Web Push instead.
+
+All extension code reaches the browser through `apps/extension/src/browser-api.ts`, which resolves the promise-based `browser` namespace and falls back to `chrome`. Firefox ships a callback-based `chrome` alias, so awaiting it directly returns `undefined` instead of the real result — never call `chrome.*` from extension source.
+
+### Loading a development build
+
+- **Chrome or Edge**: enable Developer mode at `chrome://extensions`, then _Load unpacked_ on `apps/extension/dist/chrome`.
+- **Firefox**: open `about:debugging#/runtime/this-firefox`, then _Load Temporary Add-on_ on `apps/extension/dist/firefox/manifest.json`.
+- **Safari**: convert the build to an Xcode project, then enable _Develop → Allow Unsigned Extensions_ in Safari.
+
+```bash
+xcrun safari-web-extension-converter apps/extension/dist/safari --macos-only
+```
+
+A Safari extension ships inside an app bundle, so releasing it needs Xcode and an Apple Developer account. CI builds that Xcode project unsigned on every run and uploads it as the `safari-xcode-project` artifact; signing and App Store submission stay manual.
+
+Validate the Firefox build against the add-on policies:
+
+```bash
+pnpm lint:firefox
+```
 
 ## Landing page
 
@@ -83,7 +119,7 @@ After `Verify` succeeds on `main`, the `Deploy landing page` workflow builds and
 
 ## Automated releases
 
-Do not create version tags manually. After a Conventional Commit reaches `main`, CI validates the commit history and the code, then determines the version, updates the extension manifest, creates the tag, builds the ZIP and SHA-256 checksum, and publishes the GitHub Release.
+Do not create version tags manually. After a Conventional Commit reaches `main`, CI validates the commit history and the code, then determines the version, updates `apps/extension/manifest.base.json`, creates the tag, builds a ZIP and SHA-256 checksum for each browser, and publishes them all on the GitHub Release.
 
 | Commit                                                                  | Release result |
 | ----------------------------------------------------------------------- | -------------- |

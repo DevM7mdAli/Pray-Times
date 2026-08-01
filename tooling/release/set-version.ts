@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const version = process.argv[2];
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
-const files = ["apps/extension/manifest.json", "apps/extension/package.json"] as const;
+const files = ["apps/extension/manifest.base.json", "apps/extension/package.json"] as const;
 
 if (!versionPattern.test(version ?? "")) {
   throw new Error(`Expected a stable semantic version, received: ${version ?? ""}`);

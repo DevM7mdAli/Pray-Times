@@ -52,8 +52,11 @@ export const EXTENSION_COPY = {
     permissionReady: "الإشعارات مفعلة على هذا الجهاز.",
     permissionNeeded: "فعّل التنبيهات للسماح للإضافة بإظهار الإشعارات.",
     permissionDenied: "حظر المتصفح الإشعارات. اسمح بها من إعدادات الإضافة ثم حاول مجددًا.",
+    notificationsUnsupported:
+      "لا يدعم هذا المتصفح إشعارات الإضافات. تبقى المواقيت متاحة في النافذة.",
     testNotification: "إرسال إشعار تجريبي",
     testNotificationSent: "تم إرسال إشعار تجريبي.",
+    testNotificationFailed: "تعذّر إرسال الإشعار التجريبي. أعد فتح النافذة ثم حاول مجددًا.",
     notificationTimingNote:
       "لا يستطيع المتصفح إيقاظ الجهاز من السكون. يظهر التنبيه المتأخر خلال ١٠ دقائق فقط.",
     understood: "فهمت",
@@ -115,8 +118,12 @@ export const EXTENSION_COPY = {
     permissionNeeded: "Enable alerts to let the extension show notifications.",
     permissionDenied:
       "The browser blocked notifications. Allow them in the extension settings, then try again.",
+    notificationsUnsupported:
+      "This browser does not support extension notifications. Prayer times stay available in the popup.",
     testNotification: "Send a test notification",
     testNotificationSent: "Test notification sent.",
+    testNotificationFailed:
+      "The test notification could not be sent. Reopen the popup, then try again.",
     notificationTimingNote:
       "The browser cannot wake a sleeping device. Late alerts are shown for up to 10 minutes.",
     understood: "Got it",

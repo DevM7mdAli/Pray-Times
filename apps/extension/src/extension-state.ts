@@ -8,6 +8,7 @@ import {
   type PrayerScheduleEntry,
   type SupportedLocale,
 } from "@pray-times/core";
+import { browserApi } from "./browser-api.js";
 
 export const SETTINGS_STORAGE_KEY = "pray-times:extension-settings:v1";
 export const SCHEDULE_STORAGE_KEY = "pray-times:notification-schedule:v1";
@@ -61,12 +62,12 @@ function normalizeSettings(value: unknown): ExtensionSettings {
 }
 
 export async function readExtensionSettings(): Promise<ExtensionSettings> {
-  const result = await chrome.storage.local.get(SETTINGS_STORAGE_KEY);
+  const result = await browserApi.storage.local.get(SETTINGS_STORAGE_KEY);
   return normalizeSettings(result[SETTINGS_STORAGE_KEY]);
 }
 
 export async function writeExtensionSettings(settings: ExtensionSettings): Promise<void> {
-  await chrome.storage.local.set({ [SETTINGS_STORAGE_KEY]: normalizeSettings(settings) });
+  await browserApi.storage.local.set({ [SETTINGS_STORAGE_KEY]: normalizeSettings(settings) });
 }
 
 export async function updateExtensionSettings(
@@ -82,7 +83,7 @@ export async function migrateLegacySettings(
   cityId: string,
   locale: SupportedLocale
 ): Promise<ExtensionSettings> {
-  const result = await chrome.storage.local.get(SETTINGS_STORAGE_KEY);
+  const result = await browserApi.storage.local.get(SETTINGS_STORAGE_KEY);
   if (result[SETTINGS_STORAGE_KEY]) return normalizeSettings(result[SETTINGS_STORAGE_KEY]);
   const migrated = { ...defaultExtensionSettings(locale), cityId };
   await writeExtensionSettings(migrated);
@@ -98,7 +99,7 @@ export async function readStoredPrayerDay(
   date: string
 ): Promise<PrayerDay | undefined> {
   const key = prayerDayStorageKey(cityId, date);
-  const result = await chrome.storage.local.get(key);
+  const result = await browserApi.storage.local.get(key);
   const candidate = result[key];
   if (!candidate || typeof candidate !== "object") return undefined;
   const day = candidate as PrayerDay;
@@ -115,23 +116,23 @@ export async function readStoredPrayerDay(
 }
 
 export async function writeStoredPrayerDay(day: PrayerDay): Promise<void> {
-  await chrome.storage.local.set({
+  await browserApi.storage.local.set({
     [prayerDayStorageKey(day.city.id, day.requestedDate)]: day,
   });
 }
 
 export async function readStoredSchedule(): Promise<PrayerScheduleEntry[]> {
-  const result = await chrome.storage.local.get(SCHEDULE_STORAGE_KEY);
+  const result = await browserApi.storage.local.get(SCHEDULE_STORAGE_KEY);
   const value = result[SCHEDULE_STORAGE_KEY];
   return Array.isArray(value) ? (value as PrayerScheduleEntry[]) : [];
 }
 
 export async function writeStoredSchedule(schedule: PrayerScheduleEntry[]): Promise<void> {
-  await chrome.storage.local.set({ [SCHEDULE_STORAGE_KEY]: schedule });
+  await browserApi.storage.local.set({ [SCHEDULE_STORAGE_KEY]: schedule });
 }
 
 async function readDeliveries(): Promise<Record<string, number>> {
-  const result = await chrome.storage.local.get(DELIVERY_STORAGE_KEY);
+  const result = await browserApi.storage.local.get(DELIVERY_STORAGE_KEY);
   const value = result[DELIVERY_STORAGE_KEY];
   return value && typeof value === "object" ? (value as Record<string, number>) : {};
 }
@@ -148,5 +149,5 @@ export async function markDelivered(id: string, deliveredAt = Date.now()): Promi
     Object.entries(deliveries).filter(([, timestamp]) => timestamp >= cutoff)
   );
   recent[id] = deliveredAt;
-  await chrome.storage.local.set({ [DELIVERY_STORAGE_KEY]: recent });
+  await browserApi.storage.local.set({ [DELIVERY_STORAGE_KEY]: recent });
 }

@@ -44,10 +44,72 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Builds and packages Chrome, Firefox, and Safari, then runs the Firefox
+      # add-on validator against the Firefox build.
       - run: pnpm check
+      - name: Upload the browser packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-packages
+          path: |
+            artifacts/*.zip
+            artifacts/*.zip.sha256
+          if-no-files-found: error
+
+  safari:
+    # A Safari extension ships inside an app bundle, so the only real check is
+    # that Xcode accepts the manifest and builds the generated project.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:extension safari
+      - name: Convert the Safari build to an Xcode project
+        run: |
+          xcrun safari-web-extension-converter apps/extension/dist/safari \
+            --project-location "$RUNNER_TEMP/safari" \
+            --app-name "Pray Times" \
+            --bundle-identifier io.github.devm7mdali.praytimes \
+            --swift --macos-only --no-open --no-prompt --force
+      - name: Build the Safari app extension
+        # Only the extension target is built. Building the containing app adds a
+        # ValidateEmbeddedBinary step that needs a real signing identity, which
+        # CI does not have, and the appex is what carries the web extension.
+        run: |
+          project="$(find "$RUNNER_TEMP/safari" -maxdepth 2 -name '*.xcodeproj' -print -quit)"
+          if [ -z "$project" ]; then
+            echo "The converter produced no Xcode project" >&2
+            exit 1
+          fi
+          target="$(xcodebuild -list -project "$project" -json |
+            node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).project.targets.find((name) => name.endsWith("Extension"))')"
+          if [ "$target" = "undefined" ]; then
+            echo "The converted project has no extension target" >&2
+            exit 1
+          fi
+          xcodebuild build \
+            -project "$project" \
+            -target "$target" \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+      - name: Upload the Safari Xcode project
+        uses: actions/upload-artifact@v4
+        with:
+          name: safari-xcode-project
+          path: ${{ runner.temp }}/safari
+          if-no-files-found: error
 
   release:
-    needs: [commitlint, verify]
+    needs: [commitlint, verify, safari]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
@@ -90,18 +152,24 @@ jobs:
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          VERSION="$(node -p 'JSON.parse(require("node:fs").readFileSync("apps/extension/manifest.json", "utf8")).version')"
+          VERSION="$(node -p 'JSON.parse(require("node:fs").readFileSync("apps/extension/manifest.base.json", "utf8")).version')"
           node --import tsx tooling/release/set-version.ts "$VERSION"
           pnpm package:extension
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/extension/manifest.json apps/extension/package.json
+          git add apps/extension/manifest.base.json apps/extension/package.json
           if ! git diff --cached --quiet; then
             git commit -m "chore(release): $VERSION [skip ci]"
           fi
           git tag -a "v$VERSION" -m "Release v$VERSION"
           git push origin HEAD:main "v$VERSION"
-          gh release create "v$VERSION" "artifacts/pray-times-$VERSION.zip" "artifacts/pray-times-$VERSION.zip.sha256" \
+          gh release create "v$VERSION" \
+            "artifacts/pray-times-chrome-$VERSION.zip" \
+            "artifacts/pray-times-chrome-$VERSION.zip.sha256" \
+            "artifacts/pray-times-firefox-$VERSION.zip" \
+            "artifacts/pray-times-firefox-$VERSION.zip.sha256" \
+            "artifacts/pray-times-safari-$VERSION.zip" \
+            "artifacts/pray-times-safari-$VERSION.zip.sha256" \
             --title "Pray Times $VERSION" \
             --generate-notes
           echo "created=true" >> "$GITHUB_OUTPUT"

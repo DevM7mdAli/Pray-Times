@@ -4,7 +4,7 @@
   "version": "1.3.0",
   "type": "module",
   "scripts": {
-    "dev": "pnpm exec tailwindcss -c tailwind.config.cjs -i src/input.css -o dist/styles.css --watch",
+    "dev": "pnpm exec tailwindcss -c tailwind.config.cjs -i src/input.css -o dist/chrome/styles.css --watch",
     "build": "node --import tsx ../../tooling/extension/build.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test"
