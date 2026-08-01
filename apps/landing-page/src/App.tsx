@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CITIES,
+  PRAYER_KEYS,
   cityById,
   cityName,
   fetchAyah,
@@ -11,15 +12,15 @@ import {
   isSupportedLocale,
   localeDirection,
   nextPrayerFor,
+  prayerKeysForCity,
   prayerMethodName,
   prayerName,
+  prayerNameForCity,
   type Ayah,
   type PrayerDay,
-  type PrayerKey,
   type SupportedLocale,
 } from "@pray-times/core";
 
-const PRAYER_KEYS: readonly PrayerKey[] = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
 const REPOSITORY_URL = "https://github.com/DevM7mdAli/Pray-Times";
 const EXTENSION_URL = `${REPOSITORY_URL}/releases/latest`;
 const TODAY_URL = "/Pray-Times/today/";
@@ -56,9 +57,9 @@ const COPY = {
     nextPrayer: "الصلاة القادمة",
     nextPrayerTomorrow: "الصلاة القادمة غدًا",
     remaining: "متبقٍ",
-    prayerPath: "مسار الصلوات الخمس",
+    prayerPath: "مسار مواقيت الصلاة",
     verifiedNow: "تم التحقق الآن",
-    daylineLead: "خمسة مواقيت.",
+    daylineLead: "مواقيت الصلاة.",
     daylineAccent: "مسار واحد واضح.",
     methodEyebrow: "دقة يفهمها المستخدم",
     methodLead: "لا نطلب منك أن تثق بنا بصمت.",
@@ -114,9 +115,9 @@ const COPY = {
     nextPrayer: "Next prayer",
     nextPrayerTomorrow: "Next prayer tomorrow",
     remaining: "Remaining",
-    prayerPath: "Path of the five prayers",
+    prayerPath: "Prayer-time path",
     verifiedNow: "Verified now",
-    daylineLead: "Five prayer times.",
+    daylineLead: "Prayer times.",
     daylineAccent: "One clear path.",
     methodEyebrow: "Accuracy you can understand",
     methodLead: "Trust should not be silent.",
@@ -232,7 +233,7 @@ function prayerCard(
       <div className="next-block">
         <span>{next.isTomorrow ? copy.nextPrayerTomorrow : copy.nextPrayer}</span>
         <div>
-          <strong>{prayerName(next.key, locale)}</strong>
+          <strong>{prayerNameForCity(next.key, day.city, locale)}</strong>
           <time>{formatPrayerTime(next.time, locale)}</time>
         </div>
         <p>
@@ -240,10 +241,10 @@ function prayerCard(
         </p>
       </div>
       <div className="preview-path" aria-label={copy.prayerPath}>
-        {PRAYER_KEYS.map((key) => (
+        {prayerKeysForCity(day.city).map((key) => (
           <div className={key === next.key ? "preview-stop is-current" : "preview-stop"} key={key}>
             <i aria-hidden="true" />
-            <span>{prayerName(key, locale)}</span>
+            <span>{prayerNameForCity(key, day.city, locale)}</span>
             <time>{formatPrayerTime(day.timings[key], locale)}</time>
           </div>
         ))}

@@ -1,4 +1,13 @@
-import type { City } from "./types.js";
+import {
+  CUSTOM_PRAYER_METHOD,
+  PRAYER_KEYS,
+  UMM_AL_QURA,
+  type City,
+  type PrayerKey,
+  type PrayerMethod,
+} from "./types.js";
+
+const CUSTOM_PRAYER_KEYS = ["Fajr", "Dhuhr", "Maghrib"] as const satisfies readonly PrayerKey[];
 
 export const CITIES: readonly City[] = [
   {
@@ -72,6 +81,7 @@ export const CITIES: readonly City[] = [
     latitude: 26.5654,
     longitude: 50.0089,
     timeZone: "Asia/Riyadh",
+    prayerProfile: "custom-three",
   },
   {
     id: "jubail",
@@ -205,6 +215,14 @@ export const CITIES: readonly City[] = [
 
 export function cityById(id: string | null | undefined): City | undefined {
   return CITIES.find((city) => city.id === id);
+}
+
+export function prayerMethodForCity(city: City): PrayerMethod {
+  return city.prayerProfile === "custom-three" ? CUSTOM_PRAYER_METHOD : UMM_AL_QURA;
+}
+
+export function prayerKeysForCity(city: City): readonly PrayerKey[] {
+  return city.prayerProfile === "custom-three" ? CUSTOM_PRAYER_KEYS : PRAYER_KEYS;
 }
 
 export function assertCityCatalog(cities: readonly City[] = CITIES): void {

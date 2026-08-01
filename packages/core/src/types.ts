@@ -2,6 +2,8 @@ export const PRAYER_KEYS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 
 export type PrayerKey = (typeof PRAYER_KEYS)[number];
 
+export type PrayerProfile = "default-five" | "custom-three";
+
 export type City = {
   id: string;
   nameAr: string;
@@ -9,18 +11,31 @@ export type City = {
   latitude: number;
   longitude: number;
   timeZone: "Asia/Riyadh";
+  prayerProfile?: PrayerProfile;
 };
 
-export type PrayerMethod = {
-  id: 4;
-  name: "Umm Al-Qura University, Makkah";
-  nameAr: "أم القرى، مكة المكرمة";
-};
+export type PrayerMethod =
+  | {
+      id: 4;
+      name: "Umm Al-Qura University, Makkah";
+      nameAr: "أم القرى، مكة المكرمة";
+    }
+  | {
+      id: 0;
+      name: "Custom time";
+      nameAr: "توقيت مخصص";
+    };
 
 export const UMM_AL_QURA: PrayerMethod = {
   id: 4,
   name: "Umm Al-Qura University, Makkah",
   nameAr: "أم القرى، مكة المكرمة",
+};
+
+export const CUSTOM_PRAYER_METHOD: PrayerMethod = {
+  id: 0,
+  name: "Custom time",
+  nameAr: "توقيت مخصص",
 };
 
 export type HijriDate = {

@@ -1,5 +1,4 @@
 import {
-  PRAYER_KEYS,
   type City,
   type HijriDate,
   type NextPrayer,
@@ -8,6 +7,7 @@ import {
   type PrayerMethod,
   type PrayerScheduleEntry,
 } from "./types.js";
+import { prayerKeysForCity } from "./cities.js";
 
 const TIME_PATTERN = /^(?<hour>[01]?\d|2[0-3]):(?<minute>[0-5]\d)/;
 const ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -21,6 +21,11 @@ const PRAYER_NAMES: Record<PrayerKey, Record<SupportedLocale, string>> = {
   Asr: { ar: "العصر", en: "Asr" },
   Maghrib: { ar: "المغرب", en: "Maghrib" },
   Isha: { ar: "العشاء", en: "Isha" },
+};
+
+const CUSTOM_WINDOW_NAMES: Partial<Record<PrayerKey, Record<SupportedLocale, string>>> = {
+  Dhuhr: { ar: "الظهر والعصر", en: "Dhuhr & Asr" },
+  Maghrib: { ar: "المغرب والعشاء", en: "Maghrib & Isha" },
 };
 
 export function isSupportedLocale(value: string | null | undefined): value is SupportedLocale {
@@ -172,21 +177,24 @@ export function buildPrayerSchedule(
 ): PrayerScheduleEntry[] {
   return days
     .flatMap((day) =>
-      PRAYER_KEYS.filter((key) => enabledPrayers[key]).map((key) => ({
-        id: prayerAlarmId(day, key),
-        key,
-        cityId: day.city.id,
-        requestedDate: day.requestedDate,
-        time: day.timings[key],
-        scheduledTime: prayerTimestamp(day, key),
-      }))
+      prayerKeysForCity(day.city)
+        .filter((key) => enabledPrayers[key])
+        .map((key) => ({
+          id: prayerAlarmId(day, key),
+          key,
+          cityId: day.city.id,
+          requestedDate: day.requestedDate,
+          time: day.timings[key],
+          scheduledTime: prayerTimestamp(day, key),
+        }))
     )
     .filter((entry) => entry.scheduledTime > now.getTime())
     .sort((left, right) => left.scheduledTime - right.scheduledTime);
 }
 
 export function nextPrayerFor(day: PrayerDay, now = new Date()): NextPrayer {
-  for (const key of PRAYER_KEYS) {
+  const prayerKeys = prayerKeysForCity(day.city);
+  for (const key of prayerKeys) {
     const time = day.timings[key];
     const target = prayerTimestamp(day, key);
     if (target >= now.getTime()) {
@@ -198,7 +206,7 @@ export function nextPrayerFor(day: PrayerDay, now = new Date()): NextPrayer {
       };
     }
   }
-  const firstKey: PrayerKey = PRAYER_KEYS[0];
+  const firstKey = prayerKeys[0] ?? "Fajr";
   const firstTime = day.timings[firstKey];
   const nextDate = addDaysToLocalDate(day.requestedDate, 1);
   const target = timestampForLocalTime(nextDate, firstTime, day.city.timeZone);
@@ -231,6 +239,13 @@ export function prayerNameAr(key: PrayerKey): string {
 
 export function prayerName(key: PrayerKey, locale: SupportedLocale): string {
   return PRAYER_NAMES[key][locale];
+}
+
+export function prayerNameForCity(key: PrayerKey, city: City, locale: SupportedLocale): string {
+  if (city.prayerProfile === "custom-three") {
+    return CUSTOM_WINDOW_NAMES[key]?.[locale] ?? PRAYER_NAMES[key][locale];
+  }
+  return prayerName(key, locale);
 }
 
 export function cityName(city: City, locale: SupportedLocale): string {

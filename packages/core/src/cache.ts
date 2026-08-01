@@ -1,13 +1,13 @@
 import type { PrayerDay } from "./types.js";
+import { cityById, prayerMethodForCity } from "./cities.js";
 
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
 const CACHE_PREFIX = "pray-times:prayer-day:";
 
 export function prayerCacheKey(cityId: string, date: string): string {
-  // The normalized payload now includes the English Hijri month. Versioning
-  // prevents pre-localization cache entries from producing incomplete English UI.
-  return `${CACHE_PREFIX}${cityId}:${date}:umm-al-qura-4:v2`;
+  // Version 3 separates method-aware city profiles from older Umm Al-Qura-only data.
+  return `${CACHE_PREFIX}${cityId}:${date}:method-profile:v3`;
 }
 
 export function readCachedPrayerDay(
@@ -20,7 +20,17 @@ export function readCachedPrayerDay(
     if (!raw) return undefined;
     const candidate: unknown = JSON.parse(raw);
     if (!candidate || typeof candidate !== "object") return undefined;
-    return candidate as PrayerDay;
+    const day = candidate as PrayerDay;
+    const city = cityById(cityId);
+    if (
+      day.city?.id !== cityId ||
+      day.requestedDate !== date ||
+      !city ||
+      day.method?.id !== prayerMethodForCity(city).id
+    ) {
+      return undefined;
+    }
+    return day;
   } catch {
     return undefined;
   }

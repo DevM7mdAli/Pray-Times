@@ -16,12 +16,15 @@ import {
   parseAyahResponse,
   parsePrayerDayResponse,
   prayerName,
+  prayerNameForCity,
+  prayerKeysForCity,
   prayerTimestamp,
   timestampForLocalTime,
   type City,
 } from "../src/index.ts";
 
 const riyadh = cityById("riyadh") as City;
+const qatif = cityById("qatif") as City;
 
 function prayerPayload(overrides: Record<string, unknown> = {}): unknown {
   return {
@@ -63,6 +66,17 @@ function ayahPayload(overrides: Record<string, unknown> = {}): unknown {
       ...overrides,
     },
   };
+}
+
+function qatifPrayerPayload(): unknown {
+  return prayerPayload({
+    meta: {
+      latitude: qatif.latitude,
+      longitude: qatif.longitude,
+      timezone: qatif.timeZone,
+      method: { id: 0, name: "Custom time" },
+    },
+  });
 }
 
 test("the curated Saudi city catalog is unique and keeps Riyadh coordinates", () => {
@@ -162,6 +176,45 @@ test("next prayer advances immediately after a prayer timestamp", () => {
   assert.equal(afterIsha.minutesUntil, 414);
 });
 
+test("Qatif uses the custom method and three combined prayer windows", () => {
+  const day = parsePrayerDayResponse(qatifPrayerPayload(), qatif, "31-07-2026");
+  assert.equal(day.method.id, 0);
+  assert.deepEqual(prayerKeysForCity(qatif), ["Fajr", "Dhuhr", "Maghrib"]);
+  assert.equal(prayerNameForCity("Dhuhr", qatif, "en"), "Dhuhr & Asr");
+  assert.equal(prayerNameForCity("Maghrib", qatif, "ar"), "المغرب والعشاء");
+
+  const next = nextPrayerFor(day, new Date("2026-07-31T10:00:00.000Z"));
+  assert.equal(next.key, "Maghrib");
+  const schedule = buildPrayerSchedule(
+    [day],
+    { Fajr: true, Dhuhr: true, Asr: true, Maghrib: true, Isha: true },
+    new Date("2026-07-30T22:00:00.000Z")
+  );
+  assert.deepEqual(
+    schedule.map((entry) => entry.key),
+    ["Fajr", "Dhuhr", "Maghrib"]
+  );
+});
+
+test("Qatif rejects an Umm Al-Qura response", () => {
+  assert.throws(
+    () =>
+      parsePrayerDayResponse(
+        prayerPayload({
+          meta: {
+            latitude: qatif.latitude,
+            longitude: qatif.longitude,
+            timezone: qatif.timeZone,
+            method: { id: 4, name: "Umm Al-Qura University, Makkah" },
+          },
+        }),
+        qatif,
+        "31-07-2026"
+      ),
+    /selected city profile/
+  );
+});
+
 test("Qur'an verse labels use numberInSurah and require the requested edition", () => {
   const ayah = parseAyahResponse(ayahPayload(), 1);
   assert.equal(ayah.numberInSurah, 1);
@@ -182,5 +235,12 @@ test("request clients use coordinates and reject invalid verse numbers before ne
   assert.match(requested, /latitude=24.7136/);
   assert.match(requested, /longitude=46.6753/);
   assert.doesNotMatch(requested, /timingsByCity/);
+
+  const qatifFetch: typeof fetch = async (input) => {
+    requested = String(input);
+    return new Response(JSON.stringify(qatifPrayerPayload()), { status: 200 });
+  };
+  await fetchPrayerDay(qatif, { date: "31-07-2026", fetchImpl: qatifFetch });
+  assert.match(requested, /method=0/);
   await assert.rejects(() => fetchAyah({ number: 0 }), /1 to 6236/);
 });

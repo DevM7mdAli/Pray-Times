@@ -1,4 +1,5 @@
 import { parseAyahResponse, parsePrayerDayResponse } from "./schemas.js";
+import { prayerMethodForCity } from "./cities.js";
 import { localDateFor } from "./time.js";
 import type { Ayah, City, PrayerDay } from "./types.js";
 
@@ -22,7 +23,7 @@ function createPrayerUrl(city: City, date: string): URL {
   const url = new URL(`/v1/timings/${date}`, PRAYER_API_ORIGIN);
   url.searchParams.set("latitude", String(city.latitude));
   url.searchParams.set("longitude", String(city.longitude));
-  url.searchParams.set("method", "4");
+  url.searchParams.set("method", String(prayerMethodForCity(city).id));
   return url;
 }
 

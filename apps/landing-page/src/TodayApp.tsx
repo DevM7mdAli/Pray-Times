@@ -15,8 +15,9 @@ import {
   localDateFor,
   localeDirection,
   nextPrayerFor,
+  prayerKeysForCity,
   prayerMethodName,
-  prayerName,
+  prayerNameForCity,
   readCachedPrayerDay,
   type PrayerDay,
   type PrayerKey,
@@ -194,7 +195,8 @@ export function TodayApp() {
   const [alertBusy, setAlertBusy] = useState(false);
   const [enabledPrayers, setEnabledPrayers] = useState(initialAlertPrayers);
 
-  const city = useMemo(() => cityById(cityId) ?? CITIES[0], [cityId]);
+  const city = useMemo(() => cityById(cityId) ?? CITIES[0]!, [cityId]);
+  const visiblePrayerKeys = prayerKeysForCity(city);
   const copy = COPY[locale];
   const localDate = city ? localDateFor(city.timeZone, now) : "";
   const alertSettings = useMemo(
@@ -463,7 +465,7 @@ export function TodayApp() {
           <div className="today-alert-prayers" aria-label={copy.choosePrayers}>
             <span>{copy.choosePrayers}</span>
             <div>
-              {PRAYER_KEYS.map((key) => (
+              {visiblePrayerKeys.map((key) => (
                 <label key={key}>
                   <input
                     type="checkbox"
@@ -472,7 +474,7 @@ export function TodayApp() {
                       setEnabledPrayers((current) => ({ ...current, [key]: event.target.checked }))
                     }
                   />
-                  <span>{prayerName(key, locale)}</span>
+                  <span>{prayerNameForCity(key, city, locale)}</span>
                 </label>
               ))}
             </div>
@@ -496,7 +498,7 @@ export function TodayApp() {
                       : copy.nextPrayer}
                   </p>
                   <div className="today-next-main">
-                    <strong>{prayerName(next.key, locale)}</strong>
+                    <strong>{prayerNameForCity(next.key, nextDay.city, locale)}</strong>
                     <time dateTime={next.time}>{formatPrayerTime(next.time, locale)}</time>
                   </div>
                   <div className="today-countdown">
@@ -522,10 +524,10 @@ export function TodayApp() {
                 <span>{formatHijriDate(day.hijri, locale)}</span>
               </div>
               <div className="today-prayer-list">
-                {PRAYER_KEYS.map((key) => (
+                {prayerKeysForCity(day.city).map((key) => (
                   <div className={key === next?.key && nextDay === day ? "is-next" : ""} key={key}>
                     <span className="prayer-marker" aria-hidden="true" />
-                    <strong>{prayerName(key, locale)}</strong>
+                    <strong>{prayerNameForCity(key, day.city, locale)}</strong>
                     <time dateTime={day.timings[key]}>
                       {formatPrayerTime(day.timings[key], locale)}
                     </time>

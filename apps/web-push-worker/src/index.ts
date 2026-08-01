@@ -3,6 +3,8 @@ import {
   cityById,
   fetchPrayerDay,
   localDateFor,
+  prayerKeysForCity,
+  prayerMethodForCity,
   type PrayerDay,
   type PrayerKey,
   type SupportedLocale,
@@ -91,15 +93,18 @@ async function requestBody(request: Request): Promise<unknown> {
 }
 
 async function prayerDay(env: Env, cityId: string, date: string): Promise<PrayerDay> {
+  const city = cityById(cityId);
+  if (!city) throw new Error("Unsupported city");
   const cached = await env.DB.prepare(
     "SELECT payload FROM prayer_days WHERE city_id = ?1 AND requested_date = ?2"
   )
     .bind(cityId, date)
     .first<{ payload: string }>();
-  if (cached) return JSON.parse(cached.payload) as PrayerDay;
+  if (cached) {
+    const day = JSON.parse(cached.payload) as PrayerDay;
+    if (day.method?.id === prayerMethodForCity(city).id) return day;
+  }
 
-  const city = cityById(cityId);
-  if (!city) throw new Error("Unsupported city");
   const day = await fetchPrayerDay(city, { date });
   await env.DB.prepare(
     `INSERT INTO prayer_days (city_id, requested_date, payload, fetched_at)
@@ -224,6 +229,12 @@ async function deliverDueSubscription(env: Env, row: SubscriptionRow, now: numbe
       },
       new Date(now)
     );
+    return;
+  }
+
+  const city = cityById(row.city_id);
+  if (!city || !prayerKeysForCity(city).includes(row.next_prayer_key)) {
+    await updateNextSchedule(env, row.endpoint_hash, row.city_id, enabledPrayers, new Date(now));
     return;
   }
 

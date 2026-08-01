@@ -540,6 +540,9 @@
     color: #e7edf8;
     font-size: 11px;
   }
+  .prayer-toggle-grid label[hidden] {
+    display: none;
+  }
   .prayer-toggle-grid input {
     accent-color: var(--sama);
   }

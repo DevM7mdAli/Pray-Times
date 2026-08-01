@@ -14,8 +14,11 @@ import {
   localeDirection,
   localDateFor,
   nextPrayerFor,
+  prayerKeysForCity,
+  prayerMethodForCity,
   prayerMethodName,
   prayerName,
+  prayerNameForCity,
   readCachedPrayerDay,
   type Ayah,
   type City,
@@ -148,7 +151,7 @@ function renderPrayerDay(day: PrayerDay): void {
     )
   );
   const main = element("div", "next-prayer-main");
-  main.append(element("strong", undefined, prayerName(next.key, locale)));
+  main.append(element("strong", undefined, prayerNameForCity(next.key, day.city, locale)));
   main.append(element("time", "next-prayer-time", formatPrayerTime(next.time, locale)));
   summary.append(main);
   summary.append(
@@ -161,10 +164,10 @@ function renderPrayerDay(day: PrayerDay): void {
   fragment.append(summary);
 
   const path = element("div", "light-path");
-  for (const key of ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const) {
+  for (const key of prayerKeysForCity(day.city)) {
     const node = element("div", `prayer-node${key === next.key ? " is-next" : ""}`);
     if (key === next.key) node.setAttribute("aria-current", "time");
-    node.append(element("span", undefined, prayerName(key, locale)));
+    node.append(element("span", undefined, prayerNameForCity(key, day.city, locale)));
     node.append(element("time", undefined, formatPrayerTime(day.timings[key], locale)));
     path.append(node);
   }
@@ -260,8 +263,22 @@ async function renderNotificationSettings(messageKey?: ExtensionCopyKey): Promis
   prayerNotificationOptions.disabled = !notificationToggle.checked;
   testNotificationButton.disabled =
     !notificationToggle.checked || !cityById(extensionSettings.cityId);
+  const city = cityById(extensionSettings.cityId);
+  const activeKeys = city ? prayerKeysForCity(city) : PRAYER_KEYS;
+  const methodDetail = document.querySelector<HTMLElement>("[data-i18n='methodDetail']");
+  if (methodDetail) {
+    methodDetail.textContent = city
+      ? prayerMethodName(prayerMethodForCity(city), locale)
+      : text("methodDetail");
+  }
   for (const key of PRAYER_KEYS) {
-    prayerToggle(key).checked = extensionSettings.enabledPrayers[key];
+    const toggle = prayerToggle(key);
+    toggle.checked = extensionSettings.enabledPrayers[key];
+    const label = toggle.closest("label");
+    if (label) label.hidden = !activeKeys.includes(key);
+    const name = label?.querySelector<HTMLElement>("[data-prayer-label]");
+    if (name)
+      name.textContent = city ? prayerNameForCity(key, city, locale) : prayerName(key, locale);
   }
   const key =
     messageKey ??
@@ -370,10 +387,18 @@ function applyLocale(): void {
     /* Language remains active for this popup session. */
   }
   populateCities();
+  const selectedCity = cityById(citySelect.value || extensionSettings.cityId);
+  const methodDetail = document.querySelector<HTMLElement>("[data-i18n='methodDetail']");
+  if (methodDetail && selectedCity) {
+    methodDetail.textContent = prayerMethodName(prayerMethodForCity(selectedCity), locale);
+  }
   document.querySelectorAll<HTMLElement>("[data-prayer-label]").forEach((node) => {
     const key = node.dataset.prayerLabel;
     if (key && PRAYER_KEYS.includes(key as PrayerKey)) {
-      node.textContent = prayerName(key as PrayerKey, locale);
+      const city = cityById(extensionSettings.cityId);
+      node.textContent = city
+        ? prayerNameForCity(key as PrayerKey, city, locale)
+        : prayerName(key as PrayerKey, locale);
     }
   });
   renderView();
@@ -382,8 +407,11 @@ function applyLocale(): void {
 
 function installEvents(): void {
   citySelect.addEventListener("change", () => {
-    void persistSettings({ ...extensionSettings, cityId: citySelect.value });
-    void loadSelectedCity();
+    void (async () => {
+      await persistSettings({ ...extensionSettings, cityId: citySelect.value });
+      await renderNotificationSettings();
+      await loadSelectedCity();
+    })();
   });
   refreshButton.addEventListener("click", () => void loadSelectedCity(true));
   languageButton.addEventListener("click", () => {

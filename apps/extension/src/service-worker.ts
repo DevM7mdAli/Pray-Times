@@ -6,8 +6,9 @@ import {
   fetchPrayerDay,
   formatPrayerTime,
   localDateFor,
+  prayerKeysForCity,
   prayerMethodName,
-  prayerName,
+  prayerNameForCity,
   type PrayerDay,
   type PrayerScheduleEntry,
   type SupportedLocale,
@@ -76,6 +77,7 @@ async function reconcileSchedule(): Promise<void> {
   const retainedSchedule = (await readStoredSchedule()).filter(
     (entry) =>
       entry.cityId === city.id &&
+      prayerKeysForCity(city).includes(entry.key) &&
       settings.enabledPrayers[entry.key] &&
       entry.scheduledTime > Date.now()
   );
@@ -115,7 +117,7 @@ function notificationCopy(
   day: PrayerDay,
   locale: SupportedLocale
 ): { title: string; message: string; contextMessage: string } {
-  const prayer = prayerName(entry.key, locale);
+  const prayer = prayerNameForCity(entry.key, day.city, locale);
   const place = cityName(day.city, locale);
   const time = formatPrayerTime(entry.time, locale);
   return locale === "ar"
@@ -133,9 +135,12 @@ function notificationCopy(
 
 async function deliverPrayer(entry: PrayerScheduleEntry): Promise<void> {
   const settings = await readExtensionSettings();
+  const city = cityById(entry.cityId);
   if (
     !settings.notificationsEnabled ||
     settings.cityId !== entry.cityId ||
+    !city ||
+    !prayerKeysForCity(city).includes(entry.key) ||
     !settings.enabledPrayers[entry.key] ||
     !(await hasNotificationPermission()) ||
     (await wasDelivered(entry.id))

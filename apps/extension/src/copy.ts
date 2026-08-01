@@ -26,7 +26,7 @@ export const EXTENSION_COPY = {
     verifying: "يتم التحقق من أحدث البيانات…",
     loadingDate: "جارٍ التحقق من المواقيت",
     loadingTitle: "نُحضّر مسار اليوم",
-    loadingBody: "نستخدم إحداثيات المدينة وطريقة أم القرى.",
+    loadingBody: "نستخدم إحداثيات المدينة وطريقة الحساب المحددة لها.",
     stale: "تعذّر التحقق الآن. نعرض آخر نتيجة محفوظة بتاريخ اليوم.",
     unavailable: "تعذّر جلب المواقيت. تحقق من الاتصال ثم حدّث الصفحة.",
     errorTitle: "لم نعرض وقتًا غير متحقق",
@@ -45,7 +45,8 @@ export const EXTENSION_COPY = {
     verificationDetail: "نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية",
     accuracyNote: "قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.",
     notificationsTitle: "تنبيهات الصلاة",
-    notificationsDescription: "إشعار عند دخول وقت كل صلاة، حتى عندما تكون النافذة مغلقة.",
+    notificationsDescription:
+      "إشعار عند دخول وقت الصلاة أو نافذة الجمع، حتى عندما تكون النافذة مغلقة.",
     notificationsToggle: "تفعيل تنبيهات الصلاة",
     prayerNotifications: "الصلوات التي تريد تنبيهًا لها",
     permissionReady: "الإشعارات مفعلة على هذا الجهاز.",
@@ -56,7 +57,7 @@ export const EXTENSION_COPY = {
     notificationTimingNote:
       "لا يستطيع المتصفح إيقاظ الجهاز من السكون. يظهر التنبيه المتأخر خلال ١٠ دقائق فقط.",
     understood: "فهمت",
-    footer: "أم القرى · يتحقق من التاريخ والإحداثيات قبل العرض",
+    footer: "طريقة معلنة · يتحقق من التاريخ والإحداثيات قبل العرض",
     verseNumber: "الآية",
   },
   en: {
@@ -86,7 +87,7 @@ export const EXTENSION_COPY = {
     verifying: "Checking the latest data…",
     loadingDate: "Checking prayer times",
     loadingTitle: "Preparing today’s path",
-    loadingBody: "Using city coordinates and the Umm Al-Qura method.",
+    loadingBody: "Using city coordinates and its selected calculation method.",
     stale: "We could not verify now. Showing the last saved result for today.",
     unavailable: "Prayer times are unavailable. Check your connection, then refresh.",
     errorTitle: "We did not show an unverified time",
@@ -107,7 +108,7 @@ export const EXTENSION_COPY = {
       "Calculated times can differ by minutes from a mosque or local authority announcement.",
     notificationsTitle: "Prayer alerts",
     notificationsDescription:
-      "Get an alert when each prayer begins, even while the popup is closed.",
+      "Get an alert when a prayer or combined prayer window begins, even while the popup is closed.",
     notificationsToggle: "Enable prayer notifications",
     prayerNotifications: "Prayers to notify me about",
     permissionReady: "Notifications are enabled on this device.",
@@ -119,7 +120,7 @@ export const EXTENSION_COPY = {
     notificationTimingNote:
       "The browser cannot wake a sleeping device. Late alerts are shown for up to 10 minutes.",
     understood: "Got it",
-    footer: "Umm Al-Qura · date and coordinates checked before display",
+    footer: "Declared method · date and coordinates checked before display",
     verseNumber: "Verse",
   },
 } as const;

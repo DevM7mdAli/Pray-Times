@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CITIES, UMM_AL_QURA, type PrayerDay } from "@pray-times/core";
+import {
+  CITIES,
+  CUSTOM_PRAYER_METHOD,
+  UMM_AL_QURA,
+  cityById,
+  type PrayerDay,
+} from "@pray-times/core";
 import { nextEnabledPrayer, notificationPayload, parseSubscriptionInput } from "../src/domain";
 
 const day: PrayerDay = {
@@ -37,4 +43,14 @@ test("notification payload is localized and links to the web dashboard", () => {
   const payload = notificationPayload(day, "Maghrib", "ar", "https://example.com");
   assert.match(payload.title, /المغرب/);
   assert.equal(payload.url, "https://example.com/Pray-Times/today/?lang=ar");
+});
+
+test("Qatif notifications identify the combined prayer window", () => {
+  const qatifDay: PrayerDay = {
+    ...day,
+    city: cityById("qatif")!,
+    method: CUSTOM_PRAYER_METHOD,
+  };
+  const payload = notificationPayload(qatifDay, "Dhuhr", "en", "https://example.com");
+  assert.match(payload.title, /Dhuhr & Asr/);
 });

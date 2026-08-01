@@ -1,11 +1,5 @@
-import {
-  PRAYER_KEYS,
-  UMM_AL_QURA,
-  type Ayah,
-  type City,
-  type PrayerDay,
-  type PrayerKey,
-} from "./types.js";
+import { PRAYER_KEYS, type Ayah, type City, type PrayerDay, type PrayerKey } from "./types.js";
+import { prayerMethodForCity } from "./cities.js";
 import { parseTime } from "./time.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -88,17 +82,15 @@ export function parsePrayerDayResponse(
     throw new Error("Provider timezone does not match the selected city");
   }
   const method = recordField(meta, "method");
-  if (
-    numberField(method, "id") !== UMM_AL_QURA.id ||
-    stringField(method, "name") !== UMM_AL_QURA.name
-  ) {
-    throw new Error("Provider calculation method does not match Umm Al-Qura");
+  const expectedMethod = prayerMethodForCity(city);
+  if (numberField(method, "id") !== expectedMethod.id) {
+    throw new Error("Provider calculation method does not match the selected city profile");
   }
 
   return {
     requestedDate,
     city,
-    method: UMM_AL_QURA,
+    method: expectedMethod,
     timings,
     hijri: {
       day: stringField(hijri, "day"),

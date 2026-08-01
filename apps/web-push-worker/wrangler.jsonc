@@ -10,7 +10,7 @@
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
     "VAPID_SUBJECT": "https://devm7mdali.github.io/Pray-Times/",
-    "SITE_ORIGINS": "https://devm7mdali.github.io,http://localhost:5173",
+    "SITE_ORIGINS": "https://mohammed-alajmi.me,https://devm7mdali.github.io,http://localhost:5173",
   },
   "d1_databases": [
     {

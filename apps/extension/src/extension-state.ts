@@ -1,6 +1,8 @@
 import {
   PRAYER_KEYS,
+  cityById,
   isSupportedLocale,
+  prayerMethodForCity,
   type PrayerDay,
   type PrayerKey,
   type PrayerScheduleEntry,
@@ -100,7 +102,13 @@ export async function readStoredPrayerDay(
   const candidate = result[key];
   if (!candidate || typeof candidate !== "object") return undefined;
   const day = candidate as PrayerDay;
-  if (day.city?.id !== cityId || day.requestedDate !== date || day.method?.id !== 4) {
+  const city = cityById(cityId);
+  if (
+    day.city?.id !== cityId ||
+    day.requestedDate !== date ||
+    !city ||
+    day.method?.id !== prayerMethodForCity(city).id
+  ) {
     return undefined;
   }
   return day;

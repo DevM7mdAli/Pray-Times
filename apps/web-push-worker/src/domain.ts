@@ -1,6 +1,7 @@
 import {
   PRAYER_KEYS,
   buildPrayerSchedule,
+  prayerNameForCity,
   type PrayerDay,
   type PrayerKey,
   type SupportedLocale,
@@ -91,14 +92,7 @@ export function notificationPayload(
   locale: SupportedLocale,
   siteOrigin: string
 ): PushPayload {
-  const names = {
-    Fajr: { ar: "الفجر", en: "Fajr" },
-    Dhuhr: { ar: "الظهر", en: "Dhuhr" },
-    Asr: { ar: "العصر", en: "Asr" },
-    Maghrib: { ar: "المغرب", en: "Maghrib" },
-    Isha: { ar: "العشاء", en: "Isha" },
-  } as const;
-  const prayer = names[key][locale];
+  const prayer = prayerNameForCity(key, day.city, locale);
   const city = locale === "ar" ? day.city.nameAr : day.city.nameEn;
   return {
     title: locale === "ar" ? `حان الآن وقت صلاة ${prayer}` : `It is time for ${prayer}`,
