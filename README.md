@@ -5,6 +5,7 @@ A browser extension and landing page that show the next prayer in a selected Sau
 ## What is included
 
 - A Manifest V3 browser extension written in TypeScript for Chrome, Edge, Firefox, and Safari, with loading, error, and clearly labelled cached-result states.
+- A toolbar countdown to the next prayer on the extension icon, readable without opening the popup and available on every supported browser.
 - Opt-in prayer notifications scheduled by a background service worker, with per-prayer controls and duplicate protection.
 - A curated Saudi city catalog with fixed coordinates rather than ambiguous name searches.
 - The declared Umm Al-Qura, Makkah calculation method.
@@ -63,6 +64,14 @@ Each archive and its checksum are written to `artifacts/` as `pray-times-<browse
 Firefox has no Manifest V3 `service_worker` support, and Safari only gained it in 16.4, so both run an event page instead. Firefox also rejects notification options it does not implement, so the calculation method is folded into the message body there rather than shown as a separate context line.
 
 Safari implements no extension notifications API at all. The `notifications` permission stays declared so the feature switches itself on if Safari ever ships it, and `supportsNotifications` in `browser-api.ts` gates every call at runtime: on Safari the popup shows prayer times normally and the alert toggle is disabled with an explanation. Prayer alerts on Apple devices are served by the `/today/` dashboard's Web Push instead.
+
+### The toolbar countdown
+
+The extension icon carries a badge counting down to the next prayer — `26m` inside the final hour, `6h` before that, in Arabic numerals when the interface is Arabic. It needs no permission beyond the `action` key the popup already uses, and it works on Chrome 88, Firefox 109, and Safari 15.4, which makes it the only background signal Safari users can receive.
+
+The badge redraws once per minute only inside the final hour before a prayer. Outside that window a single alarm is booked for the moment the final hour begins, so the background worker stays asleep for most of the gap between prayers. That policy lives in `badgeRefreshAt` in [time.ts](packages/core/src/time.ts) as a pure function, so it can be retuned and tested on its own.
+
+`setBadgeTextColor` is the one badge method Safari lacks, so it is called optionally. The countdown can be switched off in the settings dialog; when off, the badge is cleared and no prayer data is fetched on its behalf.
 
 All extension code reaches the browser through `apps/extension/src/browser-api.ts`, which resolves the promise-based `browser` namespace and falls back to `chrome`. Firefox ships a callback-based `chrome` alias, so awaiting it directly returns `undefined` instead of the real result — never call `chrome.*` from extension source.
 

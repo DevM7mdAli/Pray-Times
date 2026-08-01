@@ -233,6 +233,35 @@ export function formatRemainingTime(minutes: number, locale: SupportedLocale): s
   return `${hours} hr ${remainder} min`;
 }
 
+/** Roughly what a toolbar badge can show before the engine truncates it. */
+const BADGE_MAX_LENGTH = 4;
+
+/**
+ * The countdown shown on the toolbar icon. Minutes while the next prayer is
+ * under an hour away, whole hours before that, kept short enough that no engine
+ * truncates it.
+ */
+export function formatBadgeCountdown(minutesUntil: number, locale: SupportedLocale): string {
+  if (!Number.isFinite(minutesUntil)) return "";
+  const minutes = Math.max(0, Math.ceil(minutesUntil));
+  const value = minutes < 60 ? minutes : Math.floor(minutes / 60);
+  const unit = minutes < 60 ? (locale === "ar" ? "د" : "m") : locale === "ar" ? "س" : "h";
+  const text = `${locale === "ar" ? arabicNumerals(value) : value}${unit}`;
+  return text.length > BADGE_MAX_LENGTH ? "" : text;
+}
+
+/**
+ * When the badge should next be redrawn.
+ *
+ * Inside the final hour the countdown changes every minute, so it ticks. Before
+ * that a single wake-up at the top of the final hour is enough, which keeps the
+ * background worker asleep for most of the gap between prayers.
+ */
+export function badgeRefreshAt(target: number, now: number): number {
+  const finalHour = target - 60 * 60_000;
+  return now < finalHour ? finalHour : now + 60_000;
+}
+
 export function prayerNameAr(key: PrayerKey): string {
   return prayerName(key, "ar");
 }

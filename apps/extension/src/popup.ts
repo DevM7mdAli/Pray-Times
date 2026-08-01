@@ -30,6 +30,7 @@ import {
   browserApi,
   hasNotificationPermission,
   requestNotificationPermission,
+  supportsBadge,
   supportsNotifications,
 } from "./browser-api.js";
 import { EXTENSION_COPY, type ExtensionCopyKey } from "./copy.js";
@@ -82,6 +83,7 @@ const sourceLine = requiredElement<HTMLElement>("source-line");
 const refreshButton = requiredElement<HTMLButtonElement>("refresh-button");
 const languageButton = requiredElement<HTMLButtonElement>("language-button");
 const settingsDialog = requiredElement<HTMLDialogElement>("settings-dialog");
+const badgeToggle = requiredElement<HTMLInputElement>("badge-toggle");
 const notificationToggle = requiredElement<HTMLInputElement>("notification-toggle");
 const notificationPermission = requiredElement<HTMLElement>("notification-permission");
 const prayerNotificationOptions = requiredElement<HTMLFieldSetElement>(
@@ -263,6 +265,11 @@ async function persistSettings(settings: ExtensionSettings): Promise<void> {
   await settingsWriteQueue;
 }
 
+function renderBadgeSettings(): void {
+  badgeToggle.checked = extensionSettings.badgeEnabled && supportsBadge;
+  badgeToggle.disabled = !supportsBadge;
+}
+
 async function renderNotificationSettings(messageKey?: ExtensionCopyKey): Promise<void> {
   const permitted = await hasNotificationPermission();
   notificationToggle.checked = extensionSettings.notificationsEnabled && permitted;
@@ -416,6 +423,7 @@ function applyLocale(): void {
     }
   });
   renderView();
+  renderBadgeSettings();
   void renderNotificationSettings();
 }
 
@@ -432,6 +440,10 @@ function installEvents(): void {
     locale = locale === "ar" ? "en" : "ar";
     void persistSettings({ ...extensionSettings, locale });
     applyLocale();
+  });
+  badgeToggle.addEventListener("change", () => {
+    // The service worker redraws the icon when the stored settings change.
+    void persistSettings({ ...extensionSettings, badgeEnabled: badgeToggle.checked });
   });
   notificationToggle.addEventListener("change", () => {
     void (async () => {
@@ -491,6 +503,7 @@ async function initialize(): Promise<void> {
   applyLocale();
   citySelect.value = cityById(extensionSettings.cityId) ? extensionSettings.cityId : "";
   installEvents();
+  renderBadgeSettings();
   await renderNotificationSettings();
   await loadSelectedCity();
 }

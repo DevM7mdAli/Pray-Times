@@ -17,6 +17,14 @@ type WebExtensionNotificationOptions = {
 };
 
 type WebExtensionApi = {
+  /** Badge methods land in Chrome 88, Firefox 109, and Safari 15.4. */
+  action?: {
+    setBadgeText(details: { text: string }): Promise<void>;
+    setBadgeBackgroundColor(details: { color: string }): Promise<void>;
+    /** Chrome 109 and Firefox 109. Safari does not implement it. */
+    setBadgeTextColor?(details: { color: string }): Promise<void>;
+    setTitle(details: { title: string }): Promise<void>;
+  };
   alarms: {
     create(name: string, alarmInfo: { when?: number; periodInMinutes?: number }): Promise<void>;
     getAll(): Promise<Array<{ name: string; scheduledTime: number }>>;

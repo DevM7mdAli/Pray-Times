@@ -44,6 +44,9 @@ export const EXTENSION_COPY = {
     verificationLabel: "التحقق",
     verificationDetail: "نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية",
     accuracyNote: "قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.",
+    badgeTitle: "العد التنازلي على الأيقونة",
+    badgeDescription: "يظهر الوقت المتبقي للصلاة القادمة على أيقونة الإضافة دون فتح النافذة.",
+    badgeToggle: "تفعيل العد التنازلي على الأيقونة",
     notificationsTitle: "تنبيهات الصلاة",
     notificationsDescription:
       "إشعار عند دخول وقت الصلاة أو نافذة الجمع، حتى عندما تكون النافذة مغلقة.",
@@ -109,6 +112,10 @@ export const EXTENSION_COPY = {
     verificationDetail: "We reject a result when its date, coordinates, or time zone do not match",
     accuracyNote:
       "Calculated times can differ by minutes from a mosque or local authority announcement.",
+    badgeTitle: "Icon countdown",
+    badgeDescription:
+      "Shows the time left before the next prayer on the toolbar icon, without opening the popup.",
+    badgeToggle: "Enable the icon countdown",
     notificationsTitle: "Prayer alerts",
     notificationsDescription:
       "Get an alert when a prayer or combined prayer window begins, even while the popup is closed.",

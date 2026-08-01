@@ -20,6 +20,7 @@ export type ExtensionSettings = {
   cityId: string;
   locale: SupportedLocale;
   notificationsEnabled: boolean;
+  badgeEnabled: boolean;
   enabledPrayers: Record<PrayerKey, boolean>;
 };
 
@@ -37,6 +38,7 @@ export function defaultExtensionSettings(locale: SupportedLocale = "en"): Extens
     cityId: "",
     locale,
     notificationsEnabled: false,
+    badgeEnabled: true,
     enabledPrayers: { ...ALL_PRAYERS_ENABLED },
   };
 }
@@ -57,6 +59,9 @@ function normalizeSettings(value: unknown): ExtensionSettings {
     cityId: typeof candidate.cityId === "string" ? candidate.cityId : "",
     locale: isSupportedLocale(candidate.locale) ? candidate.locale : fallback.locale,
     notificationsEnabled: candidate.notificationsEnabled === true,
+    // Settings saved before the badge existed have no value here, and the
+    // badge is on by default, so only an explicit false turns it off.
+    badgeEnabled: candidate.badgeEnabled !== false,
     enabledPrayers,
   };
 }

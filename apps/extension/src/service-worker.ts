@@ -1,11 +1,15 @@
 import {
   addDaysToLocalDate,
+  badgeRefreshAt,
   buildPrayerSchedule,
   cityById,
   cityName,
   fetchPrayerDay,
+  formatBadgeCountdown,
   formatPrayerTime,
+  formatRemainingTime,
   localDateFor,
+  nextPrayerFor,
   prayerKeysForCity,
   prayerMethodName,
   prayerNameForCity,
@@ -13,7 +17,12 @@ import {
   type PrayerScheduleEntry,
   type SupportedLocale,
 } from "@pray-times/core";
-import { browserApi, hasNotificationPermission, supportsRichNotifications } from "./browser-api.js";
+import {
+  browserApi,
+  hasNotificationPermission,
+  supportsBadge,
+  supportsRichNotifications,
+} from "./browser-api.js";
 import {
   SETTINGS_STORAGE_KEY,
   markDelivered,
@@ -27,9 +36,12 @@ import {
 
 const RECONCILE_ALARM = "pray-times:reconcile";
 const RETRY_ALARM = "pray-times:retry";
+const BADGE_ALARM = "pray-times:badge";
 const PRAYER_ALARM_PREFIX = "pray-times:prayer:";
 const TODAY_URL = "https://devm7mdali.github.io/Pray-Times/today/";
 const LATE_GRACE_MS = 10 * 60 * 1000;
+const BADGE_BACKGROUND = "#4da8da";
+const BADGE_TEXT_COLOR = "#0b1736";
 
 async function clearPrayerAlarms(except = new Set<string>()): Promise<void> {
   const alarms = await browserApi.alarms.getAll();
@@ -107,6 +119,53 @@ async function reconcileSchedule(): Promise<void> {
   } catch (error) {
     console.error("Could not reconcile prayer notifications", error);
   }
+}
+
+async function clearBadge(): Promise<void> {
+  if (!supportsBadge) return;
+  await browserApi.action?.setBadgeText({ text: "" });
+  await browserApi.alarms.clear(BADGE_ALARM);
+}
+
+/**
+ * Draws the countdown on the toolbar icon and books the next redraw.
+ *
+ * This runs whether or not notifications are enabled: on Safari, which has no
+ * notifications API at all, the badge is the only background signal available.
+ */
+async function refreshBadge(): Promise<void> {
+  if (!supportsBadge) return;
+  const action = browserApi.action;
+  if (!action) return;
+  const settings = await readExtensionSettings();
+  const city = cityById(settings.cityId);
+  if (!settings.badgeEnabled || !city) {
+    await clearBadge();
+    return;
+  }
+
+  let day: PrayerDay;
+  try {
+    day = await verifiedDay(city.id, localDateFor(city.timeZone));
+  } catch (error) {
+    // Leave whatever the badge already shows rather than blanking it on a
+    // transient network failure, and try again on the next tick.
+    console.error("Could not refresh the prayer badge", error);
+    await browserApi.alarms.create(BADGE_ALARM, { when: Date.now() + 15 * 60_000 });
+    return;
+  }
+
+  const next = nextPrayerFor(day);
+  await action.setBadgeText({ text: formatBadgeCountdown(next.minutesUntil, settings.locale) });
+  await action.setBadgeBackgroundColor({ color: BADGE_BACKGROUND });
+  // Safari does not implement this one, so it stays optional.
+  await action.setBadgeTextColor?.({ color: BADGE_TEXT_COLOR });
+  await action.setTitle({
+    title: `${prayerNameForCity(next.key, day.city, settings.locale)} · ${formatPrayerTime(next.time, settings.locale)} · ${formatRemainingTime(next.minutesUntil, settings.locale)}`,
+  });
+
+  const target = Date.now() + next.minutesUntil * 60_000;
+  await browserApi.alarms.create(BADGE_ALARM, { when: badgeRefreshAt(target, Date.now()) });
 }
 
 function notificationCopy(
@@ -196,13 +255,19 @@ async function deliverPrayer(entry: PrayerScheduleEntry): Promise<void> {
 }
 
 async function handleAlarm(name: string): Promise<void> {
+  if (name === BADGE_ALARM) {
+    await refreshBadge();
+    return;
+  }
   if (name === RECONCILE_ALARM || name === RETRY_ALARM) {
     await reconcileSchedule();
+    await refreshBadge();
     return;
   }
   const entry = (await readStoredSchedule()).find((candidate) => candidate.id === name);
   if (entry) await deliverPrayer(entry);
   await reconcileSchedule();
+  await refreshBadge();
 }
 
 async function sendTestNotification(): Promise<void> {
@@ -223,11 +288,16 @@ async function sendTestNotification(): Promise<void> {
   );
 }
 
-browserApi.runtime.onInstalled.addListener(() => void reconcileSchedule());
-browserApi.runtime.onStartup.addListener(() => void reconcileSchedule());
+async function start(): Promise<void> {
+  await reconcileSchedule();
+  await refreshBadge();
+}
+
+browserApi.runtime.onInstalled.addListener(() => void start());
+browserApi.runtime.onStartup.addListener(() => void start());
 browserApi.alarms.onAlarm.addListener((alarm) => void handleAlarm(alarm.name));
 browserApi.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes[SETTINGS_STORAGE_KEY]) void reconcileSchedule();
+  if (areaName === "local" && changes[SETTINGS_STORAGE_KEY]) void start();
 });
 browserApi.notifications?.onClicked.addListener((notificationId) => {
   if (notificationId.startsWith("pray-times:")) void browserApi.tabs.create({ url: TODAY_URL });
@@ -246,4 +316,4 @@ browserApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
-void reconcileSchedule();
+void start();

@@ -25,6 +25,12 @@ export const supportsRichNotifications = __EXTENSION_TARGET__ === "chrome";
 export const supportsNotifications = Boolean(browserApi.notifications);
 
 /**
+ * The toolbar badge is the one ambient channel every engine supports, which
+ * makes it the only background signal Safari users can get.
+ */
+export const supportsBadge = typeof browserApi.action?.setBadgeText === "function";
+
+/**
  * An engine that does not know the `notifications` permission rejects rather
  * than answering false, so both permission calls are failure-tolerant.
  */

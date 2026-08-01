@@ -4,11 +4,13 @@ import {
   CITIES,
   addDaysToLocalDate,
   assertCityCatalog,
+  badgeRefreshAt,
   buildPrayerSchedule,
   cityById,
   fetchAyah,
   fetchPrayerDay,
   formatArabicTime,
+  formatBadgeCountdown,
   formatHijriDate,
   formatPrayerTime,
   formatRemainingTime,
@@ -243,4 +245,39 @@ test("request clients use coordinates and reject invalid verse numbers before ne
   await fetchPrayerDay(qatif, { date: "31-07-2026", fetchImpl: qatifFetch });
   assert.match(requested, /method=0/);
   await assert.rejects(() => fetchAyah({ number: 0 }), /1 to 6236/);
+});
+
+test("the badge countdown stays short in both languages", () => {
+  assert.equal(formatBadgeCountdown(0, "en"), "0m");
+  assert.equal(formatBadgeCountdown(1, "en"), "1m");
+  assert.equal(formatBadgeCountdown(59, "en"), "59m");
+  // A partial minute counts as the whole minute still to come.
+  assert.equal(formatBadgeCountdown(44.2, "en"), "45m");
+  assert.equal(formatBadgeCountdown(59.2, "en"), "1h");
+  assert.equal(formatBadgeCountdown(60, "en"), "1h");
+  assert.equal(formatBadgeCountdown(119, "en"), "1h");
+  assert.equal(formatBadgeCountdown(659, "en"), "10h");
+  assert.equal(formatBadgeCountdown(45, "ar"), "٤٥د");
+  assert.equal(formatBadgeCountdown(150, "ar"), "٢س");
+  // A negative countdown means the prayer has just passed, not a past time.
+  assert.equal(formatBadgeCountdown(-5, "en"), "0m");
+  assert.equal(formatBadgeCountdown(Number.NaN, "en"), "");
+  for (const minutes of [0, 7, 59, 60, 599, 1439]) {
+    for (const locale of ["ar", "en"] as const) {
+      assert.ok(formatBadgeCountdown(minutes, locale).length <= 4);
+    }
+  }
+});
+
+test("the badge sleeps until the final hour, then ticks every minute", () => {
+  const now = Date.UTC(2026, 6, 31, 12, 0, 0);
+  const hour = 60 * 60_000;
+  // Three hours out: one wake-up when the final hour begins, not sooner.
+  assert.equal(badgeRefreshAt(now + 3 * hour, now), now + 2 * hour);
+  // Exactly at the boundary and inside it: tick.
+  assert.equal(badgeRefreshAt(now + hour, now), now + 60_000);
+  assert.equal(badgeRefreshAt(now + 20 * 60_000, now), now + 60_000);
+  // Already passed: still schedules forward so the worker re-derives.
+  assert.equal(badgeRefreshAt(now - 60_000, now), now + 60_000);
+  assert.ok(badgeRefreshAt(now + 3 * hour, now) > now);
 });
