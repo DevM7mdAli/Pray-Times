@@ -1,0 +1,27 @@
+{
+  "kicker": "QIBLA DIRECTION",
+  "heading": "Qibla from",
+  "fromNorth": "Bearing from true north",
+  "distance": "Distance to the Kaaba",
+  "atHaram": "You are at the Sacred Mosque",
+  "atHaramBody": "Face the Kaaba directly; no compass is needed.",
+  "align": "Align with my device",
+  "aligning": "Move your device in a figure eight to calibrate the compass.",
+  "unsupported": "This device has no compass. The arrow points relative to true north.",
+  "denied": "Compass access was refused. The arrow points relative to true north.",
+  "note": "Calculated from the city’s fixed coordinates, without asking for your location.",
+  "north": "N",
+  "east": "E",
+  "south": "S",
+  "west": "W",
+  "points": {
+    "N": "North",
+    "NE": "North-east",
+    "E": "East",
+    "SE": "South-east",
+    "S": "South",
+    "SW": "South-west",
+    "W": "West",
+    "NW": "North-west"
+  }
+}

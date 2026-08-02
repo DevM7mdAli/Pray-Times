@@ -1,0 +1,19 @@
+{
+  "selectCity": "Choose a city",
+  "presets": "Built-in cities",
+  "saved": "Places you added",
+  "searchLabel": "Search for a city anywhere",
+  "searchPlaceholder": "Search for a city…",
+  "searching": "Searching…",
+  "noResults": "No matching place.",
+  "failed": "Search is unavailable. Check your connection.",
+  "hint": "Built-in cities work offline. Search adds any city in the world.",
+  "detect": "Use my current location",
+  "detecting": "Finding you…",
+  "detectedName": "Current location",
+  "detectDenied": "Location access was refused. Choose or search for a city instead.",
+  "detectFailed": "Your location could not be determined. Choose or search for a city instead.",
+  "detectUnsupported": "This browser cannot report a location.",
+  "detectNote": "Coordinates are rounded to about a kilometre and only sent to fetch prayer times.",
+  "attribution": "Place search by Open-Meteo"
+}

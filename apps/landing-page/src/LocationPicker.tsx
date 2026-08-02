@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   CITIES,
   cityFromCoordinates,
@@ -6,51 +7,8 @@ import {
   searchPlaces,
   type City,
   type PlaceSuggestion,
-  type SupportedLocale,
 } from "@pray-times/core";
-
-const COPY = {
-  ar: {
-    city: "المدينة",
-    selectCity: "اختر المدينة",
-    presets: "مدن جاهزة",
-    saved: "أماكن أضفتها",
-    searchLabel: "ابحث عن مدينة في أي مكان",
-    searchPlaceholder: "ابحث عن مدينة…",
-    searching: "نبحث…",
-    noResults: "لا توجد نتيجة مطابقة.",
-    failed: "تعذّر البحث الآن. تحقق من الاتصال.",
-    hint: "المدن الجاهزة تعمل دون اتصال. البحث يضيف أي مدينة في العالم.",
-    detect: "استخدم موقعي الحالي",
-    detecting: "نحدد موقعك…",
-    detectedName: "موقعي الحالي",
-    detectDenied: "لم يُسمح بالوصول إلى الموقع. اختر مدينة أو ابحث عنها.",
-    detectFailed: "تعذّر تحديد الموقع. اختر مدينة أو ابحث عنها.",
-    detectUnsupported: "هذا المتصفح لا يوفر تحديد الموقع.",
-    detectNote: "نقرّب الإحداثيات إلى نحو كيلومتر، ولا ترسل إلا لجلب المواقيت.",
-    attribution: "بحث الأماكن عبر Open-Meteo",
-  },
-  en: {
-    city: "City",
-    selectCity: "Choose a city",
-    presets: "Built-in cities",
-    saved: "Places you added",
-    searchLabel: "Search for a city anywhere",
-    searchPlaceholder: "Search for a city…",
-    searching: "Searching…",
-    noResults: "No matching place.",
-    failed: "Search is unavailable. Check your connection.",
-    hint: "Built-in cities work offline. Search adds any city in the world.",
-    detect: "Use my current location",
-    detecting: "Finding you…",
-    detectedName: "Current location",
-    detectDenied: "Location access was refused. Choose or search for a city instead.",
-    detectFailed: "Your location could not be determined. Choose or search for a city instead.",
-    detectUnsupported: "This browser cannot report a location.",
-    detectNote: "Coordinates are rounded to about a kilometre and only sent to fetch prayer times.",
-    attribution: "Place search by Open-Meteo",
-  },
-} as const;
+import { useLocale } from "./i18n/useLocale";
 
 type SearchState = "idle" | "searching" | "failed";
 type DetectState = "idle" | "detecting" | "denied" | "failed" | "unsupported";
@@ -58,17 +16,16 @@ type DetectState = "idle" | "detecting" | "denied" | "failed" | "unsupported";
 export function LocationPicker({
   cityId,
   savedCities,
-  locale,
   onSelect,
   onSave,
 }: {
   cityId: string;
   savedCities: readonly City[];
-  locale: SupportedLocale;
   onSelect: (id: string) => void;
   onSave: (city: City) => void;
 }) {
-  const copy = COPY[locale];
+  const { t } = useTranslation(["location", "common"]);
+  const locale = useLocale();
   const listId = useId();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceSuggestion[]>([]);
@@ -118,8 +75,10 @@ export function LocationPicker({
             // The device's own zone is the anchor; the provider must agree with
             // it or the response is rejected like any other.
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            nameAr: COPY.ar.detectedName,
-            nameEn: COPY.en.detectedName,
+            // A saved place carries both names, so it stays readable after the
+            // reader switches language.
+            nameAr: t("detectedName", { lng: "ar" }),
+            nameEn: t("detectedName", { lng: "en" }),
           });
           onSave(place);
           onSelect(place.id);
@@ -146,14 +105,14 @@ export function LocationPicker({
   return (
     <div className="col-start-2 row-span-3 row-start-1 grid min-w-[265px] max-w-md gap-4 max-tablet:col-start-1 max-tablet:row-auto max-tablet:mt-5 max-tablet:max-w-none">
       <label className="grid gap-2 text-xs text-muted">
-        <span>{copy.city}</span>
+        <span>{t("common:city")}</span>
         <select
           className="min-h-[54px] w-full rounded-15 border border-nur/[0.18] bg-layl-soft px-[17px] font-body text-15 font-bold text-nur"
           value={cityId}
           onChange={(event) => onSelect(event.target.value)}
-          aria-label={copy.selectCity}
+          aria-label={t("selectCity")}
         >
-          <optgroup label={copy.presets}>
+          <optgroup label={t("presets")}>
             {CITIES.map((option) => (
               <option key={option.id} value={option.id}>
                 {cityName(option, locale)}
@@ -161,7 +120,7 @@ export function LocationPicker({
             ))}
           </optgroup>
           {savedCities.length > 0 ? (
-            <optgroup label={copy.saved}>
+            <optgroup label={t("saved")}>
               {savedCities.map((option) => (
                 <option key={option.id} value={option.id}>
                   {cityName(option, locale)}
@@ -174,14 +133,14 @@ export function LocationPicker({
 
       <div className="relative grid gap-[7px]">
         <label className="text-xs text-muted" htmlFor={`${listId}-input`}>
-          {copy.searchLabel}
+          {t("searchLabel")}
         </label>
         <input
           id={`${listId}-input`}
           className="min-h-[46px] rounded-13 border border-nur/[0.16] bg-layl/60 px-[15px] text-nur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sama"
           type="search"
           value={query}
-          placeholder={copy.searchPlaceholder}
+          placeholder={t("searchPlaceholder")}
           autoComplete="off"
           role="combobox"
           aria-expanded={results.length > 0}
@@ -190,17 +149,17 @@ export function LocationPicker({
         />
         {state === "searching" ? (
           <p className="m-0 text-xs text-muted" role="status">
-            {copy.searching}
+            {t("searching")}
           </p>
         ) : null}
         {state === "failed" ? (
           <p className="m-0 text-xs text-muted" role="status">
-            {copy.failed}
+            {t("failed")}
           </p>
         ) : null}
         {state === "idle" && query.trim().length >= 2 && results.length === 0 ? (
           <p className="m-0 text-xs text-muted" role="status">
-            {copy.noResults}
+            {t("noResults")}
           </p>
         ) : null}
         {results.length > 0 ? (
@@ -208,7 +167,7 @@ export function LocationPicker({
             className="absolute inset-x-0 top-full z-[5] mt-1.5 max-h-[17rem] list-none overflow-y-auto rounded-15 border border-sama/[0.34] bg-layl-soft p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.42)]"
             id={listId}
             role="listbox"
-            aria-label={copy.searchLabel}
+            aria-label={t("searchLabel")}
           >
             {results.map((suggestion) => (
               <li key={suggestion.city.id}>
@@ -228,7 +187,7 @@ export function LocationPicker({
             ))}
           </ul>
         ) : null}
-        <p className="text-11">{copy.hint}</p>
+        <p className="text-11">{t("hint")}</p>
       </div>
 
       <div className="grid justify-items-start gap-[7px]">
@@ -238,25 +197,25 @@ export function LocationPicker({
           onClick={detect}
           disabled={detectState === "detecting"}
         >
-          {detectState === "detecting" ? copy.detecting : copy.detect}
+          {detectState === "detecting" ? t("detecting") : t("detect")}
         </button>
         {detectState === "denied" ? (
           <p className="m-0 text-xs text-muted" role="status">
-            {copy.detectDenied}
+            {t("detectDenied")}
           </p>
         ) : null}
         {detectState === "failed" ? (
           <p className="m-0 text-xs text-muted" role="status">
-            {copy.detectFailed}
+            {t("detectFailed")}
           </p>
         ) : null}
         {detectState === "unsupported" ? (
           <p className="m-0 text-xs text-muted" role="status">
-            {copy.detectUnsupported}
+            {t("detectUnsupported")}
           </p>
         ) : null}
-        <p className="text-11">{copy.detectNote}</p>
-        <p className="text-11">{copy.attribution}</p>
+        <p className="text-11">{t("detectNote")}</p>
+        <p className="text-11">{t("attribution")}</p>
       </div>
     </div>
   );

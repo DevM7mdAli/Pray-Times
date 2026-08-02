@@ -1,0 +1,85 @@
+{
+  "brandKicker": "TODAY’S PATH",
+  "documentTitle": "Pray Times — the next prayer, with confidence",
+  "documentDescription": "Pray Times shows the next prayer in your city with clear coordinates and a declared calculation method.",
+  "languageShort": "ع",
+  "homeLabel": "Pray Times, top of page",
+  "navigationLabel": "Main navigation",
+  "featuresNav": "What’s new",
+  "verificationNav": "How we verify",
+  "privacyNav": "Privacy",
+  "useOnWeb": "Use on the web with alerts",
+  "getExtension": "Get the extension",
+  "heroEyebrow": "Prayer time should not be a guess",
+  "heroTitle": "Know the next prayer,<br/><accent>with confidence.</accent>",
+  "heroLead": "Know the next prayer in any city, find the qibla, follow Ramadan, and enable verified alerts on the web or in the extension.",
+  "localOnly": "No account — your choices stay on this device",
+  "livePreview": "Live extension preview",
+  "liveLabel": "LIVE PREVIEW",
+  "choosePreviewCity": "Choose a city for the preview",
+  "loadingDay": "Checking today’s path…",
+  "unavailableTimes": "Prayer times are unavailable",
+  "doNotShowUnverified": "We will not show an unverified time.",
+  "prayerPath": "Prayer-time path",
+  "verifiedNow": "Verified now",
+  "daylineLead": "Prayer times.",
+  "daylineAccent": "One clear path.",
+  "featuresEyebrow": "FROM CITY TIMES TO A DAILY COMPANION",
+  "featuresTitle": "Everything around the prayer, in one place.",
+  "featuresIntro": "Pray Times began with verified schedules for selected Saudi cities. It now travels with you and adds the tools you need before prayer and throughout the day.",
+  "beforeLabel": "Before",
+  "beforeText": "Saudi city presets, verified prayer times, and a browser extension.",
+  "nowLabel": "Now",
+  "nowText": "Any city, optional location detection, qibla, Ramadan guidance, alerts, and a calculation method suited to the place.",
+  "methodEyebrow": "Accuracy you can understand",
+  "methodLead": "Trust should not be silent.",
+  "methodBody": "Every displayed time passes three clear checks. If the city, day, or calculation method does not match, we do not show it.",
+  "coordinateTitle": "City coordinates",
+  "coordinateBody": "Choose an offline preset, search anywhere, or use your location by choice. Coordinates are pinned before prayer times are verified.",
+  "dateTitle": "Date and time zone",
+  "dateBody": "We compare the date, time zone, and coordinates returned by the provider before displaying a result.",
+  "methodTitle": "A declared method",
+  "methodBodyCard": "We suggest a calculation method by country, and you can change it per place.",
+  "privacyEyebrow": "Privacy supports accuracy",
+  "privacyLead": "Location is not a vague request.",
+  "privacyBody": "No account or tracking. Places and preferences stay on your device; search text is sent only while finding a city, and current-location coordinates are reduced in precision before use.",
+  "verseEyebrow": "A quiet moment",
+  "verseLead": "A selected verse, without distraction.",
+  "verseUnavailable": "A verse appears when a connection is available.",
+  "originalArabic": "Original Arabic Qur’an text",
+  "closingEyebrow": "Your time, in your hands",
+  "closingTitle": "Open the web app.<br/><accent>Enable free alerts.</accent>",
+  "footer": "Made for the day, from Fajr to Isha.",
+  "features": [
+    {
+      "title": "Any city worldwide",
+      "body": "Search in Arabic or English, or choose a built-in Saudi preset that is ready before you search.",
+      "tag": "Worldwide search"
+    },
+    {
+      "title": "Location, only by choice",
+      "body": "Location is requested only after your tap, then coordinates are coarsened and the time zone is pinned.",
+      "tag": "Privacy first"
+    },
+    {
+      "title": "Qibla compass",
+      "body": "A direction calculated from your place to the Kaaba, with optional alignment to your device heading.",
+      "tag": "Clear direction"
+    },
+    {
+      "title": "Ramadan and sunrise",
+      "body": "Suhoor and iftar guidance during Ramadan, plus sunrise to show when the Fajr window closes.",
+      "tag": "Daily context"
+    },
+    {
+      "title": "Alerts wherever you use it",
+      "body": "Free Web Push, extension notifications, and a next-prayer countdown on the browser toolbar.",
+      "tag": "Even after closing"
+    },
+    {
+      "title": "A method suited to the place",
+      "body": "A country-based suggestion with a per-place override, verified before any time is displayed.",
+      "tag": "Transparent accuracy"
+    }
+  ]
+}

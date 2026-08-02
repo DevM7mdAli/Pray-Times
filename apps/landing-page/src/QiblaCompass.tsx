@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   cityName,
   compassPointFor,
@@ -6,67 +7,8 @@ import {
   type City,
   type SupportedLocale,
 } from "@pray-times/core";
+import { useLocale } from "./i18n/useLocale";
 import { Card, Kicker } from "./TodayUi";
-
-const COPY = {
-  ar: {
-    kicker: "اتجاه القبلة",
-    heading: "القبلة من",
-    fromNorth: "الاتجاه من الشمال الحقيقي",
-    distance: "المسافة إلى الكعبة",
-    atHaram: "أنت عند المسجد الحرام",
-    atHaramBody: "استقبل الكعبة مباشرة؛ لا حاجة إلى بوصلة.",
-    align: "محاذاة مع اتجاه جهازي",
-    aligning: "حرّك جهازك في شكل ٨ لمعايرة البوصلة.",
-    unsupported: "هذا الجهاز لا يوفر بوصلة. السهم يشير بالنسبة إلى الشمال الحقيقي.",
-    denied: "لم يُسمح باستخدام البوصلة. السهم يشير بالنسبة إلى الشمال الحقيقي.",
-    note: "محسوبة من إحداثيات المدينة الثابتة، دون طلب موقعك.",
-    north: "ش",
-    east: "ق",
-    south: "ج",
-    west: "غ",
-  },
-  en: {
-    kicker: "QIBLA DIRECTION",
-    heading: "Qibla from",
-    fromNorth: "Bearing from true north",
-    distance: "Distance to the Kaaba",
-    atHaram: "You are at the Sacred Mosque",
-    atHaramBody: "Face the Kaaba directly; no compass is needed.",
-    align: "Align with my device",
-    aligning: "Move your device in a figure eight to calibrate the compass.",
-    unsupported: "This device has no compass. The arrow points relative to true north.",
-    denied: "Compass access was refused. The arrow points relative to true north.",
-    note: "Calculated from the city’s fixed coordinates, without asking for your location.",
-    north: "N",
-    east: "E",
-    south: "S",
-    west: "W",
-  },
-} as const;
-
-const COMPASS_POINT_NAMES = {
-  ar: {
-    N: "شمال",
-    NE: "شمال شرق",
-    E: "شرق",
-    SE: "جنوب شرق",
-    S: "جنوب",
-    SW: "جنوب غرب",
-    W: "غرب",
-    NW: "شمال غرب",
-  },
-  en: {
-    N: "North",
-    NE: "North-east",
-    E: "East",
-    SE: "South-east",
-    S: "South",
-    SW: "South-west",
-    W: "West",
-    NW: "North-west",
-  },
-} as const;
 
 type HeadingState = "idle" | "live" | "unsupported" | "denied";
 
@@ -84,8 +26,9 @@ function formatDistance(km: number, locale: SupportedLocale): string {
   }).format(rounded);
 }
 
-export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLocale }) {
-  const copy = COPY[locale];
+export function QiblaCompass({ city }: { city: City }) {
+  const { t } = useTranslation("qibla");
+  const locale = useLocale();
   const qibla = qiblaForCity(city);
   const [headingState, setHeadingState] = useState<HeadingState>("idle");
   const [deviceHeading, setDeviceHeading] = useState(0);
@@ -140,15 +83,15 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
 
   return (
     <Card className="mt-6 bg-layl-soft/[0.72] px-7.5 py-[27px]" aria-labelledby="qibla-title">
-      <Kicker className="m-0">{copy.kicker}</Kicker>
+      <Kicker className="m-0">{t("kicker")}</Kicker>
       <h2 className="mb-[22px] mt-1 font-display text-2xl font-bold" id="qibla-title">
-        {copy.heading} {cityName(city, locale)}
+        {t("heading")} {cityName(city, locale)}
       </h2>
 
       {qibla.atHaram ? (
         <div>
-          <strong className="font-display text-[24px] font-bold">{copy.atHaram}</strong>
-          <p className="mb-0 mt-1.5 text-13 text-muted">{copy.atHaramBody}</p>
+          <strong className="font-display text-[24px] font-bold">{t("atHaram")}</strong>
+          <p className="mb-0 mt-1.5 text-13 text-muted">{t("atHaramBody")}</p>
         </div>
       ) : (
         <>
@@ -156,7 +99,7 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
             <div
               className="w-[190px] flex-none"
               role="img"
-              aria-label={`${bearingLabel}° ${COMPASS_POINT_NAMES[locale][point]}`}
+              aria-label={`${bearingLabel}° ${t(`points.${point}`)}`}
             >
               <svg className="block h-auto w-full" viewBox="0 0 200 200" aria-hidden="true">
                 <g
@@ -190,24 +133,24 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
                     x="100"
                     y="16"
                   >
-                    {copy.north}
+                    {t("north")}
                   </text>
                   <text
                     className="fill-muted text-13 font-bold [text-anchor:middle]"
                     x="192"
                     y="105"
                   >
-                    {copy.east}
+                    {t("east")}
                   </text>
                   <text
                     className="fill-muted text-13 font-bold [text-anchor:middle]"
                     x="100"
                     y="196"
                   >
-                    {copy.south}
+                    {t("south")}
                   </text>
                   <text className="fill-muted text-13 font-bold [text-anchor:middle]" x="8" y="105">
-                    {copy.west}
+                    {t("west")}
                   </text>
                   <g
                     style={{
@@ -225,18 +168,16 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
             <div>
               <dl className="m-0 grid gap-4">
                 <div>
-                  <dt className="text-11 text-muted">{copy.fromNorth}</dt>
+                  <dt className="text-11 text-muted">{t("fromNorth")}</dt>
                   <dd className="mb-0 mt-0.75 flex flex-wrap items-baseline gap-2.5">
                     <strong className="font-display text-27 font-bold text-raml">
                       {bearingLabel}°
                     </strong>
-                    <span className="max-w-[26rem] text-xs text-muted">
-                      {COMPASS_POINT_NAMES[locale][point]}
-                    </span>
+                    <span className="max-w-[26rem] text-xs text-muted">{t(`points.${point}`)}</span>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-11 text-muted">{copy.distance}</dt>
+                  <dt className="text-11 text-muted">{t("distance")}</dt>
                   <dd className="mb-0 mt-0.75 flex flex-wrap items-baseline gap-2.5">
                     <strong className="font-display text-27 font-bold text-raml">
                       {formatDistance(qibla.distanceKm, locale)} {locale === "ar" ? "كم" : "km"}
@@ -244,14 +185,14 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
                   </dd>
                 </div>
               </dl>
-              <p className="mb-0 mt-4 max-w-md text-xs text-muted">{copy.note}</p>
+              <p className="mb-0 mt-4 max-w-md text-xs text-muted">{t("note")}</p>
             </div>
           </div>
 
           <div className="mt-[22px] flex flex-wrap items-center gap-3.5 border-t border-nur/10 pt-[18px]">
             {headingState === "live" ? (
               <p className="m-0 text-xs text-muted" role="status">
-                {copy.aligning}
+                {t("aligning")}
               </p>
             ) : (
               <>
@@ -260,16 +201,16 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
                   type="button"
                   onClick={() => void enableCompass()}
                 >
-                  {copy.align}
+                  {t("align")}
                 </button>
                 {headingState === "unsupported" ? (
                   <p className="m-0 text-xs text-muted" role="status">
-                    {copy.unsupported}
+                    {t("unsupported")}
                   </p>
                 ) : null}
                 {headingState === "denied" ? (
                   <p className="m-0 text-xs text-muted" role="status">
-                    {copy.denied}
+                    {t("denied")}
                   </p>
                 ) : null}
               </>
