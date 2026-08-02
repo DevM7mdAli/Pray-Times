@@ -1,16 +1,17 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   CITIES,
   cityFromCoordinates,
   cityName,
-  searchPlaces,
   type City,
   type PlaceSuggestion,
 } from "@pray-times/core";
+import { useDebouncedValue } from "./hooks/useDebouncedValue";
 import { useLocale } from "./i18n/useLocale";
+import { MIN_SEARCH_LENGTH, placesQuery } from "./queries/places";
 
-type SearchState = "idle" | "searching" | "failed";
 type DetectState = "idle" | "detecting" | "denied" | "failed" | "unsupported";
 
 export function LocationPicker({
@@ -28,37 +29,17 @@ export function LocationPicker({
   const locale = useLocale();
   const listId = useId();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<PlaceSuggestion[]>([]);
-  const [state, setState] = useState<SearchState>("idle");
   const [detectState, setDetectState] = useState<DetectState>("idle");
-  // Only the newest query may write results, so a slow response cannot
-  // overwrite a newer one.
-  const requestVersion = useRef(0);
 
-  useEffect(() => {
-    const trimmed = query.trim();
-    const version = ++requestVersion.current;
-    if (trimmed.length < 2) {
-      setResults([]);
-      setState("idle");
-      return;
-    }
-    setState("searching");
-    const timer = window.setTimeout(() => {
-      void searchPlaces(trimmed, { limit: 6 })
-        .then((found) => {
-          if (version !== requestVersion.current) return;
-          setResults(found);
-          setState("idle");
-        })
-        .catch(() => {
-          if (version !== requestVersion.current) return;
-          setResults([]);
-          setState("failed");
-        });
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [query]);
+  const trimmed = query.trim();
+  const term = useDebouncedValue(trimmed, 300);
+  const search = useQuery(placesQuery(term));
+  const long = trimmed.length >= MIN_SEARCH_LENGTH;
+  const results = long && term === trimmed ? (search.data ?? []) : [];
+  // Says "searching" from the keystroke rather than from when the debounce
+  // elapses, so the field never looks unresponsive.
+  const searching = long && (term !== trimmed || search.isFetching);
+  const failed = long && !searching && search.isError;
 
   const detect = () => {
     if (!("geolocation" in navigator)) {
@@ -94,12 +75,12 @@ export function LocationPicker({
     );
   };
 
+  // Clearing the term empties the list on its own, because the query is
+  // disabled below the minimum length.
   const choose = (suggestion: PlaceSuggestion) => {
     onSave(suggestion.city);
     onSelect(suggestion.city.id);
     setQuery("");
-    setResults([]);
-    setState("idle");
   };
 
   return (
@@ -147,17 +128,17 @@ export function LocationPicker({
           aria-controls={listId}
           onChange={(event) => setQuery(event.target.value)}
         />
-        {state === "searching" ? (
+        {searching ? (
           <p className="m-0 text-xs text-muted" role="status">
             {t("searching")}
           </p>
         ) : null}
-        {state === "failed" ? (
+        {failed ? (
           <p className="m-0 text-xs text-muted" role="status">
             {t("failed")}
           </p>
         ) : null}
-        {state === "idle" && query.trim().length >= 2 && results.length === 0 ? (
+        {long && !searching && !failed && results.length === 0 ? (
           <p className="m-0 text-xs text-muted" role="status">
             {t("noResults")}
           </p>

@@ -1,24 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
 import {
   CITIES,
   PRAYER_KEYS,
   cityById,
   cityName,
-  fetchAyah,
-  fetchPrayerDay,
   formatHijriDate,
   formatPrayerTime,
   formatRemainingTime,
+  localDateFor,
   nextPrayerFor,
   prayerKeysForCity,
   prayerMethodName,
   prayerName,
   prayerNameForCity,
-  type Ayah,
   type PrayerDay,
 } from "@pray-times/core";
 import { useDocumentLocale, useLocale, useToggleLocale } from "./i18n/useLocale";
+import { ayahQuery } from "./queries/ayah";
+import { prayerDayQuery } from "./queries/prayerDay";
 import { AyahQuote } from "./components/AyahQuote";
 import { Eyebrow } from "./components/Eyebrow";
 import { Reveal } from "./components/Reveal";
@@ -120,41 +121,13 @@ export function App() {
   const locale = useLocale();
   const toggleLocale = useToggleLocale();
   const [cityId, setCityId] = useState("riyadh");
-  const [day, setDay] = useState<PrayerDay>();
-  const [ayah, setAyah] = useState<Ayah>();
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
 
-  const city = useMemo(() => cityById(cityId) ?? CITIES[0], [cityId]);
+  const city = useMemo(() => cityById(cityId) ?? CITIES[0]!, [cityId]);
 
   useDocumentLocale({ title: t("documentTitle"), description: t("documentDescription") });
 
-  useEffect(() => {
-    if (!city) return;
-    let active = true;
-    setLoading(true);
-    setFailed(false);
-    void fetchPrayerDay(city)
-      .then((result) => {
-        if (active) setDay(result);
-      })
-      .catch(() => {
-        if (active) setFailed(true);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    void fetchAyah()
-      .then((result) => {
-        if (active) setAyah(result);
-      })
-      .catch(() => {
-        if (active) setAyah(undefined);
-      });
-    return () => {
-      active = false;
-    };
-  }, [city]);
+  const prayerDay = useQuery(prayerDayQuery(city, localDateFor(city.timeZone)));
+  const ayah = useQuery(ayahQuery());
 
   return (
     <div className="overflow-hidden bg-nur antialiased">
@@ -278,7 +251,11 @@ export function App() {
                   ))}
                 </select>
               </label>
-              <PrayerPreviewCard day={day} loading={loading} failed={failed} />
+              <PrayerPreviewCard
+                day={prayerDay.data}
+                loading={prayerDay.isPending}
+                failed={prayerDay.isError}
+              />
             </section>
           </Reveal>
         </Shell>
@@ -445,8 +422,8 @@ export function App() {
             delay={90}
             className="m-0 border-s-2 border-raml ps-[35px] max-mobile:ps-[22px]"
           >
-            {ayah ? (
-              <AyahQuote ayah={ayah} className="text-layl-soft" />
+            {ayah.data ? (
+              <AyahQuote ayah={ayah.data} className="text-layl-soft" />
             ) : (
               <>
                 <p className="m-0 font-body text-display-sm text-layl-soft">

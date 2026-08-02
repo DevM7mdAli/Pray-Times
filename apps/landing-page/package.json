@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
-    "test": "node --test",
+    "test": "node --import tsx --test tests/*.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

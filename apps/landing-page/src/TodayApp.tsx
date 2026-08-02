@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   CITIES,
   PRAYER_KEYS,
   addDaysToLocalDate,
-  cachePrayerDay,
   allPrayerMethods,
   cityName,
   cityWithMethod,
   dayTimeline,
   fastingStatusFor,
-  fetchAyah,
-  fetchPrayerDay,
   formatHijriDate,
   formatPrayerTime,
   formatRemainingTime,
@@ -25,17 +23,16 @@ import {
   isPrayerMethodId,
   parseMethodOverrides,
   parseSavedCities,
-  readCachedPrayerDay,
   resolveCity,
-  VerificationError,
   sunriseName,
-  type Ayah,
   type City,
-  type PrayerDay,
   type PrayerKey,
   type PrayerMethodId,
 } from "@pray-times/core";
+import { useNow } from "./hooks/useNow";
 import { useDocumentLocale, useLocale, useToggleLocale } from "./i18n/useLocale";
+import { ayahQuery } from "./queries/ayah";
+import { loadStatusFor, prayerDayQuery } from "./queries/prayerDay";
 import { EXTENSION_URL, HOME_PATH, ICON_URL } from "./lib/urls";
 import { AyahQuote } from "./components/AyahQuote";
 import { Card, Kicker } from "./components/Card";
@@ -64,8 +61,6 @@ const ALL_PRAYERS_ENABLED: Record<PrayerKey, boolean> = {
   Isha: true,
 };
 
-type LoadStatus = "loading" | "verified" | "cached" | "error" | "zone-mismatch";
-type AyahStatus = "loading" | "ready" | "error";
 type AlertStatus =
   | "checking"
   | "unconfigured"
@@ -134,18 +129,11 @@ export function TodayApp() {
   const [savedCities, setSavedCities] = useState<City[]>(initialSavedCities);
   const [methodOverrides, setMethodOverrides] =
     useState<Record<string, PrayerMethodId>>(initialMethodOverrides);
-  const [day, setDay] = useState<PrayerDay>();
-  const [tomorrow, setTomorrow] = useState<PrayerDay>();
-  const [status, setStatus] = useState<LoadStatus>("loading");
-  const [now, setNow] = useState(() => new Date());
-  const [refreshVersion, setRefreshVersion] = useState(0);
   const [pushApiUrl, setPushApiUrl] = useState<string>();
   const [alertStatus, setAlertStatus] = useState<AlertStatus>("checking");
   const [alertBusy, setAlertBusy] = useState(false);
   const [enabledPrayers, setEnabledPrayers] = useState(initialAlertPrayers);
-  const [ayah, setAyah] = useState<Ayah>();
-  const [ayahStatus, setAyahStatus] = useState<AyahStatus>("loading");
-  const [ayahVersion, setAyahVersion] = useState(0);
+  const now = useNow();
 
   const city = useMemo(() => {
     const base = resolveCity(cityId, savedCities) ?? CITIES[0]!;
@@ -162,35 +150,16 @@ export function TodayApp() {
 
   useDocumentLocale({ title: t("documentTitle") });
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 30_000);
-    const refreshVisiblePage = () => {
-      if (document.visibilityState === "visible") setNow(new Date());
-    };
-    document.addEventListener("visibilitychange", refreshVisiblePage);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", refreshVisiblePage);
-    };
-  }, []);
+  // Tomorrow is fetched alongside today so the countdown can roll past Isha
+  // without waiting on a request at the moment it matters.
+  const tomorrowDate = localDate ? addDaysToLocalDate(localDate, 1) : "";
+  const todayQuery = useQuery(prayerDayQuery(city, localDate));
+  const tomorrowQuery = useQuery(prayerDayQuery(city, tomorrowDate));
+  const ayahQ = useQuery(ayahQuery());
 
-  useEffect(() => {
-    let active = true;
-    setAyah(undefined);
-    setAyahStatus("loading");
-    void fetchAyah()
-      .then((result) => {
-        if (!active) return;
-        setAyah(result);
-        setAyahStatus("ready");
-      })
-      .catch(() => {
-        if (active) setAyahStatus("error");
-      });
-    return () => {
-      active = false;
-    };
-  }, [ayahVersion]);
+  const day = todayQuery.data;
+  const tomorrow = tomorrowQuery.data;
+  const status = loadStatusFor(todayQuery);
 
   useEffect(() => {
     let active = true;
@@ -240,54 +209,6 @@ export function TodayApp() {
     }, 400);
     return () => window.clearTimeout(timer);
   }, [alertSettings, alertStatus, pushApiUrl]);
-
-  useEffect(() => {
-    if (!city || !localDate) return;
-    let active = true;
-    const tomorrowDate = addDaysToLocalDate(localDate, 1);
-    let cached: PrayerDay | undefined;
-    let cachedTomorrow: PrayerDay | undefined;
-    try {
-      cached = readCachedPrayerDay(localStorage, city, localDate);
-      cachedTomorrow = readCachedPrayerDay(localStorage, city, tomorrowDate);
-    } catch {
-      cached = undefined;
-      cachedTomorrow = undefined;
-    }
-    setDay(cached);
-    setTomorrow(cachedTomorrow);
-    setStatus(cached ? "cached" : "loading");
-
-    void Promise.allSettled([
-      fetchPrayerDay(city, { date: localDate }),
-      fetchPrayerDay(city, { date: tomorrowDate }),
-    ]).then(([todayResult, tomorrowResult]) => {
-      if (!active) return;
-      if (todayResult.status === "fulfilled") {
-        cachePrayerDay(localStorage, todayResult.value);
-        setDay(todayResult.value);
-        setStatus("verified");
-      } else if (cached) {
-        setStatus("cached");
-      } else {
-        // A zone that disagrees with the coordinates is not a network problem,
-        // and saying so would send the reader chasing the wrong fix.
-        const reason = todayResult.reason;
-        setStatus(
-          reason instanceof VerificationError && reason.field === "timeZone"
-            ? "zone-mismatch"
-            : "error"
-        );
-      }
-      if (tomorrowResult.status === "fulfilled") {
-        cachePrayerDay(localStorage, tomorrowResult.value);
-        setTomorrow(tomorrowResult.value);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [city, localDate, refreshVersion]);
 
   const fasting = day ? fastingStatusFor(day, now) : undefined;
   const todayNext = day ? nextPrayerFor(day, now) : undefined;
@@ -671,7 +592,7 @@ export function TodayApp() {
             <button
               className="min-h-11 cursor-pointer rounded-xl border-0 bg-raml px-[22px] font-extrabold text-layl"
               type="button"
-              onClick={() => setRefreshVersion((value) => value + 1)}
+              onClick={() => void todayQuery.refetch()}
             >
               {t("retry")}
             </button>
@@ -694,7 +615,7 @@ export function TodayApp() {
         <Card
           className="relative mt-6 overflow-hidden bg-layl-soft/[0.72] bg-[image:radial-gradient(circle_at_88%_0%,rgba(242,214,162,0.13),transparent_24rem)] px-[38px] pb-[38px] pt-[34px] before:absolute before:inset-y-[34px] before:start-0 before:w-0.75 before:rounded-full before:bg-[image:linear-gradient(theme(colors.raml.DEFAULT),theme(colors.fajr.DEFAULT))] before:content-[''] max-mobile:px-[22px] max-mobile:pb-7.5 max-mobile:pt-[27px] max-mobile:before:inset-y-[27px]"
           aria-labelledby="today-ayah-title"
-          aria-busy={ayahStatus === "loading"}
+          aria-busy={ayahQ.isFetching}
         >
           <div className="relative z-[1] flex items-center justify-between gap-6 max-mobile:flex-col max-mobile:items-start">
             <div>
@@ -708,22 +629,20 @@ export function TodayApp() {
             <button
               className="min-h-[42px] flex-none cursor-pointer rounded-xl border border-raml/[0.36] bg-raml/[0.08] px-[17px] font-bold text-raml transition-[color,border-color,background] duration-150 disabled:cursor-progress disabled:opacity-55 max-mobile:w-full [&:hover:not(:disabled)]:border-raml [&:hover:not(:disabled)]:bg-raml [&:hover:not(:disabled)]:text-layl"
               type="button"
-              onClick={() => setAyahVersion((value) => value + 1)}
-              disabled={ayahStatus === "loading"}
+              onClick={() => void ayahQ.refetch()}
+              disabled={ayahQ.isFetching}
             >
               {t("ayahRefresh")}
             </button>
           </div>
           <div className="relative z-[1] mt-[26px] min-h-[118px]" aria-live="polite">
-            {ayah ? (
+            {ayahQ.data ? (
               <blockquote className="m-0 border-0 p-0">
-                <AyahQuote ayah={ayah} className="max-w-[58rem] text-nur" />
+                <AyahQuote ayah={ayahQ.data} className="max-w-[58rem] text-nur" />
               </blockquote>
             ) : (
-              <p
-                className={`mb-0 mt-[34px] ${ayahStatus === "error" ? "text-fajr" : "text-muted"}`}
-              >
-                {ayahStatus === "error" ? t("ayahError") : t("ayahLoading")}
+              <p className={`mb-0 mt-[34px] ${ayahQ.isError ? "text-fajr" : "text-muted"}`}>
+                {ayahQ.isError ? t("ayahError") : t("ayahLoading")}
               </p>
             )}
           </div>
