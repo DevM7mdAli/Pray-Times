@@ -52,9 +52,11 @@ module.exports = {
       },
       fontSize: {
         // Fixed UI scale, in px. Captions, labels, buttons, body copy.
-        10: ["10px", { lineHeight: "15px" }],
-        11: ["11px", { lineHeight: "16.5px" }],
-        13: ["13px", { lineHeight: "19.5px" }],
+        // Unitless line heights work on web and avoid react-native-css treating
+        // pixel values as multipliers (for example, 11 * 16.5).
+        10: ["10px", { lineHeight: "1.5" }],
+        11: ["11px", { lineHeight: "1.5" }],
+        13: ["13px", { lineHeight: "1.5" }],
         15: ["15px", { lineHeight: "1.9" }],
         17: ["17px", { lineHeight: "1.7" }],
         19: ["19px", { lineHeight: "1.45" }],

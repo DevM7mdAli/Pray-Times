@@ -13,6 +13,7 @@ const MARKUP_EXTENSIONS = new Set([".tsx", ".ts", ".html"]);
 const STYLESHEET = {
   "apps/landing-page": "apps/landing-page/src/index.css",
   "apps/extension": "apps/extension/src/input.css",
+  "apps/mobile": "apps/mobile/global.css",
 };
 
 // This design is not on a 4px grid, so one-off geometry (px spacing, a clamp,
@@ -71,8 +72,10 @@ for (const [app, expected] of Object.entries(STYLESHEET)) {
 for (const file of cssFiles) {
   const source = await readFile(path.join(root, file), "utf8");
 
-  if (!source.includes("@tailwind")) {
-    failures.push(`${file} is missing @tailwind directives`);
+  const hasTailwindV3Directives = source.includes("@tailwind");
+  const hasTailwindV4Imports = /@import\s+["']tailwindcss\//.test(source);
+  if (!hasTailwindV3Directives && !hasTailwindV4Imports) {
+    failures.push(`${file} is missing Tailwind directives or imports`);
   }
 
   if (source.includes("@apply")) {
@@ -192,6 +195,7 @@ for (const [app, ceiling] of Object.entries(ARBITRARY_VALUE_CEILING)) {
 for (const config of [
   "apps/landing-page/tailwind.config.cjs",
   "apps/extension/tailwind.config.cjs",
+  "apps/mobile/tailwind.config.cjs",
 ]) {
   const source = await readFile(path.join(root, config), "utf8");
   if (!source.includes('require("../../tailwind.preset.cjs")')) {

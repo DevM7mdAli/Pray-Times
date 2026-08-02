@@ -1,13 +1,9 @@
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { styled } from "react-native-css";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-const StyledSafeAreaView = styled(SafeAreaView);
+import { Pressable, SafeAreaView, ScrollView, Text, View } from "@/components/primitives";
 
 export function Screen({ children }: { children: ReactNode }) {
   return (
-    <StyledSafeAreaView className="bg-layl flex-1">
+    <SafeAreaView className="bg-layl flex-1">
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-5 px-5 pb-10 pt-5"
@@ -15,7 +11,7 @@ export function Screen({ children }: { children: ReactNode }) {
       >
         {children}
       </ScrollView>
-    </StyledSafeAreaView>
+    </SafeAreaView>
   );
 }
 

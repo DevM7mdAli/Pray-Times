@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
@@ -16,6 +16,7 @@ import {
   sunriseName,
 } from "@pray-times/core";
 import { Card, Kicker, OutlineButton, PrimaryButton, Screen } from "@/components/ui";
+import { Pressable, Text, View } from "@/components/primitives";
 import { reconcilePrayerNotifications } from "@/features/notifications/service";
 import { useAyah, useFreshAyahNumber, usePrayerDays } from "@/features/prayer-times/queries";
 import i18n from "@/lib/i18n";

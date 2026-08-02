@@ -16,4 +16,6 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
-module.exports = withNativeWind(config);
+// Explicit styled primitives avoid the preview global polyfill wrapping every
+// React Native import, which can produce incorrect shared layout state.
+module.exports = withNativeWind(config, { globalClassNamePolyfill: false });

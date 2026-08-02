@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Text, View } from "react-native";
 import * as Location from "expo-location";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { cityName, compassPointFor, qiblaForCity } from "@pray-times/core";
 import { Card, Kicker, OutlineButton, Screen } from "@/components/ui";
+import { Text, View } from "@/components/primitives";
 import { selectedCityForPreferences, usePreferencesStore } from "@/store/preferences-store";
 
 export default function QiblaScreen() {

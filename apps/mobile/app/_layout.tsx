@@ -1,10 +1,11 @@
 import "../global.css";
 import "@/lib/i18n";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AppQueryProvider } from "@/lib/query-provider";
 import { usePreferencesStore } from "@/store/preferences-store";
+import { View } from "@/components/primitives";
 
 function HydrationGate() {
   const hasHydrated = usePreferencesStore((state) => state.hasHydrated);

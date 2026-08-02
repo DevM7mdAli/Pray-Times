@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Switch, Text, View } from "react-native";
+import { Switch } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
@@ -12,6 +12,7 @@ import {
   prayerNameForCity,
 } from "@pray-times/core";
 import { Card, Kicker, Screen } from "@/components/ui";
+import { Pressable, Text, View } from "@/components/primitives";
 import {
   disablePrayerNotifications,
   requestNotificationPermission,

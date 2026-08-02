@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import * as Location from "expo-location";
 import { useTranslation } from "react-i18next";
 import { CITIES, cityFromCoordinates, cityName, type City } from "@pray-times/core";
 import { Card, OutlineButton, Screen } from "@/components/ui";
+import { Pressable, Text, TextInput, View } from "@/components/primitives";
 import { usePlaceSearch } from "@/features/prayer-times/queries";
 import { usePreferencesStore } from "@/store/preferences-store";
 
