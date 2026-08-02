@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
 import { CITIES, cityById, cityName, localDateFor } from "@pray-times/core";
@@ -7,8 +8,9 @@ import { Reveal } from "../../../components/Reveal";
 import { Shell } from "../../../components/Shell";
 import { ArrowIcon, BrandMark, CheckIcon } from "../../../components/icons";
 import { useLocale } from "../../../i18n/useLocale";
-import { EXTENSION_URL, TODAY_PATH } from "../../../lib/urls";
+import { EXTENSION_URL } from "../../../lib/urls";
 import { prayerDayQuery } from "../../../queries/prayerDay";
+import { TODAY_ROUTE } from "../../../routes";
 import { BUTTON_PRIMARY, HEADING } from "../../../styles/tokens";
 import { PrayerPreviewCard } from "../components/PrayerPreviewCard";
 
@@ -36,9 +38,9 @@ export function HeroSection() {
           {t("heroLead")}
         </p>
         <div className="mt-[31px] flex flex-wrap items-center gap-[21px]">
-          <a className={BUTTON_PRIMARY} href={TODAY_PATH}>
+          <Link className={BUTTON_PRIMARY} to={TODAY_ROUTE}>
             {t("useOnWeb")} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
-          </a>
+          </Link>
           <a
             className="border-b border-line-strong text-13 font-extrabold text-layl transition-colors duration-200 hover:text-fajr"
             href={EXTENSION_URL}

@@ -1,8 +1,9 @@
+import { Link } from "react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { Eyebrow } from "../../../components/Eyebrow";
 import { Reveal } from "../../../components/Reveal";
 import { ArrowIcon } from "../../../components/icons";
-import { TODAY_PATH } from "../../../lib/urls";
+import { TODAY_ROUTE } from "../../../routes";
 import { BUTTON_PRIMARY, HEADING } from "../../../styles/tokens";
 
 export function ClosingSection() {
@@ -22,9 +23,9 @@ export function ClosingSection() {
           components={{ br: <br />, accent: <em className="not-italic text-fajr" /> }}
         />
       </h2>
-      <a className={`${BUTTON_PRIMARY} mt-8`} href={TODAY_PATH}>
+      <Link className={`${BUTTON_PRIMARY} mt-8`} to={TODAY_ROUTE}>
         {t("useOnWeb")} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
-      </a>
+      </Link>
     </Reveal>
   );
 }

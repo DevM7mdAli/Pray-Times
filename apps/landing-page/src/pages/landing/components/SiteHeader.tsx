@@ -1,8 +1,9 @@
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Reveal } from "../../../components/Reveal";
 import { ArrowIcon, BrandMark } from "../../../components/icons";
 import { useToggleLocale } from "../../../i18n/useLocale";
-import { TODAY_PATH } from "../../../lib/urls";
+import { TODAY_ROUTE } from "../../../routes";
 import { BUTTON } from "../../../styles/tokens";
 
 export function SiteHeader() {
@@ -47,12 +48,12 @@ export function SiteHeader() {
         >
           {t("languageShort")}
         </button>
-        <a
+        <Link
           className={`${BUTTON} bg-layl text-nur max-mobile:px-3 max-mobile:text-11`}
-          href={TODAY_PATH}
+          to={TODAY_ROUTE}
         >
           {t("useOnWeb")} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
-        </a>
+        </Link>
       </div>
     </Reveal>
   );
