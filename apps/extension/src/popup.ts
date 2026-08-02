@@ -309,7 +309,7 @@ function ramadanPanel(day: PrayerDay): HTMLElement | undefined {
   panel.append(
     element(
       "p",
-      "mb-[5px] mt-0 text-10 font-extrabold tracking-[0.08em] text-raml",
+      "mb-1.25 mt-0 text-10 font-extrabold tracking-[0.08em] text-raml",
       text("ramadanKicker")
     )
   );
@@ -385,18 +385,19 @@ function renderPrayerDay(day: PrayerDay): void {
 
   const path = element(
     "div",
-    "light-path relative mx-0.5 mb-0 mt-[17px] grid auto-cols-fr grid-flow-col gap-[3px]"
+    "relative mx-0.5 mb-0 mt-[17px] grid auto-cols-fr grid-flow-col gap-0.75 " +
+      "before:absolute before:inset-x-[7px] before:top-[10px] before:h-0.5 before:opacity-[0.68] " +
+      "before:bg-[image:linear-gradient(90deg,theme(colors.fajr.DEFAULT),theme(colors.sama),theme(colors.raml.DEFAULT))] " +
+      "before:content-['']"
   );
   for (const entry of dayTimeline(day)) {
     const isNext = entry.kind === "prayer" && entry.key === next.key;
     const isMarker = entry.kind === "sunrise";
-    const classes = [
-      "prayer-node",
-      "relative z-[1] grid justify-items-center gap-[5px] text-center text-10 text-muted",
-    ];
-    if (isNext) classes.push("is-next font-bold text-nur");
+    const classes = [PRAYER_NODE];
+    if (isNext) classes.push(PRAYER_NODE_NEXT, "font-bold text-nur");
     // Sunrise divides the day without being a prayer, so it reads as a marker.
-    if (isMarker) classes.push("is-marker opacity-[0.72]");
+    else if (isMarker) classes.push(PRAYER_NODE_MARKER, "text-muted opacity-[0.72]");
+    else classes.push(PRAYER_NODE_DOT, "text-muted");
     const node = element("div", classes.join(" "));
     if (isNext) node.setAttribute("aria-current", "time");
     node.append(
@@ -415,6 +416,18 @@ function renderPrayerDay(day: PrayerDay): void {
   prayerPanel.replaceChildren(fragment);
 }
 
+// Timeline node markers. Each state picks exactly one dot variant so no two
+// conflicting `before:` utilities land on the same element.
+const PRAYER_NODE =
+  "relative z-[1] grid justify-items-center gap-1.25 text-center text-10 " +
+  "before:rounded-full before:border-2 before:content-['']";
+const PRAYER_NODE_DOT =
+  "before:size-2 before:border-layl-soft before:bg-sama before:shadow-[0_0_0_1px_rgba(77,168,218,0.6)]";
+const PRAYER_NODE_MARKER = "before:mt-px before:size-1.5 before:border-layl-soft before:bg-raml";
+const PRAYER_NODE_NEXT =
+  "before:-mt-0.75 before:size-[13px] before:border-raml before:bg-fajr " +
+  "before:shadow-[0_0_0_4px_rgba(233,128,110,0.18)]";
+
 function renderNoCity(): void {
   dateLine.textContent = text("noCityDate");
   sourceLine.textContent = text("noCitySource");
@@ -422,9 +435,7 @@ function renderNoCity(): void {
     "div",
     "grid min-h-[190px] place-content-center justify-items-center text-center text-muted"
   );
-  empty.append(
-    element("span", "size-10 rounded-[50%_50%_50%_6px] border-8 border-sama opacity-75 rotate-45")
-  );
+  empty.append(element("span", "size-10 rounded-orb border-8 border-sama opacity-75 rotate-45"));
   empty.append(element("p", "mb-0.5 mt-3 font-display text-base text-nur", text("noCityTitle")));
   empty.append(element("span", "max-w-[220px] text-xs", text("noCityBody")));
   prayerPanel.replaceChildren(empty);
@@ -437,9 +448,7 @@ function renderLoading(city: City): void {
     "div",
     "grid min-h-[190px] place-content-center justify-items-center text-center text-muted"
   );
-  empty.append(
-    element("span", "size-10 rounded-[50%_50%_50%_6px] border-8 border-sama opacity-75 rotate-45")
-  );
+  empty.append(element("span", "size-10 rounded-orb border-8 border-sama opacity-75 rotate-45"));
   empty.append(element("p", "mb-0.5 mt-3 font-display text-base text-nur", text("loadingTitle")));
   empty.append(element("span", "max-w-[220px] text-xs", text("loadingBody")));
   prayerPanel.replaceChildren(empty);
@@ -452,9 +461,7 @@ function renderError(city: City): void {
     "div",
     "grid min-h-[190px] place-content-center justify-items-center text-center text-muted"
   );
-  empty.append(
-    element("span", "size-10 rounded-[50%_50%_50%_6px] border-8 border-sama opacity-75 rotate-45")
-  );
+  empty.append(element("span", "size-10 rounded-orb border-8 border-sama opacity-75 rotate-45"));
   empty.append(element("p", "mb-0.5 mt-3 font-display text-base text-nur", text("errorTitle")));
   empty.append(element("span", "max-w-[220px] text-xs", text("errorBody")));
   prayerPanel.replaceChildren(empty);
@@ -478,7 +485,7 @@ function renderAyah(): void {
     fragment.append(
       element(
         "p",
-        "mb-0 mt-[5px] text-11 text-muted",
+        "mb-0 mt-1.25 text-11 text-muted",
         `${reference} · ${text("verseNumber")} ${currentAyah.numberInSurah}`
       )
     );

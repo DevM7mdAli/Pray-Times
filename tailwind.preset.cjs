@@ -7,6 +7,8 @@ module.exports = {
           DEFAULT: "#0b1736",
           soft: "#142449",
           deep: "#071128",
+          raised: "#10234a",
+          lift: "#173267",
         },
         sama: "#4da8da",
         raml: {
@@ -49,7 +51,7 @@ module.exports = {
         quran: ["Amiri", "Traditional Arabic", "serif"],
       },
       fontSize: {
-        // fixed sizes used across the small UI (captions, buttons, meta text)
+        // Fixed UI scale, in px. Captions, labels, buttons, body copy.
         10: ["10px", { lineHeight: "15px" }],
         11: ["11px", { lineHeight: "16.5px" }],
         13: ["13px", { lineHeight: "19.5px" }],
@@ -57,17 +59,14 @@ module.exports = {
         17: ["17px", { lineHeight: "1.7" }],
         19: ["19px", { lineHeight: "1.45" }],
         22: ["22px", { lineHeight: "1.3" }],
-        27: ["27px", { lineHeight: "1.15" }], // preview-widget prayer name
-        29: ["29px", { lineHeight: "1.1" }], // preview-widget prayer time
-        // fluid headings: named instead of ad hoc clamp() per heading
-        "display-hero": ["clamp(40px, 6vw, 69px)", { lineHeight: "1.1" }],
-        "display-section": ["clamp(34px, 4.5vw, 56px)", { lineHeight: "1.15" }],
-        "display-section-alt": ["clamp(32px, 4vw, 50px)", { lineHeight: "1.15" }],
-        "display-today-hero": ["clamp(48px, 7vw, 76px)", { lineHeight: "1" }],
-        "display-stat": ["clamp(25px, 3.7vw, 38px)", { lineHeight: "1.2" }],
-        "display-stat-time": ["clamp(27px, 4vw, 40px)", { lineHeight: "1" }],
-        "display-ayah": ["clamp(26px, 3.2vw, 36px)", { lineHeight: "1.9" }],
-        "display-ayah-translation": ["clamp(19px, 2.4vw, 26px)", { lineHeight: "1.65" }],
+        27: ["27px", { lineHeight: "1.15" }],
+        29: ["29px", { lineHeight: "1.1" }],
+        // Fluid display scale. Four steps, named by position in the scale —
+        // never after the component that happens to use them.
+        "display-sm": ["clamp(19px, 2.4vw, 26px)", { lineHeight: "1.65" }],
+        "display-md": ["clamp(26px, 3.6vw, 38px)", { lineHeight: "1.6" }],
+        "display-lg": ["clamp(33px, 4.2vw, 53px)", { lineHeight: "1.15" }],
+        "display-xl": ["clamp(43px, 6.4vw, 72px)", { lineHeight: "1.08" }],
       },
       borderRadius: {
         10: "10px",
@@ -75,14 +74,30 @@ module.exports = {
         13: "13px",
         15: "15px",
         20: "20px",
+        21: "21px",
         22: "22px",
+        26: "26px",
         27: "27px",
+        // Teardrop used by the loading/empty-state orb.
+        orb: "50% 50% 50% 6px",
+      },
+      // Off-grid steps this design leans on, expressed in Tailwind's own
+      // quarter-step convention (1 unit = 4px), so `gap-1.25` is 5px.
+      spacing: {
+        0.75: "3px",
+        1.25: "5px",
+        7.5: "30px",
+      },
+      boxShadow: {
+        // Elevation of a raised dashboard/dialog panel.
+        card: "0 24px 80px rgba(0, 0, 0, 0.16)",
+        // Lift applied to a button or card on hover.
+        lift: "0 13px 24px rgba(11, 23, 54, 0.2)",
       },
       width: {
         // shared page-content width, used by every landing-page section
         shell: "min(1160px, calc(100% - 48px))",
-        // narrower variant used by the today app's header/main/footer
-        "today-shell": "min(1120px, calc(100% - 40px))",
+        "shell-today": "min(1120px, calc(100% - 40px))",
       },
       screens: {
         mobile: "600px",
@@ -90,6 +105,42 @@ module.exports = {
       },
       transitionTimingFunction: {
         reveal: "cubic-bezier(0.22, 1, 0.36, 1)",
+      },
+      transitionDuration: {
+        reveal: "720ms",
+      },
+      // Stagger steps for the scroll-reveal sequence.
+      transitionDelay: {
+        30: "30ms",
+        70: "70ms",
+        90: "90ms",
+        110: "110ms",
+        140: "140ms",
+        190: "190ms",
+      },
+      keyframes: {
+        float: {
+          "50%": { transform: "translateY(-5px) rotate(45deg)" },
+        },
+        "aura-breathe": {
+          "50%": { opacity: "0.72", scale: "1.08" },
+        },
+        "live-pulse": {
+          "70%, 100%": { boxShadow: "0 0 0 10px rgba(233, 128, 110, 0)" },
+        },
+        "path-flow": {
+          to: { backgroundPosition: "220% 0" },
+        },
+        "compass-breathe": {
+          "50%": { filter: "drop-shadow(0 0 12px rgba(77, 168, 218, 0.42))" },
+        },
+      },
+      animation: {
+        float: "float 2.6s ease-in-out infinite",
+        "aura-breathe": "aura-breathe 6s ease-in-out infinite",
+        "live-pulse": "live-pulse 2.4s ease-out infinite",
+        "path-flow": "path-flow 6s linear infinite",
+        "compass-breathe": "compass-breathe 4.5s ease-in-out infinite",
       },
     },
   },

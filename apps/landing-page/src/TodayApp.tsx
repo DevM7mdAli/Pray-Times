@@ -38,6 +38,7 @@ import {
   type SupportedLocale,
 } from "@pray-times/core";
 import { LocationPicker } from "./LocationPicker";
+import { Card, Kicker } from "./TodayUi";
 import { QiblaCompass } from "./QiblaCompass";
 import {
   currentWebPushSubscription,
@@ -492,8 +493,8 @@ export function TodayApp() {
   };
 
   return (
-    <div className="today-shell min-h-screen text-nur antialiased">
-      <header className="mx-auto flex min-h-[86px] w-today-shell items-center justify-between gap-6 border-b border-nur/10 max-mobile:min-h-[74px] max-mobile:w-[calc(100%-28px)]">
+    <div className="min-h-screen bg-layl bg-[image:radial-gradient(circle_at_76%_8%,rgba(77,168,218,0.2),transparent_30rem),linear-gradient(155deg,theme(colors.layl.raised)_0%,theme(colors.layl.DEFAULT)_52%,theme(colors.layl.deep)_100%)] text-nur antialiased">
+      <header className="mx-auto flex min-h-[86px] w-shell-today items-center justify-between gap-6 border-b border-nur/10 max-mobile:min-h-[74px] max-mobile:w-[calc(100%-28px)]">
         <a
           className="flex items-center gap-[11px] font-display font-bold text-nur no-underline"
           href="/Pray-Times/"
@@ -533,12 +534,12 @@ export function TodayApp() {
         </nav>
       </header>
 
-      <main className="mx-auto w-today-shell pb-14 pt-[72px] max-mobile:w-[calc(100%-28px)] max-mobile:pb-[38px] max-mobile:pt-12">
+      <main className="mx-auto w-shell-today pb-14 pt-[72px] max-mobile:w-[calc(100%-28px)] max-mobile:pb-[38px] max-mobile:pt-12">
         <section className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-12 gap-y-3 max-tablet:grid-cols-1">
           <p className="col-start-1 m-0 text-xs font-extrabold tracking-[0.14em] text-raml">
             {locale === "ar" ? "مسار يومك" : "YOUR DAILY PATH"}
           </p>
-          <h1 className="col-start-1 m-0 font-display text-display-hero leading-[1.08]">
+          <h1 className="col-start-1 m-0 font-display text-display-xl leading-[1.08]">
             {copy.title}
           </h1>
           <p className="col-start-1 m-0 text-17 text-muted">{copy.subtitle}</p>
@@ -561,8 +562,8 @@ export function TodayApp() {
           />
         </section>
 
-        <section
-          className="today-card mt-9 grid gap-[22px] bg-layl-soft/[0.72] bg-[image:linear-gradient(120deg,rgba(77,168,218,0.14),transparent_55%)] px-[30px] py-[27px] max-mobile:px-[19px] max-mobile:py-[22px]"
+        <Card
+          className="mt-9 grid gap-[22px] bg-layl-soft/[0.72] bg-[image:linear-gradient(120deg,rgba(77,168,218,0.14),transparent_55%)] px-7.5 py-[27px] max-mobile:px-[19px] max-mobile:py-[22px]"
           data-state={alertStatus}
           aria-labelledby="web-alerts-title"
         >
@@ -574,7 +575,7 @@ export function TodayApp() {
               <h2 className="m-0 inline font-display text-22 font-bold" id="web-alerts-title">
                 {copy.alertsTitle}
               </h2>
-              <p className="mb-0 mt-[5px] text-13 text-muted">{copy.alertsBody}</p>
+              <p className="mb-0 mt-1.25 text-13 text-muted">{copy.alertsBody}</p>
             </div>
             <div className="flex shrink-0 gap-[9px] max-mobile:flex-col">
               {alertStatus === "enabled" || alertStatus === "sent" ? (
@@ -653,7 +654,7 @@ export function TodayApp() {
             <p className="m-0">{alertMessage}</p>
           </div>
           <p className="mb-0 mt-[-11px] text-11">{copy.iosHelp}</p>
-        </section>
+        </Card>
 
         {day && fasting ? (
           <section
@@ -661,10 +662,10 @@ export function TodayApp() {
             data-phase={fasting.phase}
             aria-live="polite"
           >
-            <p className="section-kicker mb-2.5 mt-0">{copy.ramadanKicker}</p>
+            <Kicker className="mb-2.5 mt-0">{copy.ramadanKicker}</Kicker>
             {fasting.phase === "completed" ? (
               <div className="flex flex-wrap items-baseline gap-3.5">
-                <strong className="font-display text-display-stat leading-[1.1]">
+                <strong className="font-display text-display-md leading-[1.1]">
                   {copy.fastCompleted}
                 </strong>
                 <span className="text-13 text-muted">
@@ -676,7 +677,7 @@ export function TodayApp() {
                 <span className="text-13 text-muted">
                   {fasting.phase === "suhoor" ? copy.suhoorLabel : copy.iftarLabel}
                 </span>
-                <strong className="font-display text-display-stat leading-[1.1]">
+                <strong className="font-display text-display-md leading-[1.1]">
                   {formatRemainingTime(fasting.minutesUntil ?? 0, locale)}
                 </strong>
                 <time className="ms-auto text-xl text-raml" dateTime={fasting.time}>
@@ -689,8 +690,8 @@ export function TodayApp() {
 
         {day ? (
           <div className="mt-[52px] grid grid-cols-[minmax(0,0.92fr)_minmax(420px,1.08fr)] gap-6 max-tablet:grid-cols-1">
-            <section
-              className="today-card relative min-h-[380px] overflow-hidden bg-layl-soft bg-[image:linear-gradient(145deg,rgba(77,168,218,0.23),rgba(20,36,73,0.76))] p-[35px] max-mobile:min-h-[330px] max-mobile:p-[26px]"
+            <Card
+              className="relative min-h-[380px] overflow-hidden bg-layl-soft bg-[image:linear-gradient(145deg,rgba(77,168,218,0.23),rgba(20,36,73,0.76))] p-[35px] max-mobile:min-h-[330px] max-mobile:p-[26px]"
               aria-labelledby="next-prayer-title"
             >
               {next && nextDay ? (
@@ -700,11 +701,11 @@ export function TodayApp() {
                       ? copy.nextPrayerTomorrow
                       : copy.nextPrayer}
                   </p>
-                  <div className="relative z-[1] mt-12 grid gap-[5px]">
-                    <strong className="font-display text-display-today-hero leading-none">
+                  <div className="relative z-[1] mt-12 grid gap-1.25">
+                    <strong className="font-display text-display-xl leading-none">
                       {prayerNameForCity(next.key, nextDay.city, locale)}
                     </strong>
-                    <time className="text-display-stat-time text-raml" dateTime={next.time}>
+                    <time className="text-display-md text-raml" dateTime={next.time}>
                       {formatPrayerTime(next.time, locale)}
                     </time>
                   </div>
@@ -720,7 +721,7 @@ export function TodayApp() {
                   <p className="relative z-[1] m-0 font-bold text-raml" id="next-prayer-title">
                     {copy.nextPrayerTomorrow}
                   </p>
-                  <strong className="max-w-[25rem] font-display text-display-stat font-semibold leading-[1.35] text-raml">
+                  <strong className="max-w-[25rem] font-display text-display-md font-semibold leading-[1.35] text-raml">
                     {copy.refreshing}
                   </strong>
                 </div>
@@ -729,14 +730,14 @@ export function TodayApp() {
                 className="absolute -end-[70px] top-[-70px] h-[250px] w-[250px] rounded-full bg-fajr/20 blur-[15px]"
                 aria-hidden="true"
               />
-            </section>
+            </Card>
 
-            <section className="today-card p-[30px]" aria-labelledby="today-schedule-title">
+            <Card className="bg-layl-soft/[0.72] p-7.5" aria-labelledby="today-schedule-title">
               <div className="mb-4 flex items-end justify-between gap-6 max-mobile:flex-col max-mobile:items-start max-mobile:gap-2">
                 <div>
                   <p className="m-0 text-[12px] text-muted">{cityName(day.city, locale)}</p>
                   <h2
-                    className="m-0 mt-[3px] font-display text-2xl font-bold"
+                    className="m-0 mt-0.75 font-display text-2xl font-bold"
                     id="today-schedule-title"
                   >
                     {copy.schedule}
@@ -788,10 +789,10 @@ export function TodayApp() {
                   );
                 })}
               </div>
-            </section>
+            </Card>
           </div>
         ) : status === "error" || status === "zone-mismatch" ? (
-          <section className="today-card mt-[52px] px-[30px] py-[54px] text-center" role="alert">
+          <Card className="mt-[52px] bg-layl-soft/[0.72] px-7.5 py-[54px] text-center" role="alert">
             <span
               className="mx-auto mb-4 mt-0 grid size-[52px] place-items-center rounded-full border border-fajr/[0.55] font-extrabold text-fajr"
               aria-hidden="true"
@@ -811,10 +812,10 @@ export function TodayApp() {
             >
               {copy.retry}
             </button>
-          </section>
+          </Card>
         ) : (
-          <section
-            className="today-card mt-[52px] px-[30px] py-[54px] text-center"
+          <Card
+            className="mt-[52px] bg-layl-soft/[0.72] px-7.5 py-[54px] text-center"
             aria-live="polite"
           >
             <span
@@ -822,13 +823,13 @@ export function TodayApp() {
               aria-hidden="true"
             />
             <p className="text-muted">{copy.refreshing}</p>
-          </section>
+          </Card>
         )}
 
         <QiblaCompass city={city} locale={locale} />
 
-        <section
-          className="today-card today-ayah relative mt-6 overflow-hidden bg-layl-soft/[0.72] bg-[image:radial-gradient(circle_at_88%_0%,rgba(242,214,162,0.13),transparent_24rem)] px-[38px] pb-[38px] pt-[34px] max-mobile:px-[22px] max-mobile:pb-[30px] max-mobile:pt-[27px]"
+        <Card
+          className="relative mt-6 overflow-hidden bg-layl-soft/[0.72] bg-[image:radial-gradient(circle_at_88%_0%,rgba(242,214,162,0.13),transparent_24rem)] px-[38px] pb-[38px] pt-[34px] before:absolute before:inset-y-[34px] before:start-0 before:w-0.75 before:rounded-full before:bg-[image:linear-gradient(theme(colors.raml.DEFAULT),theme(colors.fajr.DEFAULT))] before:content-[''] max-mobile:px-[22px] max-mobile:pb-7.5 max-mobile:pt-[27px] max-mobile:before:inset-y-[27px]"
           aria-labelledby="today-ayah-title"
           aria-busy={ayahStatus === "loading"}
         >
@@ -837,7 +838,7 @@ export function TodayApp() {
               <p className="m-0 text-11 font-extrabold tracking-[0.09em] text-raml">
                 {copy.ayahKicker}
               </p>
-              <h2 className="m-0 mt-[5px] font-display text-2xl font-bold" id="today-ayah-title">
+              <h2 className="m-0 mt-1.25 font-display text-2xl font-bold" id="today-ayah-title">
                 {copy.ayahTitle}
               </h2>
             </div>
@@ -854,7 +855,7 @@ export function TodayApp() {
             {ayah ? (
               <blockquote className="m-0 border-0 p-0">
                 <p
-                  className="m-0 max-w-[58rem] font-quran text-display-ayah text-nur"
+                  className="m-0 max-w-[58rem] font-quran text-display-md text-nur"
                   lang="ar"
                   dir="rtl"
                 >
@@ -875,10 +876,14 @@ export function TodayApp() {
               </p>
             )}
           </div>
-        </section>
+        </Card>
 
         {day ? (
-          <section className="today-card mt-6 px-7 py-6" data-state={status} aria-live="polite">
+          <Card
+            className="mt-6 bg-layl-soft/[0.72] px-7 py-6"
+            data-state={status}
+            aria-live="polite"
+          >
             <div className="flex items-center gap-[9px]">
               <span
                 className={
@@ -897,13 +902,13 @@ export function TodayApp() {
               </p>
             </div>
             <dl className="mb-3.5 mt-5 flex flex-wrap gap-x-[42px] gap-y-4">
-              <div className="grid gap-[3px]">
+              <div className="grid gap-0.75">
                 <dt className="text-11 text-muted">{copy.refreshed}</dt>
                 <dd className="m-0 text-raml">
                   {formatUpdatedAt(day.fetchedAt, day.city.timeZone, locale)}
                 </dd>
               </div>
-              <div className="grid gap-[3px]">
+              <div className="grid gap-0.75">
                 <dt className="text-11 text-muted">
                   <label htmlFor="method-select">
                     {locale === "ar" ? "طريقة الحساب" : "Calculation"}
@@ -942,15 +947,13 @@ export function TodayApp() {
                     ))}
                   </select>
                   {methodOverrides[city.id] === undefined ? null : (
-                    <span className="mt-[5px] block text-11 text-raml">
-                      {copy.methodOverridden}
-                    </span>
+                    <span className="mt-1.25 block text-11 text-raml">{copy.methodOverridden}</span>
                   )}
                 </dd>
               </div>
             </dl>
             <p className="text-xs text-muted">{copy.accuracy}</p>
-          </section>
+          </Card>
         ) : null}
       </main>
 

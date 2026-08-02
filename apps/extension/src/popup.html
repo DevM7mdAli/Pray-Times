@@ -8,7 +8,7 @@
   </head>
   <body class="m-0 min-w-[360px] bg-layl font-body text-sm leading-normal text-nur">
     <main
-      class="popup-shell min-h-[552px] w-[min(100%,400px)] overflow-hidden p-5 antialiased"
+      class="min-h-[552px] w-[min(100%,400px)] overflow-hidden bg-layl bg-[image:radial-gradient(circle_at_50%_-10%,rgba(77,168,218,0.22),transparent_35%),linear-gradient(160deg,theme(colors.layl.raised)_0%,theme(colors.layl.DEFAULT)_58%)] p-5 antialiased"
       aria-labelledby="app-title"
     >
       <header class="flex items-center justify-between gap-3">
@@ -38,7 +38,7 @@
         </div>
         <div class="flex items-center gap-2">
           <button
-            class="icon-btn size-10 rounded-xl font-display text-xs font-bold"
+            class="inline-grid size-10 size-11 flex-none cursor-pointer place-items-center rounded-13 rounded-xl border border-nur/[0.16] bg-nur/[0.06] font-display text-xs font-bold transition-[background,transform] duration-200 hover:-translate-y-px hover:bg-nur/[0.12]"
             id="language-button"
             type="button"
             aria-label="التبديل إلى الإنجليزية"
@@ -46,7 +46,7 @@
             EN
           </button>
           <button
-            class="icon-btn"
+            class="inline-grid size-11 flex-none cursor-pointer place-items-center rounded-13 border border-nur/[0.16] bg-nur/[0.06] transition-[background,transform] duration-200 hover:-translate-y-px hover:bg-nur/[0.12]"
             id="settings-button"
             type="button"
             data-i18n-aria-label="settingsLabel"
@@ -82,7 +82,7 @@
           >اختيار المدينة يحفظ على هذا الجهاز فقط.</span
         >
         <button
-          class="icon-btn size-9 rounded-10 border-0"
+          class="inline-grid size-11 size-9 flex-none cursor-pointer place-items-center rounded-10 rounded-13 border border-0 border-nur/[0.16] bg-nur/[0.06] transition-[background,transform] duration-200 hover:-translate-y-px hover:bg-nur/[0.12] [&[aria-busy='true']_svg]:animate-spin"
           id="refresh-button"
           type="button"
           data-i18n-aria-label="refreshTimes"
@@ -98,7 +98,7 @@
             />
           </svg>
         </button>
-        <div class="relative grid basis-full gap-[5px]">
+        <div class="relative grid basis-full gap-1.25">
           <label class="sr-only" for="city-search" data-i18n="searchCity"
             >ابحث عن مدينة في أي مكان</label
           >
@@ -136,7 +136,7 @@
         اختر مدينة لعرض مواقيت اليوم
       </p>
       <p
-        class="mx-0.5 mb-0 mt-[3px] min-h-5 text-xs text-raml data-[state=error]:text-fajr-pale"
+        class="mx-0.5 mb-0 mt-0.75 min-h-5 text-xs text-raml data-[state=error]:text-fajr-pale"
         id="status-line"
         role="status"
         aria-live="polite"
@@ -156,7 +156,7 @@
       >
         <div class="flex items-center gap-2 text-raml">
           <span
-            class="h-px w-[22px] bg-[linear-gradient(90deg,transparent,#f2d6a2)]"
+            class="h-px w-[22px] bg-[image:linear-gradient(90deg,transparent,theme(colors.raml.DEFAULT))]"
             aria-hidden="true"
           ></span>
           <h2 class="m-0 text-xs" id="ayah-heading" data-i18n="verseTitle">آية مختارة</h2>
@@ -170,7 +170,7 @@
     </main>
 
     <dialog
-      class="rounded-21 max-h-[min(720px,calc(100vh-28px))] w-[min(calc(100%-28px),372px)] overflow-y-auto border border-nur/[0.18] bg-layl-soft p-[19px] text-nur shadow-[0_24px_90px_rgba(0,0,0,0.5)] backdrop:bg-[rgba(2,8,24,0.72)] backdrop:backdrop-blur-[3px]"
+      class="max-h-[min(720px,calc(100vh-28px))] w-[min(calc(100%-28px),372px)] overflow-y-auto rounded-21 border border-nur/[0.18] bg-layl-soft p-[19px] text-nur shadow-[0_24px_90px_rgba(0,0,0,0.5)] backdrop:bg-[rgba(2,8,24,0.72)] backdrop:backdrop-blur-[3px]"
       id="settings-dialog"
       aria-labelledby="settings-title"
     >
@@ -187,7 +187,7 @@
           </h2>
         </div>
         <button
-          class="icon-btn"
+          class="inline-grid size-11 flex-none cursor-pointer place-items-center rounded-13 border border-nur/[0.16] bg-nur/[0.06] transition-[background,transform] duration-200 hover:-translate-y-px hover:bg-nur/[0.12]"
           id="close-settings"
           type="button"
           data-i18n-aria-label="closeSettings"
@@ -199,7 +199,7 @@
       <dl class="my-[19px]">
         <div class="border-b border-nur/10 py-3">
           <dt class="font-bold text-raml" data-i18n="locationLabel">الموقع</dt>
-          <dd class="mb-0 mt-[3px] text-xs text-muted" data-i18n="locationDetail">
+          <dd class="mb-0 mt-0.75 text-xs text-muted" data-i18n="locationDetail">
             إحداثيات ثابتة للمدينة التي تختارها
           </dd>
         </div>
@@ -207,7 +207,7 @@
           <dt class="font-bold text-raml">
             <label for="method-select" data-i18n="methodLabel">طريقة الحساب</label>
           </dt>
-          <dd class="mb-0 mt-[3px] text-xs text-muted">
+          <dd class="mb-0 mt-0.75 text-xs text-muted">
             <select
               class="min-h-[34px] w-full rounded-10 border border-nur/[0.18] bg-layl-soft px-[9px] text-xs text-nur"
               id="method-select"
@@ -217,7 +217,7 @@
         </div>
         <div class="border-b border-nur/10 py-3">
           <dt class="font-bold text-raml" data-i18n="verificationLabel">التحقق</dt>
-          <dd class="mb-0 mt-[3px] text-xs text-muted" data-i18n="verificationDetail">
+          <dd class="mb-0 mt-0.75 text-xs text-muted" data-i18n="verificationDetail">
             نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية
           </dd>
         </div>
@@ -231,7 +231,7 @@
       >
         <div class="flex items-start justify-between gap-3.5">
           <div>
-            <h3 class="mb-[3px] mt-0 font-display text-sm" id="badge-title" data-i18n="badgeTitle">
+            <h3 class="mb-0.75 mt-0 font-display text-sm" id="badge-title" data-i18n="badgeTitle">
               العد التنازلي على الأيقونة
             </h3>
             <p class="m-0 text-11 text-muted" data-i18n="badgeDescription">
@@ -259,7 +259,7 @@
         <div class="flex items-start justify-between gap-3.5">
           <div>
             <h3
-              class="mb-[3px] mt-0 font-display text-sm"
+              class="mb-0.75 mt-0 font-display text-sm"
               id="notifications-title"
               data-i18n="notificationsTitle"
             >
@@ -297,31 +297,31 @@
           <div class="grid grid-cols-3 gap-[7px]">
             <label class="[&[hidden]]:hidden">
               <input class="accent-sama" id="prayer-toggle-Fajr" type="checkbox" /><span
-                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
+                class="rounded-9 flex min-h-[34px] items-center gap-1.25 border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Fajr"
               ></span>
             </label>
             <label class="[&[hidden]]:hidden">
               <input class="accent-sama" id="prayer-toggle-Dhuhr" type="checkbox" /><span
-                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
+                class="rounded-9 flex min-h-[34px] items-center gap-1.25 border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Dhuhr"
               ></span>
             </label>
             <label class="[&[hidden]]:hidden">
               <input class="accent-sama" id="prayer-toggle-Asr" type="checkbox" /><span
-                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
+                class="rounded-9 flex min-h-[34px] items-center gap-1.25 border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Asr"
               ></span>
             </label>
             <label class="[&[hidden]]:hidden">
               <input class="accent-sama" id="prayer-toggle-Maghrib" type="checkbox" /><span
-                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
+                class="rounded-9 flex min-h-[34px] items-center gap-1.25 border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Maghrib"
               ></span>
             </label>
             <label class="[&[hidden]]:hidden">
               <input class="accent-sama" id="prayer-toggle-Isha" type="checkbox" /><span
-                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
+                class="rounded-9 flex min-h-[34px] items-center gap-1.25 border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Isha"
               ></span>
             </label>

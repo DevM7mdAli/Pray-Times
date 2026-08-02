@@ -6,6 +6,7 @@ import {
   type City,
   type SupportedLocale,
 } from "@pray-times/core";
+import { Card, Kicker } from "./TodayUi";
 
 const COPY = {
   ar: {
@@ -138,8 +139,8 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
   }).format(Math.round(qibla.bearing));
 
   return (
-    <section className="today-card mt-6 px-[30px] py-[27px]" aria-labelledby="qibla-title">
-      <p className="section-kicker m-0">{copy.kicker}</p>
+    <Card className="mt-6 bg-layl-soft/[0.72] px-7.5 py-[27px]" aria-labelledby="qibla-title">
+      <Kicker className="m-0">{copy.kicker}</Kicker>
       <h2 className="mb-[22px] mt-1 font-display text-2xl font-bold" id="qibla-title">
         {copy.heading} {cityName(city, locale)}
       </h2>
@@ -164,12 +165,16 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
                     transformOrigin: "100px 100px",
                   }}
                 >
-                  <circle className="compass-face" cx="100" cy="100" r="88" />
-                  <circle className="compass-inner" cx="100" cy="100" r="66" />
+                  <circle className="fill-layl/70 stroke-sama/40" cx="100" cy="100" r="88" />
+                  <circle className="fill-none stroke-nur/10" cx="100" cy="100" r="66" />
                   {Array.from({ length: 24 }, (_, index) => (
                     <line
                       key={index}
-                      className={index % 6 === 0 ? "compass-tick is-cardinal" : "compass-tick"}
+                      className={
+                        index % 6 === 0
+                          ? "stroke-sama stroke-[2.5]"
+                          : "stroke-nur/[0.28] stroke-[1.5]"
+                      }
                       x1="100"
                       y1={index % 6 === 0 ? 20 : 24}
                       x2="100"
@@ -180,16 +185,28 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
                       }}
                     />
                   ))}
-                  <text className="compass-label" x="100" y="16">
+                  <text
+                    className="fill-muted text-13 font-bold [text-anchor:middle]"
+                    x="100"
+                    y="16"
+                  >
                     {copy.north}
                   </text>
-                  <text className="compass-label" x="192" y="105">
+                  <text
+                    className="fill-muted text-13 font-bold [text-anchor:middle]"
+                    x="192"
+                    y="105"
+                  >
                     {copy.east}
                   </text>
-                  <text className="compass-label" x="100" y="196">
+                  <text
+                    className="fill-muted text-13 font-bold [text-anchor:middle]"
+                    x="100"
+                    y="196"
+                  >
                     {copy.south}
                   </text>
-                  <text className="compass-label" x="8" y="105">
+                  <text className="fill-muted text-13 font-bold [text-anchor:middle]" x="8" y="105">
                     {copy.west}
                   </text>
                   <g
@@ -198,8 +215,8 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
                       transformOrigin: "100px 100px",
                     }}
                   >
-                    <path className="compass-needle" d="M100 30 L112 112 L100 104 L88 112 Z" />
-                    <circle className="compass-hub" cx="100" cy="100" r="7" />
+                    <path className="fill-fajr" d="M100 30 L112 112 L100 104 L88 112 Z" />
+                    <circle className="fill-raml" cx="100" cy="100" r="7" />
                   </g>
                 </g>
               </svg>
@@ -209,7 +226,7 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
               <dl className="m-0 grid gap-4">
                 <div>
                   <dt className="text-11 text-muted">{copy.fromNorth}</dt>
-                  <dd className="mb-0 mt-[3px] flex flex-wrap items-baseline gap-2.5">
+                  <dd className="mb-0 mt-0.75 flex flex-wrap items-baseline gap-2.5">
                     <strong className="font-display text-27 font-bold text-raml">
                       {bearingLabel}°
                     </strong>
@@ -220,7 +237,7 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
                 </div>
                 <div>
                   <dt className="text-11 text-muted">{copy.distance}</dt>
-                  <dd className="mb-0 mt-[3px] flex flex-wrap items-baseline gap-2.5">
+                  <dd className="mb-0 mt-0.75 flex flex-wrap items-baseline gap-2.5">
                     <strong className="font-display text-27 font-bold text-raml">
                       {formatDistance(qibla.distanceKm, locale)} {locale === "ar" ? "كم" : "km"}
                     </strong>
@@ -260,6 +277,6 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
           </div>
         </>
       )}
-    </section>
+    </Card>
   );
 }

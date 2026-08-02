@@ -49,6 +49,16 @@
   :root {
     color-scheme: dark;
   }
+  body {
+    min-width: 360px;
+    background-color: theme("colors.layl.DEFAULT");
+    color: theme("colors.nur");
+    font-family: theme("fontFamily.body");
+  }
+  button,
+  select {
+    font: inherit;
+  }
   svg {
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -59,81 +69,15 @@
     outline-offset: 3px;
   }
   ::selection {
-    @apply bg-raml text-layl;
+    background-color: theme("colors.raml.DEFAULT");
+    color: theme("colors.layl.DEFAULT");
   }
 }
 
-@layer components {
-  /* Repeated across the topbar's icon-only buttons (see docs/STYLING.md component rule). */
-  .icon-btn {
-    @apply inline-grid size-11 flex-none cursor-pointer place-items-center rounded-13 border border-nur/[0.16] bg-nur/[0.06] transition-[background,transform] duration-200 hover:-translate-y-px hover:bg-nur/[0.12];
-  }
-
-  /* Multi-stop gradient background for the popup shell. */
-  .popup-shell {
-    background:
-      radial-gradient(circle at 50% -10%, rgba(77, 168, 218, 0.22), transparent 35%),
-      linear-gradient(160deg, #10234a 0%, theme("colors.layl.DEFAULT") 58%);
-  }
-
-  /* Dynamic aria-busy state drives the spin, not a static class. */
-  .refresh-button[aria-busy="true"] svg {
-    animation: spin 1s linear infinite;
-  }
-
-  /* Pseudo-element artwork: decorative marks with no backing DOM node. */
-  .light-path::before {
-    position: absolute;
-    top: 10px;
-    right: 7px;
-    left: 7px;
-    height: 2px;
-    content: "";
-    background: linear-gradient(
-      90deg,
-      theme("colors.fajr.DEFAULT"),
-      theme("colors.sama"),
-      theme("colors.raml.DEFAULT")
-    );
-    opacity: 0.68;
-  }
-  .prayer-node::before {
-    width: 8px;
-    height: 8px;
-    content: "";
-    border: 2px solid theme("colors.layl.soft");
-    border-radius: 999px;
-    background: theme("colors.sama");
-    box-shadow: 0 0 0 1px rgba(77, 168, 218, 0.6);
-  }
-  .prayer-node.is-marker::before {
-    width: 6px;
-    height: 6px;
-    margin-top: 1px;
-    border-color: theme("colors.layl.soft");
-    background: theme("colors.raml.DEFAULT");
-    box-shadow: none;
-  }
-  .prayer-node.is-next::before {
-    width: 13px;
-    height: 13px;
-    margin-top: -3px;
-    border-color: theme("colors.raml.DEFAULT");
-    background: theme("colors.fajr.DEFAULT");
-    box-shadow: 0 0 0 4px rgba(233, 128, 110, 0.18);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
 import {
   CITIES,
   PRAYER_KEYS,
@@ -20,6 +20,7 @@ import {
   type PrayerDay,
   type SupportedLocale,
 } from "@pray-times/core";
+import { Reveal } from "./Reveal";
 
 const REPOSITORY_URL = "https://github.com/DevM7mdAli/Pray-Times";
 const EXTENSION_URL = `${REPOSITORY_URL}/releases/latest`;
@@ -289,6 +290,46 @@ function CheckIcon({ className = "" }: { className?: string }) {
   );
 }
 
+/** Page-content column, shared by every top-level section. */
+function Shell({
+  as: Tag = "section",
+  className = "",
+  children,
+  ...rest
+}: {
+  as?: "section" | "header";
+  className?: string;
+  children: ReactNode;
+} & Omit<HTMLAttributes<HTMLElement>, "className" | "children">) {
+  return (
+    <Tag className={`mx-auto w-shell max-mobile:w-[calc(100%-32px)] ${className}`} {...rest}>
+      {children}
+    </Tag>
+  );
+}
+
+/** Small all-caps label above a section heading, with its leading hairline. */
+function Eyebrow({ tone, children }: { tone: "raml" | "fajr"; children: ReactNode }) {
+  return (
+    <p
+      className={`mb-[18px] mt-0 flex items-center gap-[9px] text-11 font-extrabold tracking-[0.075em] ${
+        tone === "raml" ? "text-raml" : "text-fajr"
+      }`}
+    >
+      <span
+        className="block h-px w-7 bg-[image:linear-gradient(90deg,transparent,currentColor)]"
+        aria-hidden="true"
+      />
+      {children}
+    </p>
+  );
+}
+
+const HEADING = "m-0 font-display font-bold tracking-[-0.045em]";
+const BUTTON =
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-13 px-[15px] py-2.5 text-13 font-extrabold transition-[transform,box-shadow,background] duration-200 hover:-translate-y-0.5 hover:shadow-lift";
+const BUTTON_PRIMARY = `${BUTTON} bg-raml text-layl shadow-[inset_0_1px_rgba(255,255,255,0.55),0_8px_18px_rgba(235,194,118,0.25)]`;
+
 function prayerCard(
   day: PrayerDay | undefined,
   loading: boolean,
@@ -299,16 +340,16 @@ function prayerCard(
   if (loading) {
     return (
       <div className="grid min-h-[250px] place-content-center justify-items-center text-center text-muted">
-        <span className="size-[38px] rotate-45 animate-[float_2.6s_ease-in-out_infinite] rounded-[50%_50%_50%_6px] border-8 border-sama" />
-        <p className="mb-[3px] mt-3 font-display text-15 text-nur">{copy.loadingDay}</p>
+        <span className="size-[38px] rotate-45 animate-[float_2.6s_ease-in-out_infinite] rounded-orb border-8 border-sama" />
+        <p className="mb-0.75 mt-3 font-display text-15 text-nur">{copy.loadingDay}</p>
       </div>
     );
   }
   if (failed || !day) {
     return (
       <div className="grid min-h-[250px] place-content-center justify-items-center text-center text-muted">
-        <span className="size-[38px] rotate-45 rounded-[50%_50%_50%_6px] border-8 border-fajr" />
-        <p className="mb-[3px] mt-3 font-display text-15 text-nur">{copy.unavailableTimes}</p>
+        <span className="size-[38px] rotate-45 rounded-orb border-8 border-fajr" />
+        <p className="mb-0.75 mt-3 font-display text-15 text-nur">{copy.unavailableTimes}</p>
         <span className="text-11">{copy.doNotShowUnverified}</span>
       </div>
     );
@@ -336,7 +377,7 @@ function prayerCard(
         </p>
       </div>
       <div
-        className="preview-path relative mt-[18px] grid grid-cols-5 gap-[3px]"
+        className="relative mt-[18px] grid grid-cols-5 gap-0.75 before:absolute before:inset-x-2 before:top-[7px] before:z-0 before:h-0.5 before:bg-[image:linear-gradient(90deg,theme(colors.fajr.DEFAULT),theme(colors.sama),theme(colors.raml.DEFAULT))] before:opacity-75 before:content-['']"
         aria-label={copy.prayerPath}
       >
         {prayerKeysForCity(day.city).map((key) => {
@@ -345,8 +386,8 @@ function prayerCard(
             <div
               className={
                 isCurrent
-                  ? "z-1 relative grid justify-items-center gap-[5px] text-center text-10 font-extrabold text-nur max-mobile:text-[8px]"
-                  : "z-1 relative grid justify-items-center gap-[5px] text-center text-10 text-muted max-mobile:text-[8px]"
+                  ? "z-1 relative grid justify-items-center gap-1.25 text-center text-10 font-extrabold text-nur max-mobile:text-[8px]"
+                  : "z-1 relative grid justify-items-center gap-1.25 text-center text-10 text-muted max-mobile:text-[8px]"
               }
               key={key}
             >
@@ -354,7 +395,7 @@ function prayerCard(
                 aria-hidden="true"
                 className={
                   isCurrent
-                    ? "mt-[-3px] h-[13px] w-[13px] rounded-full border-raml bg-fajr shadow-[0_0_0_4px_rgba(233,128,110,0.18)]"
+                    ? "-mt-0.75 h-[13px] w-[13px] rounded-full border-raml bg-fajr shadow-[0_0_0_4px_rgba(233,128,110,0.18)]"
                     : "size-2 rounded-full border-2 border-layl-soft bg-sama shadow-[0_0_0_1px_rgba(77,168,218,0.6)]"
                 }
               />
@@ -372,7 +413,6 @@ function prayerCard(
 }
 
 export function App() {
-  const shellRef = useRef<HTMLDivElement>(null);
   const [locale, setLocale] = useState<SupportedLocale>(initialLocale);
   const [cityId, setCityId] = useState("riyadh");
   const [day, setDay] = useState<PrayerDay>();
@@ -382,32 +422,6 @@ export function App() {
 
   const copy = COPY[locale];
   const city = useMemo(() => cityById(cityId) ?? CITIES[0], [cityId]);
-
-  useLayoutEffect(() => {
-    const shell = shellRef.current;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!shell || reducedMotion || !("IntersectionObserver" in window)) return;
-
-    const targets = Array.from(shell.querySelectorAll<HTMLElement>("[data-reveal]"));
-    shell.classList.add("motion-ready");
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          entry.target.classList.add("is-revealed");
-          observer.unobserve(entry.target);
-        }
-      },
-      { rootMargin: "0px 0px -8%", threshold: 0.12 }
-    );
-
-    targets.forEach((target) => observer.observe(target));
-    return () => {
-      observer.disconnect();
-      shell.classList.remove("motion-ready");
-    };
-  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -461,11 +475,12 @@ export function App() {
   }, [city]);
 
   return (
-    <div ref={shellRef} className="overflow-hidden bg-nur antialiased">
-      <header
-        className="section-wrap relative z-[5] flex min-h-[85px] items-center justify-between gap-5 max-mobile:min-h-[72px]"
-        data-reveal="down"
-        style={{ "--reveal-delay": "30ms" } as CSSProperties}
+    <div className="overflow-hidden bg-nur antialiased">
+      <Reveal
+        as="header"
+        variant="down"
+        delay={30}
+        className="relative z-[5] mx-auto flex min-h-[85px] w-shell items-center justify-between gap-5 max-mobile:min-h-[72px] max-mobile:w-[calc(100%-32px)]"
       >
         <a
           className="inline-flex items-center gap-2.5 font-display text-base font-bold"
@@ -499,22 +514,19 @@ export function App() {
             {copy.languageShort}
           </button>
           <a
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-13 bg-layl px-[15px] py-2.5 text-13 font-extrabold text-nur transition-[transform,box-shadow,background] duration-200 hover:-translate-y-0.5 hover:shadow-[0_13px_24px_rgba(11,23,54,0.2)] max-mobile:px-3 max-mobile:text-11"
+            className={`${BUTTON} bg-layl text-nur max-mobile:px-3 max-mobile:text-11`}
             href={TODAY_URL}
           >
             {copy.useOnWeb} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
           </a>
         </div>
-      </header>
+      </Reveal>
 
       <main id="top">
-        <section className="section-wrap grid min-h-[650px] grid-cols-[0.94fr_1.06fr] items-center gap-[clamp(45px,8vw,100px)] pb-[85px] pt-[65px] max-tablet:grid-cols-1 max-tablet:pb-20 max-tablet:pt-[50px]">
-          <div data-reveal="up" style={{ "--reveal-delay": "110ms" } as CSSProperties}>
-            <p className="eyebrow text-raml">
-              <span className="block h-px w-7 bg-[linear-gradient(90deg,transparent,currentColor)]" />{" "}
-              {copy.heroEyebrow}
-            </p>
-            <h1 className="heading-display m-0 text-display-hero text-layl">
+        <Shell className="grid min-h-[650px] grid-cols-[0.94fr_1.06fr] items-center gap-[clamp(45px,8vw,100px)] pb-[85px] pt-[65px] max-tablet:grid-cols-1 max-tablet:pb-20 max-tablet:pt-[50px]">
+          <Reveal delay={110}>
+            <Eyebrow tone="raml">{copy.heroEyebrow}</Eyebrow>
+            <h1 className={`${HEADING} text-display-xl text-layl`}>
               {locale === "ar" ? (
                 <>
                   اعرف الصلاة القادمة،
@@ -533,10 +545,7 @@ export function App() {
               {copy.heroLead}
             </p>
             <div className="mt-[31px] flex flex-wrap items-center gap-[21px]">
-              <a
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-13 bg-raml px-[15px] py-2.5 text-13 font-extrabold text-layl shadow-[inset_0_1px_rgba(255,255,255,0.55),0_8px_18px_rgba(235,194,118,0.25)] transition-[transform,box-shadow,background] duration-200 hover:-translate-y-0.5 hover:shadow-[0_13px_24px_rgba(11,23,54,0.2)]"
-                href={TODAY_URL}
-              >
+              <a className={BUTTON_PRIMARY} href={TODAY_URL}>
                 {copy.useOnWeb} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
               </a>
               <a
@@ -551,19 +560,19 @@ export function App() {
             <p className="mb-0 mt-5 inline-flex items-center gap-[7px] text-xs text-ink-faint">
               <CheckIcon className="size-[15px] stroke-sama stroke-[2.2]" /> {copy.localOnly}
             </p>
-          </div>
+          </Reveal>
 
-          <div
+          <Reveal
+            variant="scale"
+            delay={190}
             className="relative w-[min(100%,493px)] justify-self-end max-tablet:justify-self-start"
-            data-reveal="scale"
-            style={{ "--reveal-delay": "190ms" } as CSSProperties}
           >
             <div
-              className="absolute inset-x-[-12%] bottom-[-8%] top-[8%] z-0 animate-[aura-breathe_6s_ease-in-out_infinite] rounded-full bg-[radial-gradient(ellipse,rgba(77,168,218,0.23),transparent_66%)] blur-lg"
+              className="absolute inset-x-[-12%] bottom-[-8%] top-[8%] z-0 animate-aura-breathe rounded-full bg-[image:radial-gradient(ellipse,rgba(77,168,218,0.23),transparent_66%)] blur-lg"
               aria-hidden="true"
             />
             <section
-              className="relative z-[1] min-h-[440px] overflow-hidden rounded-[28px] border border-nur/[0.18] bg-[radial-gradient(circle_at_50%_-15%,rgba(77,168,218,0.33),transparent_36%),linear-gradient(150deg,#173267,#0b1736_61%)] p-[22px] text-nur shadow-[0_35px_70px_-34px_rgba(11,23,54,0.52),inset_0_1px_rgba(255,255,255,0.13)] max-mobile:min-h-[416px] max-mobile:rounded-22 max-mobile:p-[17px]"
+              className="relative z-[1] min-h-[440px] overflow-hidden rounded-[28px] border border-nur/[0.18] bg-layl bg-[image:radial-gradient(circle_at_50%_-15%,rgba(77,168,218,0.33),transparent_36%),linear-gradient(150deg,theme(colors.layl.lift),theme(colors.layl.DEFAULT)_61%)] p-[22px] text-nur shadow-[0_35px_70px_-34px_rgba(11,23,54,0.52),inset_0_1px_rgba(255,255,255,0.13)] max-mobile:min-h-[416px] max-mobile:rounded-22 max-mobile:p-[17px]"
               aria-label={copy.livePreview}
             >
               <div className="flex items-center justify-between gap-3">
@@ -576,7 +585,7 @@ export function App() {
                     {copy.appName}
                   </span>
                 </div>
-                <span className="live-dot inline-flex items-center gap-1.5 text-10 text-nur/85">
+                <span className="inline-flex items-center gap-1.5 text-10 text-nur/85 before:block before:size-1.5 before:animate-live-pulse before:rounded-full before:bg-fajr before:shadow-[0_0_0_4px_rgba(233,128,110,0.13)] before:content-['']">
                   {copy.liveLabel}
                 </span>
               </div>
@@ -597,38 +606,31 @@ export function App() {
               </label>
               {prayerCard(day, loading, failed, locale, copy)}
             </section>
-          </div>
-        </section>
+          </Reveal>
+        </Shell>
 
-        <section
+        <Shell
           id="features"
-          className="section-wrap pb-[115px] pt-[125px] max-tablet:pb-20 max-tablet:pt-[90px] max-mobile:pb-[65px] max-mobile:pt-[75px]"
+          className="pb-[115px] pt-[125px] max-tablet:pb-20 max-tablet:pt-[90px] max-mobile:pb-[65px] max-mobile:pt-[75px]"
         >
-          <div
-            className="grid grid-cols-[1fr_0.82fr] items-end gap-[clamp(40px,8vw,110px)] max-tablet:grid-cols-1 max-tablet:gap-7"
-            data-reveal="up"
-          >
+          <Reveal className="grid grid-cols-[1fr_0.82fr] items-end gap-[clamp(40px,8vw,110px)] max-tablet:grid-cols-1 max-tablet:gap-7">
             <div>
-              <p className="eyebrow text-fajr">
-                <span className="block h-px w-7 bg-[linear-gradient(90deg,transparent,currentColor)]" />{" "}
-                {copy.featuresEyebrow}
-              </p>
-              <h2 className="heading-display m-0 max-w-[650px] text-display-section text-layl">
+              <Eyebrow tone="fajr">{copy.featuresEyebrow}</Eyebrow>
+              <h2 className={`${HEADING} max-w-[650px] text-display-lg text-layl`}>
                 {copy.featuresTitle}
               </h2>
             </div>
             <p className="m-0 max-w-[480px] text-15 leading-[1.9] text-ink-soft">
               {copy.featuresIntro}
             </p>
-          </div>
+          </Reveal>
 
-          <div
+          <Reveal
+            delay={90}
             className="mt-[54px] grid grid-cols-[0.78fr_1.22fr] gap-px overflow-hidden rounded-22 border border-line bg-line max-mobile:mt-[38px] max-mobile:grid-cols-1"
             aria-label={copy.featuresTitle}
-            data-reveal="up"
-            style={{ "--reveal-delay": "90ms" } as CSSProperties}
           >
-            <div className="min-h-[135px] bg-surface-panel px-[30px] py-[26px]">
+            <div className="min-h-[135px] bg-surface-panel px-7.5 py-[26px]">
               <span className="text-10 font-extrabold uppercase tracking-[0.08em] text-fajr">
                 {copy.beforeLabel}
               </span>
@@ -636,7 +638,7 @@ export function App() {
                 {copy.beforeText}
               </p>
             </div>
-            <div className="min-h-[135px] bg-layl-soft bg-[image:radial-gradient(circle_at_85%_-40%,rgba(77,168,218,0.42),transparent_43%)] px-[30px] py-[26px] text-nur">
+            <div className="min-h-[135px] bg-layl-soft bg-[image:radial-gradient(circle_at_85%_-40%,rgba(77,168,218,0.42),transparent_43%)] px-7.5 py-[26px] text-nur">
               <span className="text-10 font-extrabold uppercase tracking-[0.08em] text-raml">
                 {copy.nowLabel}
               </span>
@@ -644,84 +646,67 @@ export function App() {
                 {copy.nowText}
               </p>
             </div>
-          </div>
+          </Reveal>
 
           <div className="mt-4 grid grid-cols-3 gap-[15px] max-tablet:grid-cols-2 max-mobile:grid-cols-1">
             {FEATURES[locale].map((feature, index) => (
-              <article
-                className="feature-card group relative min-h-[260px] overflow-hidden rounded-20 border border-line bg-white/[0.62] p-[30px] transition-[transform,border-color,box-shadow] duration-200 hover:translate-y-[-3px] hover:border-line-hover hover:shadow-[0_18px_35px_-28px_rgba(11,23,54,0.58)] max-mobile:min-h-0 max-mobile:p-[25px]"
-                key={index}
-                data-reveal="up"
-                style={
-                  {
-                    "--reveal-delay": index % 3 === 1 ? "70ms" : index % 3 === 2 ? "140ms" : "0ms",
-                  } as CSSProperties
-                }
-              >
-                <div
-                  className="mb-[30px] grid size-[42px] place-items-center rounded-13 border border-line-soft bg-surface-chip font-display text-11 font-bold text-layl transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:-rotate-3 rtl:group-hover:rotate-3"
-                  aria-hidden="true"
-                >
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-                <span className="text-10 font-extrabold uppercase tracking-[0.08em] text-fajr">
-                  {feature.tag}
-                </span>
-                <h3 className="mb-0 mt-[11px] font-display text-19 leading-[1.45] text-layl">
-                  {feature.title}
-                </h3>
-                <p className="mb-0 mt-[11px] text-13 leading-[1.8] text-ink-faint">
-                  {feature.body}
-                </p>
-              </article>
+              <Reveal key={index} delay={index % 3 === 1 ? 70 : index % 3 === 2 ? 140 : 0}>
+                <article className="group relative h-full min-h-[260px] overflow-hidden rounded-20 border border-line bg-white/[0.62] p-7.5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.75 hover:border-line-hover hover:shadow-[0_18px_35px_-28px_rgba(11,23,54,0.58)] max-mobile:min-h-0 max-mobile:p-[25px]">
+                  <div
+                    className="mb-7.5 grid size-[42px] place-items-center rounded-13 border border-line-soft bg-surface-chip font-display text-11 font-bold text-layl transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:-rotate-3 rtl:group-hover:rotate-3"
+                    aria-hidden="true"
+                  >
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+                  <span className="text-10 font-extrabold uppercase tracking-[0.08em] text-fajr">
+                    {feature.tag}
+                  </span>
+                  <h3 className="mb-0 mt-[11px] font-display text-19 leading-[1.45] text-layl">
+                    {feature.title}
+                  </h3>
+                  <p className="mb-0 mt-[11px] text-13 leading-[1.8] text-ink-faint">
+                    {feature.body}
+                  </p>
+                </article>
+              </Reveal>
             ))}
           </div>
-        </section>
+        </Shell>
 
         <section
           className="grid min-h-[125px] grid-cols-[0.8fr_1.2fr] items-center bg-layl px-[max(24px,calc((100vw-1160px)/2))] text-nur max-tablet:grid-cols-1 max-tablet:gap-[22px] max-tablet:py-8 max-mobile:px-4"
           aria-label={copy.prayerPath}
         >
-          <p className="m-0 font-display text-xl font-bold max-mobile:text-17" data-reveal="up">
+          <Reveal as="p" className="m-0 font-display text-xl font-bold max-mobile:text-17">
             {copy.daylineLead} <span className="text-raml">{copy.daylineAccent}</span>
-          </p>
-          <div
-            className="dayline-track relative grid grid-cols-5 gap-1 pt-[21px]"
-            data-reveal="up"
-            style={{ "--reveal-delay": "90ms" } as CSSProperties}
+          </Reveal>
+          <Reveal
+            delay={90}
+            className="relative grid grid-cols-5 gap-1 pt-[21px] before:absolute before:inset-x-0 before:top-[7px] before:h-0.5 before:animate-path-flow before:bg-[image:linear-gradient(90deg,theme(colors.fajr.DEFAULT),theme(colors.sama)_53%,theme(colors.raml.DEFAULT))] before:bg-[length:220%_100%] before:content-['']"
           >
             {PRAYER_KEYS.map((key) => (
               <span
-                className="relative text-center text-11 text-nur/80 max-mobile:text-10"
+                className="relative text-center text-11 text-nur/80 before:absolute before:end-[calc(50%-4px)] before:top-[-17px] before:size-2 before:rounded-full before:border-2 before:border-layl before:bg-sama before:content-[''] max-mobile:text-10"
                 key={key}
               >
                 {prayerName(key, locale)}
               </span>
             ))}
-          </div>
+          </Reveal>
         </section>
 
-        <section
+        <Shell
           id="method"
-          className="section-wrap grid grid-cols-[0.9fr_1.1fr] gap-[95px] py-[130px] max-tablet:grid-cols-1 max-tablet:gap-[45px] max-tablet:py-[85px] max-mobile:py-[70px]"
+          className="grid grid-cols-[0.9fr_1.1fr] gap-[95px] py-[130px] max-tablet:grid-cols-1 max-tablet:gap-[45px] max-tablet:py-[85px] max-mobile:py-[70px]"
         >
-          <div data-reveal="up" style={{ "--reveal-delay": "110ms" } as CSSProperties}>
-            <p className="eyebrow text-fajr">
-              <span className="block h-px w-7 bg-[linear-gradient(90deg,transparent,currentColor)]" />{" "}
-              {copy.methodEyebrow}
-            </p>
-            <h2 className="heading-display m-0 text-display-section-alt text-layl">
-              {copy.methodLead}
-            </h2>
+          <Reveal delay={110}>
+            <Eyebrow tone="fajr">{copy.methodEyebrow}</Eyebrow>
+            <h2 className={`${HEADING} text-display-lg text-layl`}>{copy.methodLead}</h2>
             <p className="mb-0 mt-[22px] max-w-[420px] leading-[1.9] text-ink-soft">
               {copy.methodBody}
             </p>
-          </div>
-          <div
-            className="border-t border-line"
-            data-reveal="up"
-            style={{ "--reveal-delay": "90ms" } as CSSProperties}
-          >
+          </Reveal>
+          <Reveal delay={90} className="border-t border-line">
             <article className="grid grid-cols-[44px_1fr] gap-4 border-b border-line py-[25px]">
               <PinIcon className="size-[33px] rounded-11 bg-surface-chip stroke-[1.7] p-[7px] text-layl" />
               <div>
@@ -749,56 +734,46 @@ export function App() {
                 </p>
               </div>
             </article>
-          </div>
-        </section>
+          </Reveal>
+        </Shell>
 
-        <section
+        <Shell
           id="privacy"
-          className="section-wrap max-mobile:rounded-21 grid grid-cols-[255px_1fr] items-center gap-[90px] rounded-27 bg-layl-soft p-[70px] text-nur max-tablet:grid-cols-1 max-tablet:gap-7 max-tablet:px-[34px] max-tablet:py-[45px] max-mobile:px-6 max-mobile:py-[35px]"
+          className="grid grid-cols-[255px_1fr] items-center gap-[90px] rounded-27 bg-layl-soft p-[70px] text-nur max-tablet:grid-cols-1 max-tablet:gap-7 max-tablet:px-[34px] max-tablet:py-[45px] max-mobile:rounded-21 max-mobile:px-6 max-mobile:py-[35px]"
         >
-          <div
-            className="privacy-symbol relative flex h-[170px] items-end justify-center gap-2 max-tablet:h-[120px] max-tablet:w-[200px]"
+          <Reveal
+            variant="scale"
             aria-hidden="true"
-            data-reveal="scale"
+            className="relative flex h-[170px] items-end justify-center gap-2 before:absolute before:left-1/2 before:top-[10px] before:size-[84px] before:-translate-x-1/2 before:animate-compass-breathe before:rounded-t-[84px] before:border-[16px] before:border-b-0 before:border-sama before:content-[''] max-tablet:h-[120px] max-tablet:w-[200px] max-tablet:before:top-0"
           >
-            <span className="h-[11px] w-[11px] rounded-full border-[3px] border-layl-soft bg-raml shadow-[0_0_0_1px_#f2d6a2]" />
-            <span className="h-[11px] w-[11px] rounded-full border-[3px] border-layl-soft bg-raml shadow-[0_0_0_1px_#f2d6a2]" />
-            <span className="mb-[3px] h-[15px] w-[15px] rounded-full border-[3px] border-layl-soft bg-fajr shadow-[0_0_0_5px_rgba(233,128,110,0.15)]" />
-            <span className="h-[11px] w-[11px] rounded-full border-[3px] border-layl-soft bg-raml shadow-[0_0_0_1px_#f2d6a2]" />
-            <span className="h-[11px] w-[11px] rounded-full border-[3px] border-layl-soft bg-raml shadow-[0_0_0_1px_#f2d6a2]" />
-          </div>
-          <div data-reveal="up" style={{ "--reveal-delay": "90ms" } as CSSProperties}>
-            <p className="eyebrow text-raml">
-              <span className="block h-px w-7 bg-[linear-gradient(90deg,transparent,currentColor)]" />{" "}
-              {copy.privacyEyebrow}
-            </p>
-            <h2 className="heading-display m-0 text-display-section-alt text-nur">
-              {copy.privacyLead}
-            </h2>
+            <span className="h-[11px] w-[11px] rounded-full border-[3px] border-layl-soft bg-raml shadow-[0_0_0_1px_theme(colors.raml.DEFAULT)]" />
+            <span className="h-[11px] w-[11px] rounded-full border-[3px] border-layl-soft bg-raml shadow-[0_0_0_1px_theme(colors.raml.DEFAULT)]" />
+            <span className="mb-0.75 h-[15px] w-[15px] rounded-full border-[3px] border-layl-soft bg-fajr shadow-[0_0_0_5px_rgba(233,128,110,0.15)]" />
+            <span className="h-[11px] w-[11px] rounded-full border-[3px] border-layl-soft bg-raml shadow-[0_0_0_1px_theme(colors.raml.DEFAULT)]" />
+            <span className="h-[11px] w-[11px] rounded-full border-[3px] border-layl-soft bg-raml shadow-[0_0_0_1px_theme(colors.raml.DEFAULT)]" />
+          </Reveal>
+          <Reveal delay={90}>
+            <Eyebrow tone="raml">{copy.privacyEyebrow}</Eyebrow>
+            <h2 className={`${HEADING} text-display-lg text-nur`}>{copy.privacyLead}</h2>
             <p className="mb-0 mt-[22px] max-w-[420px] leading-[1.9] text-nur/85">
               {copy.privacyBody}
             </p>
-          </div>
-        </section>
+          </Reveal>
+        </Shell>
 
-        <section className="section-wrap grid grid-cols-[0.8fr_1.2fr] items-center gap-[100px] py-[135px] max-tablet:grid-cols-1 max-tablet:gap-[45px] max-tablet:py-[85px] max-mobile:py-[70px]">
-          <div data-reveal="up" style={{ "--reveal-delay": "110ms" } as CSSProperties}>
-            <p className="eyebrow text-fajr">
-              <span className="block h-px w-7 bg-[linear-gradient(90deg,transparent,currentColor)]" />{" "}
-              {copy.verseEyebrow}
-            </p>
-            <h2 className="heading-display m-0 text-display-section-alt text-layl">
-              {copy.verseLead}
-            </h2>
-          </div>
-          <blockquote
+        <Shell className="grid grid-cols-[0.8fr_1.2fr] items-center gap-[100px] py-[135px] max-tablet:grid-cols-1 max-tablet:gap-[45px] max-tablet:py-[85px] max-mobile:py-[70px]">
+          <Reveal delay={110}>
+            <Eyebrow tone="fajr">{copy.verseEyebrow}</Eyebrow>
+            <h2 className={`${HEADING} text-display-lg text-layl`}>{copy.verseLead}</h2>
+          </Reveal>
+          <Reveal
+            as="blockquote"
+            delay={90}
             className="m-0 border-s-2 border-raml ps-[35px] max-mobile:ps-[22px]"
-            data-reveal="up"
-            style={{ "--reveal-delay": "90ms" } as CSSProperties}
           >
             {ayah ? (
               <>
-                <p className="m-0 font-quran text-display-ayah text-layl-soft" lang="ar" dir="rtl">
+                <p className="m-0 font-quran text-display-md text-layl-soft" lang="ar" dir="rtl">
                   ﴿{ayah.text}﴾
                 </p>
                 <cite className="mt-3 block font-display text-xs font-bold not-italic text-fajr">
@@ -810,7 +785,7 @@ export function App() {
               </>
             ) : (
               <>
-                <p className="m-0 font-body text-display-ayah-translation text-layl-soft">
+                <p className="m-0 font-body text-display-sm text-layl-soft">
                   {copy.verseUnavailable}
                 </p>
                 <cite className="mt-3 block font-display text-xs font-bold not-italic text-fajr">
@@ -818,18 +793,16 @@ export function App() {
                 </cite>
               </>
             )}
-          </blockquote>
-        </section>
+          </Reveal>
+        </Shell>
 
-        <section
-          className="section-wrap grid justify-items-center rounded-[28px_28px_0_0] bg-layl bg-[image:radial-gradient(circle_at_50%_-50%,rgba(77,168,218,0.46),transparent_46%)] px-[25px] py-[125px] text-center text-nur"
-          data-reveal="scale"
+        <Reveal
+          as="section"
+          variant="scale"
+          className="mx-auto grid w-shell justify-items-center rounded-[28px_28px_0_0] bg-layl bg-[image:radial-gradient(circle_at_50%_-50%,rgba(77,168,218,0.46),transparent_46%)] px-[25px] py-[125px] text-center text-nur max-mobile:w-[calc(100%-32px)]"
         >
-          <p className="eyebrow text-raml">
-            <span className="block h-px w-7 bg-[linear-gradient(90deg,transparent,currentColor)]" />{" "}
-            {copy.closingEyebrow}
-          </p>
-          <h2 className="heading-display m-0 max-w-[650px] text-display-hero text-nur">
+          <Eyebrow tone="raml">{copy.closingEyebrow}</Eyebrow>
+          <h2 className={`${HEADING} max-w-[650px] text-display-xl text-nur`}>
             {locale === "ar" ? (
               <>
                 افتح الويب.
@@ -844,13 +817,10 @@ export function App() {
               </>
             )}
           </h2>
-          <a
-            className="mt-8 inline-flex min-h-11 items-center justify-center gap-2 rounded-13 bg-raml px-[15px] py-2.5 text-13 font-extrabold text-layl shadow-[inset_0_1px_rgba(255,255,255,0.55),0_8px_18px_rgba(235,194,118,0.25)] transition-[transform,box-shadow,background] duration-200 hover:-translate-y-0.5 hover:shadow-[0_13px_24px_rgba(11,23,54,0.2)]"
-            href={TODAY_URL}
-          >
+          <a className={`${BUTTON_PRIMARY} mt-8`} href={TODAY_URL}>
             {copy.useOnWeb} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
           </a>
-        </section>
+        </Reveal>
       </main>
 
       <footer className="flex items-center justify-between gap-5 border-t border-nur/10 bg-layl px-[max(24px,calc((100vw-1160px)/2))] py-[28px] text-xs text-muted max-mobile:flex-wrap max-mobile:px-4">
