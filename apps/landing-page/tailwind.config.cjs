@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   presets: [require("../../tailwind.preset.cjs")],
-  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  content: ["./index.html", "./today/index.html", "./src/**/*.{ts,tsx}"],
   plugins: [],
 };
