@@ -2,12 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
-  CITIES,
-  PRAYER_KEYS,
   addDaysToLocalDate,
   allPrayerMethods,
   cityName,
-  cityWithMethod,
   dayTimeline,
   fastingStatusFor,
   formatHijriDate,
@@ -21,15 +18,10 @@ import {
   prayerMethodName,
   prayerNameForCity,
   isPrayerMethodId,
-  parseMethodOverrides,
-  parseSavedCities,
-  resolveCity,
   sunriseName,
-  type City,
-  type PrayerKey,
-  type PrayerMethodId,
 } from "@pray-times/core";
 import { useNow } from "./hooks/useNow";
+import { useDefaultCity, usePreferences, useSelectedCity } from "./stores/preferences";
 import { useDocumentLocale, useLocale, useToggleLocale } from "./i18n/useLocale";
 import { ayahQuery } from "./queries/ayah";
 import { loadStatusFor, prayerDayQuery } from "./queries/prayerDay";
@@ -48,19 +40,6 @@ import {
   testWebPush,
 } from "./lib/web-push";
 
-const CITY_STORAGE_KEY = "pray-times:today-city";
-const ALERT_PRAYERS_STORAGE_KEY = "pray-times:web-alert-prayers";
-const SAVED_CITIES_STORAGE_KEY = "pray-times:saved-places:v1";
-const METHOD_OVERRIDES_STORAGE_KEY = "pray-times:method-overrides:v1";
-
-const ALL_PRAYERS_ENABLED: Record<PrayerKey, boolean> = {
-  Fajr: true,
-  Dhuhr: true,
-  Asr: true,
-  Maghrib: true,
-  Isha: true,
-};
-
 type AlertStatus =
   | "checking"
   | "unconfigured"
@@ -71,76 +50,21 @@ type AlertStatus =
   | "sent"
   | "error";
 
-function initialCity(): string {
-  try {
-    // A saved place is resolved later against the stored list, so any id is
-    // accepted here and falls back to the default if it no longer resolves.
-    const stored = localStorage.getItem(CITY_STORAGE_KEY);
-    if (stored) return stored;
-  } catch {
-    // Riyadh remains the visible default.
-  }
-  return "riyadh";
-}
-
-function initialAlertPrayers(): Record<PrayerKey, boolean> {
-  try {
-    const value = JSON.parse(localStorage.getItem(ALERT_PRAYERS_STORAGE_KEY) ?? "null") as unknown;
-    if (value && typeof value === "object") {
-      const candidate = value as Record<string, unknown>;
-      if (PRAYER_KEYS.every((key) => typeof candidate[key] === "boolean")) {
-        return Object.fromEntries(PRAYER_KEYS.map((key) => [key, candidate[key]])) as Record<
-          PrayerKey,
-          boolean
-        >;
-      }
-    }
-  } catch {
-    // All prayers remain enabled when the stored preference is unavailable.
-  }
-  return { ...ALL_PRAYERS_ENABLED };
-}
-
-function initialMethodOverrides(): Record<string, PrayerMethodId> {
-  try {
-    return parseMethodOverrides(
-      JSON.parse(localStorage.getItem(METHOD_OVERRIDES_STORAGE_KEY) ?? "null")
-    );
-  } catch {
-    // Country defaults apply when the stored choice cannot be read.
-    return {};
-  }
-}
-
-function initialSavedCities(): City[] {
-  try {
-    return parseSavedCities(JSON.parse(localStorage.getItem(SAVED_CITIES_STORAGE_KEY) ?? "null"));
-  } catch {
-    // Built-in cities remain available when storage cannot be read.
-    return [];
-  }
-}
-
 export function TodayApp() {
   const { t } = useTranslation(["today", "common"]);
   const locale = useLocale();
   const toggleLocale = useToggleLocale();
-  const [cityId, setCityId] = useState(initialCity);
-  const [savedCities, setSavedCities] = useState<City[]>(initialSavedCities);
-  const [methodOverrides, setMethodOverrides] =
-    useState<Record<string, PrayerMethodId>>(initialMethodOverrides);
   const [pushApiUrl, setPushApiUrl] = useState<string>();
   const [alertStatus, setAlertStatus] = useState<AlertStatus>("checking");
   const [alertBusy, setAlertBusy] = useState(false);
-  const [enabledPrayers, setEnabledPrayers] = useState(initialAlertPrayers);
+  const enabledPrayers = usePreferences((state) => state.enabledPrayers);
+  const setPrayerEnabled = usePreferences((state) => state.setPrayerEnabled);
+  const methodOverrides = usePreferences((state) => state.methodOverrides);
+  const setMethodOverride = usePreferences((state) => state.setMethodOverride);
   const now = useNow();
 
-  const city = useMemo(() => {
-    const base = resolveCity(cityId, savedCities) ?? CITIES[0]!;
-    // Layered on here so the override reaches the request and the cache check,
-    // not only the selector.
-    return cityWithMethod(base, methodOverrides[base.id]);
-  }, [cityId, methodOverrides, savedCities]);
+  const city = useSelectedCity();
+  const defaultCity = useDefaultCity();
   const visiblePrayerKeys = prayerKeysForCity(city);
   const localDate = city ? localDateFor(city.timeZone, now) : "";
   const alertSettings = useMemo(
@@ -190,17 +114,6 @@ export function TodayApp() {
       active = false;
     };
   }, []); // The initial preferences are synchronized once; later changes use the effect below.
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(CITY_STORAGE_KEY, cityId);
-      localStorage.setItem(ALERT_PRAYERS_STORAGE_KEY, JSON.stringify(enabledPrayers));
-      localStorage.setItem(SAVED_CITIES_STORAGE_KEY, JSON.stringify(savedCities));
-      localStorage.setItem(METHOD_OVERRIDES_STORAGE_KEY, JSON.stringify(methodOverrides));
-    } catch {
-      // Preferences remain available for this visit.
-    }
-  }, [cityId, enabledPrayers, methodOverrides, savedCities]);
 
   useEffect(() => {
     if (!pushApiUrl || (alertStatus !== "enabled" && alertStatus !== "sent")) return;
@@ -328,22 +241,7 @@ export function TodayApp() {
             {t("title")}
           </h1>
           <p className="col-start-1 m-0 text-17 text-muted">{t("subtitle")}</p>
-          <LocationPicker
-            cityId={cityId}
-            savedCities={savedCities}
-            onSelect={setCityId}
-            onSave={(place) =>
-              setSavedCities((current) => {
-                const index = current.findIndex((entry) => entry.id === place.id);
-                if (index === -1) return [...current, place];
-                // A detected place keeps one id as the reader moves, so a fresh
-                // reading replaces the stored one rather than being ignored.
-                const next = [...current];
-                next[index] = place;
-                return next;
-              })
-            }
-          />
+          <LocationPicker />
         </section>
 
         <Card
@@ -412,9 +310,7 @@ export function TodayApp() {
                     className="peer pointer-events-none absolute opacity-0"
                     type="checkbox"
                     checked={enabledPrayers[key]}
-                    onChange={(event) =>
-                      setEnabledPrayers((current) => ({ ...current, [key]: event.target.checked }))
-                    }
+                    onChange={(event) => setPrayerEnabled(key, event.target.checked)}
                   />
                   <span className="block rounded-full border border-nur/[0.13] px-[13px] py-2 text-xs text-muted transition-[border-color,background,color] duration-150 peer-checked:border-raml/[0.42] peer-checked:bg-raml/10 peer-checked:text-raml peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-sama">
                     {prayerNameForCity(key, city, locale)}
@@ -693,22 +589,14 @@ export function TodayApp() {
                     }
                     onChange={(event) => {
                       const chosen = Number(event.target.value);
-                      setMethodOverrides((current) => {
-                        const next = { ...current };
-                        // An empty choice returns the place to its country default.
-                        if (event.target.value === "" || !isPrayerMethodId(chosen))
-                          delete next[city.id];
-                        else next[city.id] = chosen;
-                        return next;
-                      });
+                      // An empty choice returns the place to its country default.
+                      const valid = event.target.value !== "" && isPrayerMethodId(chosen);
+                      setMethodOverride(city.id, valid ? chosen : undefined);
                     }}
                   >
                     <option value="">
                       {t("methodAuto")} —{" "}
-                      {prayerMethodName(
-                        prayerMethodForCity(resolveCity(cityId, savedCities) ?? CITIES[0]!),
-                        locale
-                      )}
+                      {prayerMethodName(prayerMethodForCity(defaultCity), locale)}
                     </option>
                     {allPrayerMethods().map((method) => (
                       <option key={method.id} value={method.id}>

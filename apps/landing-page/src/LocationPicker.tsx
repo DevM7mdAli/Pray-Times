@@ -1,30 +1,19 @@
 import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import {
-  CITIES,
-  cityFromCoordinates,
-  cityName,
-  type City,
-  type PlaceSuggestion,
-} from "@pray-times/core";
+import { CITIES, cityFromCoordinates, cityName, type PlaceSuggestion } from "@pray-times/core";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
 import { useLocale } from "./i18n/useLocale";
 import { MIN_SEARCH_LENGTH, placesQuery } from "./queries/places";
+import { usePreferences } from "./stores/preferences";
 
 type DetectState = "idle" | "detecting" | "denied" | "failed" | "unsupported";
 
-export function LocationPicker({
-  cityId,
-  savedCities,
-  onSelect,
-  onSave,
-}: {
-  cityId: string;
-  savedCities: readonly City[];
-  onSelect: (id: string) => void;
-  onSave: (city: City) => void;
-}) {
+export function LocationPicker() {
+  const cityId = usePreferences((state) => state.cityId);
+  const savedCities = usePreferences((state) => state.savedCities);
+  const onSelect = usePreferences((state) => state.selectCity);
+  const onSave = usePreferences((state) => state.savePlace);
   const { t } = useTranslation(["location", "common"]);
   const locale = useLocale();
   const listId = useId();
