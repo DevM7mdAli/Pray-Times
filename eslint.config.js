@@ -65,7 +65,7 @@ export default tseslint.config(
   },
   tailwindcss.configs["flat/recommended"][0],
   {
-    files: ["tooling/**/*.mjs", "apps/mobile/scripts/**/*.mjs"],
+    files: ["tooling/**/*.mjs", "apps/mobile/scripts/**/*.mjs", "apps/mobile/targets/**/*.js"],
     languageOptions: {
       globals: globals.node,
     },

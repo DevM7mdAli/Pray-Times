@@ -6,8 +6,16 @@ import type { SupportedLocale } from "@pray-times/core";
  * set of strings they need is duplicated here rather than pulling in i18next.
  */
 const WIDGET_LABELS = {
-  en: { nextPrayer: "Next prayer", nextPrayerTomorrow: "Next prayer tomorrow", schedule: "Today’s schedule" },
-  ar: { nextPrayer: "الصلاة القادمة", nextPrayerTomorrow: "الصلاة القادمة غدًا", schedule: "مواقيت اليوم" },
+  en: {
+    nextPrayer: "Next prayer",
+    nextPrayerTomorrow: "Next prayer tomorrow",
+    schedule: "Today’s schedule",
+  },
+  ar: {
+    nextPrayer: "الصلاة القادمة",
+    nextPrayerTomorrow: "الصلاة القادمة غدًا",
+    schedule: "مواقيت اليوم",
+  },
 } as const satisfies Record<SupportedLocale, Record<string, string>>;
 
 export function widgetLabel(

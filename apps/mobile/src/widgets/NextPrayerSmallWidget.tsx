@@ -1,4 +1,4 @@
-'use no memo';
+"use no memo";
 import { formatRemainingTime } from "@pray-times/core";
 import { FlexWidget, TextWidget } from "react-native-android-widget";
 import { widgetLabel } from "./labels";
@@ -24,7 +24,10 @@ export function NextPrayerSmallWidget({ payload }: { payload: WidgetPayload }) {
   const remainingLabel = next ? (
     <TextWidget
       key="remaining"
-      text={formatRemainingTime(Math.max(0, Math.ceil((next.timestampMs - now) / 60_000)), payload.locale)}
+      text={formatRemainingTime(
+        Math.max(0, Math.ceil((next.timestampMs - now) / 60_000)),
+        payload.locale
+      )}
       style={{ fontSize: 13, fontWeight: "700", color: widgetColors.white }}
     />
   ) : null;

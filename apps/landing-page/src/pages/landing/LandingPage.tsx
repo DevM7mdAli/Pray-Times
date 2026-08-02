@@ -9,6 +9,7 @@ import { HeroSection } from "./sections/HeroSection";
 import { MethodSection } from "./sections/MethodSection";
 import { PrivacySection } from "./sections/PrivacySection";
 import { VerseSection } from "./sections/VerseSection";
+import { WidgetSection } from "./sections/WidgetSection";
 
 export function LandingPage() {
   const { t } = useTranslation("landing");
@@ -20,6 +21,7 @@ export function LandingPage() {
       <main id="top">
         <HeroSection />
         <FeaturesSection />
+        <WidgetSection />
         <DaylineSection />
         <MethodSection />
         <PrivacySection />

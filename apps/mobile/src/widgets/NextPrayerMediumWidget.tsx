@@ -1,4 +1,4 @@
-'use no memo';
+"use no memo";
 import { formatRemainingTime } from "@pray-times/core";
 import { FlexWidget, TextWidget } from "react-native-android-widget";
 import { widgetLabel } from "./labels";
@@ -30,7 +30,13 @@ export function NextPrayerMediumWidget({ payload }: { payload: WidgetPayload }) 
         text={next?.name ?? "—"}
         maxLines={1}
         truncate="END"
-        style={{ fontSize: 19, fontWeight: "700", color: widgetColors.white, textAlign: align, marginTop: 2 }}
+        style={{
+          fontSize: 19,
+          fontWeight: "700",
+          color: widgetColors.white,
+          textAlign: align,
+          marginTop: 2,
+        }}
       />
       <TextWidget
         text={next?.time ?? ""}
@@ -38,8 +44,17 @@ export function NextPrayerMediumWidget({ payload }: { payload: WidgetPayload }) 
       />
       {next ? (
         <TextWidget
-          text={formatRemainingTime(Math.max(0, Math.ceil((next.timestampMs - now) / 60_000)), payload.locale)}
-          style={{ fontSize: 12, fontWeight: "700", color: widgetColors.muted, textAlign: align, marginTop: 6 }}
+          text={formatRemainingTime(
+            Math.max(0, Math.ceil((next.timestampMs - now) / 60_000)),
+            payload.locale
+          )}
+          style={{
+            fontSize: 12,
+            fontWeight: "700",
+            color: widgetColors.muted,
+            textAlign: align,
+            marginTop: 6,
+          }}
         />
       ) : null}
     </FlexWidget>
@@ -48,15 +63,29 @@ export function NextPrayerMediumWidget({ payload }: { payload: WidgetPayload }) 
   const divider = (
     <FlexWidget
       key="divider"
-      style={{ width: 1, height: "match_parent", backgroundColor: widgetColors.divider, marginHorizontal: 14 }}
+      style={{
+        width: 1,
+        height: "match_parent",
+        backgroundColor: widgetColors.divider,
+        marginHorizontal: 14,
+      }}
     />
   );
 
   const scheduleBlock = (
-    <FlexWidget key="schedule" style={{ flexDirection: "column", flex: 1, justifyContent: "center" }}>
+    <FlexWidget
+      key="schedule"
+      style={{ flexDirection: "column", flex: 1, justifyContent: "center" }}
+    >
       <TextWidget
         text={widgetLabel(payload.locale, "schedule")}
-        style={{ fontSize: 10, fontWeight: "700", color: widgetColors.muted, textAlign: align, marginBottom: 4 }}
+        style={{
+          fontSize: 10,
+          fontWeight: "700",
+          color: widgetColors.muted,
+          textAlign: align,
+          marginBottom: 4,
+        }}
       />
       {rows.map((row) => (
         <FlexWidget
@@ -77,7 +106,12 @@ export function NextPrayerMediumWidget({ payload }: { payload: WidgetPayload }) 
               text={row.name}
               maxLines={1}
               truncate="END"
-              style={{ fontSize: 13, fontWeight: "700", color: widgetColors.white, textAlign: align }}
+              style={{
+                fontSize: 13,
+                fontWeight: "700",
+                color: widgetColors.white,
+                textAlign: align,
+              }}
             />
           </FlexWidget>
           <TextWidget
