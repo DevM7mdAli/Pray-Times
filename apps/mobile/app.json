@@ -18,11 +18,44 @@
         {
           "locationWhenInUsePermission": "Pray Times uses your location only to calculate and verify prayer times for your current place."
         }
+      ],
+      "@bacons/apple-targets",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "NextPrayerSmall",
+              "label": "Next Prayer",
+              "description": "Shows the next prayer name, time, and countdown.",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "none",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "NextPrayerMedium",
+              "label": "Next Prayer + Schedule",
+              "description": "Shows the next prayer alongside today's remaining schedule.",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "none",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
       ]
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.devm7mdali.praytimes"
+      "bundleIdentifier": "com.devm7mdali.praytimes",
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.devm7mdali.praytimes"]
+      }
     },
     "android": {
       "package": "com.devm7mdali.praytimes"

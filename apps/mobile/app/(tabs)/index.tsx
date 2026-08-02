@@ -28,6 +28,7 @@ import { reconcilePrayerNotifications } from "@/features/notifications/service";
 import { useAyah, useFreshAyahNumber, usePrayerDays } from "@/features/prayer-times/queries";
 import { useAppDirection } from "@/lib/direction";
 import { selectedCityForPreferences, usePreferencesStore } from "@/store/preferences-store";
+import { useSyncWidgets } from "@/widgets/sync";
 
 function useClock() {
   const [now, setNow] = useState(() => new Date());
@@ -75,6 +76,14 @@ export default function TodayScreen() {
     today.data,
     tomorrow.data,
   ]);
+
+  useSyncWidgets({
+    today: today.data,
+    tomorrow: tomorrow.data,
+    city,
+    locale: preferences.locale,
+    isRtl,
+  });
 
   const day = today.data;
   const todayNext = day ? nextPrayerFor(day, now) : undefined;
