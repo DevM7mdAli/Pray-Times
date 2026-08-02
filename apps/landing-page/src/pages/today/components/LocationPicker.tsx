@@ -2,10 +2,10 @@ import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { CITIES, cityFromCoordinates, cityName, type PlaceSuggestion } from "@pray-times/core";
-import { useDebouncedValue } from "./hooks/useDebouncedValue";
-import { useLocale } from "./i18n/useLocale";
-import { MIN_SEARCH_LENGTH, placesQuery } from "./queries/places";
-import { usePreferences } from "./stores/preferences";
+import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
+import { useLocale } from "../../../i18n/useLocale";
+import { MIN_SEARCH_LENGTH, placesQuery } from "../../../queries/places";
+import { usePreferences } from "../../../stores/preferences";
 
 type DetectState = "idle" | "detecting" | "denied" | "failed" | "unsupported";
 
