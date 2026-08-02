@@ -4,6 +4,7 @@ import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { ClosingSection } from "./sections/ClosingSection";
 import { DaylineSection } from "./sections/DaylineSection";
+import { EverywhereSection } from "./sections/EverywhereSection";
 import { FeaturesSection } from "./sections/FeaturesSection";
 import { HeroSection } from "./sections/HeroSection";
 import { MethodSection } from "./sections/MethodSection";
@@ -21,6 +22,7 @@ export function LandingPage() {
       <main id="top">
         <HeroSection />
         <FeaturesSection />
+        <EverywhereSection />
         <WidgetSection />
         <DaylineSection />
         <MethodSection />

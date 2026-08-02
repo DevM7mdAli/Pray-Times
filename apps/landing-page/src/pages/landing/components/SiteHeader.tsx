@@ -26,11 +26,14 @@ export function SiteHeader() {
         <span>{t("common:appName")}</span>
       </a>
       <nav
-        className="flex items-center gap-5 text-13 text-ink max-tablet:hidden"
+        className="flex items-center gap-4 text-13 text-ink max-tablet:hidden"
         aria-label={t("navigationLabel")}
       >
         <a className="hover:text-fajr" href="#features">
           {t("featuresNav")}
+        </a>
+        <a className="hover:text-fajr" href="#everywhere">
+          {t("everywhereNav")}
         </a>
         <a className="hover:text-fajr" href="#widget">
           {t("widgetNav")}
