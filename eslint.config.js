@@ -22,7 +22,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    // Scoped to the two Tailwind apps — elsewhere the plugin has no config to
+    // Scoped to the Tailwind/NativeWind apps — elsewhere the plugin has no config to
     // resolve and only adds noise. The plugin doesn't probe .cjs by default,
     // so each app's config is pointed at explicitly (it extends the shared
     // tailwind.preset.cjs, so this still sees the full custom theme).
@@ -49,9 +49,23 @@ export default tseslint.config(
       "tailwindcss/no-custom-classname": "off",
     },
   },
+  {
+    files: ["apps/mobile/**/*.{ts,tsx}"],
+    ...tailwindcss.configs["flat/recommended"][1],
+    settings: {
+      tailwindcss: { config: path.join(root, "apps/mobile/tailwind.config.cjs") },
+    },
+    rules: {
+      ...tailwindcss.configs["flat/recommended"][1].rules,
+      "tailwindcss/no-custom-classname": "off",
+      // The plugin targets Tailwind 3 ordering; its auto-fix and the Tailwind 4
+      // Prettier formatter conflict. Keep formatting deterministic via Prettier.
+      "tailwindcss/classnames-order": "off",
+    },
+  },
   tailwindcss.configs["flat/recommended"][0],
   {
-    files: ["tooling/**/*.mjs"],
+    files: ["tooling/**/*.mjs", "apps/mobile/scripts/**/*.mjs"],
     languageOptions: {
       globals: globals.node,
     },

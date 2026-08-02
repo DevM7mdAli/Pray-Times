@@ -9,10 +9,13 @@
   "scripts": {
     "dev:landing": "pnpm --filter @pray-times/landing-page dev",
     "dev:extension": "pnpm --filter @pray-times/extension dev",
+    "dev:mobile": "pnpm --filter @pray-times/mobile start",
     "build": "pnpm build:core && pnpm build:extension && pnpm build:landing",
     "build:core": "pnpm --filter @pray-times/core build",
     "build:extension": "pnpm --filter @pray-times/extension build",
     "build:landing": "pnpm --filter @pray-times/landing-page build",
+    "mobile:android": "pnpm --filter @pray-times/mobile android",
+    "mobile:ios": "pnpm --filter @pray-times/mobile ios",
     "check:tailwind": "node tooling/check-tailwind.mjs",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",

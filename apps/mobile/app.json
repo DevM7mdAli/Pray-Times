@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Pray Times",
+    "slug": "pray-times",
+    "scheme": "praytimes",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pray Times uses your location only to calculate and verify prayer times for your current place."
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.devm7mdali.praytimes"
+    },
+    "android": {
+      "package": "com.devm7mdali.praytimes"
+    }
+  }
+}

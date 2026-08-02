@@ -1,6 +1,7 @@
 node_modules
 **/node_modules
 .pnpm-store
+.expo/
 **/dist
 artifacts/*.zip
 artifacts/*.sha256

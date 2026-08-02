@@ -48,7 +48,7 @@ export async function requestJson(url: URL, fetchImpl: FetchLike, retry = true):
     if (error instanceof ProviderError) throw error;
     if (retry) return requestJson(url, fetchImpl, false);
     const message =
-      error instanceof DOMException && error.name === "AbortError"
+      error instanceof Error && error.name === "AbortError"
         ? "The provider did not respond in time"
         : "Could not reach the provider";
     throw new ProviderError(message, true);

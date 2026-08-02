@@ -2,4 +2,6 @@ artifacts/
 CSS/
 JS/
 **/dist/
+apps/mobile/ios/
+apps/mobile/android/
 pnpm-lock.yaml

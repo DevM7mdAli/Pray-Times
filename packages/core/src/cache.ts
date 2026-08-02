@@ -1,5 +1,6 @@
-import { PRAYER_KEYS, type City, type PrayerDay } from "./types.js";
+import { type City, type PrayerDay } from "./types.js";
 import { prayerMethodForCity } from "./cities.js";
+import { prayerDaySchema } from "./validation.js";
 
 /**
  * Whether a value read back from a cache is a day that can actually be used.
@@ -10,17 +11,14 @@ import { prayerMethodForCity } from "./cities.js";
  * formatting.
  */
 export function isUsablePrayerDay(value: unknown): value is PrayerDay {
-  if (!value || typeof value !== "object") return false;
-  const day = value as Partial<PrayerDay>;
-  if (typeof day.requestedDate !== "string" || !day.city || typeof day.city !== "object") {
-    return false;
-  }
-  if (!day.method || typeof day.method.id !== "number") return false;
-  if (!day.timings || typeof day.timings !== "object") return false;
-  return PRAYER_KEYS.every((key) => typeof day.timings?.[key] === "string");
+  return prayerDaySchema.safeParse(value).success;
 }
 
-export type StorageLike = Pick<Storage, "getItem" | "setItem">;
+/** A synchronous key-value adapter; intentionally independent of the DOM Storage type. */
+export type StorageLike = {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+};
 
 const CACHE_PREFIX = "pray-times:prayer-day:";
 
