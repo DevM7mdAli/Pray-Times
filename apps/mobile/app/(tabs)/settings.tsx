@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Switch } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -11,13 +11,12 @@ import {
   prayerMethodName,
   prayerNameForCity,
 } from "@pray-times/core";
-import { Card, Kicker, Screen } from "@/components/ui";
+import { Card, DirectionalStack, Kicker, Screen } from "@/components/ui";
 import { Pressable, Text, View } from "@/components/primitives";
 import {
   disablePrayerNotifications,
   requestNotificationPermission,
 } from "@/features/notifications/service";
-import i18n from "@/lib/i18n";
 import { selectedCityForPreferences, usePreferencesStore } from "@/store/preferences-store";
 
 export default function SettingsScreen() {
@@ -39,10 +38,6 @@ export default function SettingsScreen() {
   const city = useMemo(() => selectedCityForPreferences(preferences), [preferences]);
   const [notificationError, setNotificationError] = useState<string>();
 
-  useEffect(() => {
-    void i18n.changeLanguage(preferences.locale);
-  }, [preferences.locale]);
-
   const changeNotifications = async (enabled: boolean) => {
     setNotificationError(undefined);
     if (!enabled) {
@@ -56,13 +51,15 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <View className="gap-2">
+      <DirectionalStack gap={8}>
         <Kicker>{t("settings")}</Kicker>
         <Text className="text-29 text-nur font-bold">{t("settings")}</Text>
-      </View>
+      </DirectionalStack>
 
       <Card className="gap-4">
-        <Text className="text-17 text-nur font-bold">{t("language")}</Text>
+        <DirectionalStack>
+          <Text className="text-17 text-nur font-bold">{t("language")}</Text>
+        </DirectionalStack>
         <View className="flex-row gap-3">
           {(["en", "ar"] as const).map((locale) => (
             <Pressable
@@ -71,7 +68,8 @@ export default function SettingsScreen() {
               onPress={() => setLocale(locale)}
             >
               <Text
-                className={`text-center font-bold ${preferences.locale === locale ? "text-layl" : "text-nur"}`}
+                align="center"
+                className={`font-bold ${preferences.locale === locale ? "text-layl" : "text-nur"}`}
               >
                 {locale === "ar" ? "العربية" : "English"}
               </Text>
@@ -93,7 +91,9 @@ export default function SettingsScreen() {
           />
         </View>
         {notificationError ? <Text className="text-fajr">{notificationError}</Text> : null}
-        <Text className="text-13 text-muted font-bold">{t("alertMeFor")}</Text>
+        <DirectionalStack>
+          <Text className="text-13 text-muted font-bold">{t("alertMeFor")}</Text>
+        </DirectionalStack>
         {prayerKeysForCity(city).map((key) => (
           <View className="flex-row items-center justify-between py-1" key={key}>
             <Text className="text-nur">{prayerNameForCity(key, city, preferences.locale)}</Text>
@@ -107,8 +107,10 @@ export default function SettingsScreen() {
       </Card>
 
       <Card className="gap-3">
-        <Text className="text-17 text-nur font-bold">{t("calculation")}</Text>
-        <Text className="text-13 text-muted">{cityName(city, preferences.locale)}</Text>
+        <DirectionalStack gap={4}>
+          <Text className="text-17 text-nur font-bold">{t("calculation")}</Text>
+          <Text className="text-13 text-muted">{cityName(city, preferences.locale)}</Text>
+        </DirectionalStack>
         <Pressable
           className="rounded-13 border-nur/15 border px-4 py-3"
           onPress={() => setMethodOverride(city.id)}

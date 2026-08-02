@@ -15,11 +15,18 @@ import {
   prayerNameForCity,
   sunriseName,
 } from "@pray-times/core";
-import { Card, Kicker, OutlineButton, PrimaryButton, Screen } from "@/components/ui";
+import {
+  Card,
+  DirectionalStack,
+  Kicker,
+  OutlineButton,
+  PrimaryButton,
+  Screen,
+} from "@/components/ui";
 import { Pressable, Text, View } from "@/components/primitives";
 import { reconcilePrayerNotifications } from "@/features/notifications/service";
 import { useAyah, useFreshAyahNumber, usePrayerDays } from "@/features/prayer-times/queries";
-import i18n from "@/lib/i18n";
+import { useAppDirection } from "@/lib/direction";
 import { selectedCityForPreferences, usePreferencesStore } from "@/store/preferences-store";
 
 function useClock() {
@@ -33,6 +40,7 @@ function useClock() {
 
 export default function TodayScreen() {
   const { t } = useTranslation();
+  const { isRtl } = useAppDirection();
   const now = useClock();
   const preferences = usePreferencesStore(
     useShallow((state) => ({
@@ -48,10 +56,6 @@ export default function TodayScreen() {
   const { today, tomorrow } = usePrayerDays(city, now);
   const [ayahNumber, refreshAyah] = useFreshAyahNumber();
   const ayah = useAyah(ayahNumber);
-
-  useEffect(() => {
-    void i18n.changeLanguage(preferences.locale);
-  }, [preferences.locale]);
 
   useEffect(() => {
     if (!preferences.notificationsEnabled || !today.data || !tomorrow.data) return;
@@ -77,18 +81,16 @@ export default function TodayScreen() {
   const nextDay = todayNext?.isTomorrow ? tomorrow.data : day;
   const next = nextDay ? nextPrayerFor(nextDay, now) : undefined;
   const fasting = day ? fastingStatusFor(day, now) : undefined;
-  const isRtl = preferences.locale === "ar";
-  const alignment = isRtl ? "text-right" : "text-left";
   const todayError = today.error;
   const zoneMismatch = todayError instanceof VerificationError && todayError.field === "timeZone";
 
   return (
     <Screen>
-      <View className="gap-2">
+      <DirectionalStack gap={8}>
         <Kicker>{t("today")}</Kicker>
-        <Text className={`text-29 text-nur font-bold ${alignment}`}>{t("prayerTimes")}</Text>
-        <Text className={`text-15 text-muted ${alignment}`}>{t("verifiedTimes")}</Text>
-      </View>
+        <Text className="text-29 text-nur font-bold">{t("prayerTimes")}</Text>
+        <Text className="text-15 text-muted">{t("verifiedTimes")}</Text>
+      </DirectionalStack>
 
       <Pressable
         className="rounded-15 border-nur/15 bg-layl-soft flex-row items-center justify-between border p-4"
@@ -100,7 +102,9 @@ export default function TodayScreen() {
             {cityName(city, preferences.locale)}
           </Text>
         </View>
-        <Text className="text-raml">›</Text>
+        <Text className="text-raml" contentDirection="ltr">
+          {isRtl ? "‹" : "›"}
+        </Text>
       </Pressable>
 
       {today.isPending && !day ? (
@@ -112,7 +116,7 @@ export default function TodayScreen() {
 
       {today.isError && !day ? (
         <Card className="items-center gap-4 py-10">
-          <Text className="text-17 text-fajr text-center font-bold">
+          <Text align="center" className="text-17 text-fajr font-bold">
             {zoneMismatch ? t("zoneMismatch") : t("unavailable")}
           </Text>
           <PrimaryButton onPress={() => void today.refetch()}>{t("retry")}</PrimaryButton>
@@ -122,25 +126,25 @@ export default function TodayScreen() {
       {day ? (
         <>
           <Card className="bg-layl-raised gap-5 overflow-hidden">
-            <View className="gap-1">
-              <Text className={`text-13 text-raml font-bold ${alignment}`}>
+            <DirectionalStack gap={4}>
+              <Text className="text-13 text-raml font-bold">
                 {nextDay?.requestedDate !== day.requestedDate
                   ? t("nextPrayerTomorrow")
                   : t("nextPrayer")}
               </Text>
               {next && nextDay ? (
                 <>
-                  <Text className={`text-29 text-nur font-bold ${alignment}`}>
+                  <Text className="text-29 text-nur font-bold">
                     {prayerNameForCity(next.key, nextDay.city, preferences.locale)}
                   </Text>
-                  <Text className={`text-22 text-raml ${alignment}`}>
+                  <Text className="text-22 text-raml">
                     {formatPrayerTime(next.time, preferences.locale)}
                   </Text>
                 </>
               ) : (
                 <Text className="text-17 text-muted">{t("loading")}</Text>
               )}
-            </View>
+            </DirectionalStack>
             {next ? (
               <View className="border-nur/10 flex-row items-center justify-between border-t pt-4">
                 <Text className="text-muted">{t("remaining")}</Text>
@@ -153,11 +157,15 @@ export default function TodayScreen() {
 
           {fasting ? (
             <Card className="border-raml/40 gap-2 border">
-              <Kicker>{preferences.locale === "ar" ? "رمضان" : "Ramadan"}</Kicker>
+              <DirectionalStack>
+                <Kicker>{preferences.locale === "ar" ? "رمضان" : "Ramadan"}</Kicker>
+              </DirectionalStack>
               {fasting.phase === "completed" ? (
-                <Text className={`text-19 text-nur font-bold ${alignment}`}>
-                  {preferences.locale === "ar" ? "تقبل الله صيامكم" : "May your fast be accepted"}
-                </Text>
+                <DirectionalStack>
+                  <Text className="text-19 text-nur font-bold">
+                    {preferences.locale === "ar" ? "تقبل الله صيامكم" : "May your fast be accepted"}
+                  </Text>
+                </DirectionalStack>
               ) : (
                 <View className="flex-row items-baseline justify-between gap-4">
                   <Text className="text-muted">
@@ -218,20 +226,17 @@ export default function TodayScreen() {
           </Card>
 
           {today.isFetching && !today.isPending ? (
-            <Text className={`text-11 text-muted ${alignment}`}>{t("cached")}</Text>
+            <Text className="text-11 text-muted">{t("cached")}</Text>
           ) : null}
 
           <Card className="gap-4">
-            <View className="gap-1">
+            <DirectionalStack gap={4}>
               <Kicker>{preferences.locale === "ar" ? "آية مختارة" : "Selected ayah"}</Kicker>
-              <Text className={`text-22 text-nur font-bold ${alignment}`}>{t("ayah")}</Text>
-            </View>
+              <Text className="text-22 text-nur font-bold">{t("ayah")}</Text>
+            </DirectionalStack>
             {ayah.data ? (
-              <View className="gap-3">
-                <Text
-                  className="text-22 text-nur text-right leading-10"
-                  style={{ writingDirection: "rtl" }}
-                >
+              <DirectionalStack gap={12}>
+                <Text align="right" className="text-22 text-nur leading-10" contentDirection="rtl">
                   ﴿{ayah.data.text}﴾
                 </Text>
                 <Text className="text-fajr">
@@ -240,7 +245,7 @@ export default function TodayScreen() {
                     : ayah.data.surah.name}{" "}
                   · {ayah.data.numberInSurah}
                 </Text>
-              </View>
+              </DirectionalStack>
             ) : (
               <Text className={ayah.isError ? "text-fajr" : "text-muted"}>
                 {ayah.isError ? t("unavailable") : t("loading")}

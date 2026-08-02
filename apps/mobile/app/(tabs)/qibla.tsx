@@ -4,7 +4,7 @@ import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { cityName, compassPointFor, qiblaForCity } from "@pray-times/core";
-import { Card, Kicker, OutlineButton, Screen } from "@/components/ui";
+import { Card, DirectionalStack, Kicker, OutlineButton, Screen } from "@/components/ui";
 import { Text, View } from "@/components/primitives";
 import { selectedCityForPreferences, usePreferencesStore } from "@/store/preferences-store";
 
@@ -59,18 +59,22 @@ export default function QiblaScreen() {
 
   return (
     <Screen>
-      <View className="gap-2">
+      <DirectionalStack gap={8}>
         <Kicker>{t("qibla")}</Kicker>
         <Text className="text-29 text-nur font-bold">
           {t("qiblaFrom", { city: cityName(city, preferences.locale) })}
         </Text>
-      </View>
+      </DirectionalStack>
 
       <Card className="items-center gap-6">
         {qibla.atHaram ? (
-          <View className="gap-2">
-            <Text className="text-22 text-nur text-center font-bold">{t("atHaram")}</Text>
-            <Text className="text-muted text-center">{t("atHaramBody")}</Text>
+          <View className="items-center gap-2">
+            <Text align="center" className="text-22 text-nur font-bold">
+              {t("atHaram")}
+            </Text>
+            <Text align="center" className="text-muted">
+              {t("atHaramBody")}
+            </Text>
           </View>
         ) : (
           <>
@@ -122,22 +126,30 @@ export default function QiblaScreen() {
               </G>
             </Svg>
             <View className="w-full gap-5">
-              <View className="gap-1">
+              <DirectionalStack gap={4}>
                 <Text className="text-11 text-muted">{t("bearing")}</Text>
-                <Text className="text-27 text-raml font-bold">
+                <Text className="text-27 text-raml font-bold" contentDirection="ltr">
                   {Math.round(qibla.bearing)}° · {compassPointFor(qibla.bearing)}
                 </Text>
-              </View>
-              <View className="gap-1">
+              </DirectionalStack>
+              <DirectionalStack gap={4}>
                 <Text className="text-11 text-muted">{t("distance")}</Text>
-                <Text className="text-27 text-raml font-bold">{distance} km</Text>
-              </View>
+                <Text className="text-27 text-raml font-bold" contentDirection="ltr">
+                  {distance} km
+                </Text>
+              </DirectionalStack>
             </View>
             <OutlineButton onPress={() => void enableCompass()}>{t("alignCompass")}</OutlineButton>
             {isAligned ? (
-              <Text className="text-muted text-center">{t("compassActive")}</Text>
+              <Text align="center" className="text-muted">
+                {t("compassActive")}
+              </Text>
             ) : null}
-            {compassError ? <Text className="text-fajr text-center">{compassError}</Text> : null}
+            {compassError ? (
+              <Text align="center" className="text-fajr">
+                {compassError}
+              </Text>
+            ) : null}
           </>
         )}
       </Card>

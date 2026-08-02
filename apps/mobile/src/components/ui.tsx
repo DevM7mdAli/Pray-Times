@@ -1,15 +1,29 @@
 import type { ReactNode } from "react";
+import { useWindowDimensions, View as NativeView } from "react-native";
 import { Pressable, SafeAreaView, ScrollView, Text, View } from "@/components/primitives";
+import { useAppDirection } from "@/lib/direction";
 
 export function Screen({ children }: { children: ReactNode }) {
+  const { viewStyle } = useAppDirection();
+  const { width } = useWindowDimensions();
+
   return (
-    <SafeAreaView className="bg-layl flex-1">
+    <SafeAreaView className="bg-layl flex-1" style={viewStyle}>
       <ScrollView
         className="flex-1"
-        contentContainerClassName="gap-5 px-5 pb-10 pt-5"
+        contentContainerClassName="pb-10 pt-5"
         showsVerticalScrollIndicator={false}
       >
-        {children}
+        <NativeView
+          style={{
+            alignSelf: "flex-start",
+            gap: 20,
+            marginHorizontal: 20,
+            width: Math.max(0, width - 40),
+          }}
+        >
+          {children}
+        </NativeView>
       </ScrollView>
     </SafeAreaView>
   );
@@ -17,6 +31,23 @@ export function Screen({ children }: { children: ReactNode }) {
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <View className={`rounded-22 bg-layl-soft p-5 ${className}`}>{children}</View>;
+}
+
+export function DirectionalStack({ children, gap = 0 }: { children: ReactNode; gap?: number }) {
+  const { isRtl } = useAppDirection();
+  return (
+    <NativeView
+      style={{
+        alignItems: "flex-start",
+        alignSelf: "stretch",
+        direction: isRtl ? "rtl" : "ltr",
+        gap,
+        width: "100%",
+      }}
+    >
+      {children}
+    </NativeView>
+  );
 }
 
 export function Kicker({ children }: { children: ReactNode }) {

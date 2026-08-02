@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import * as Location from "expo-location";
 import { useTranslation } from "react-i18next";
 import { CITIES, cityFromCoordinates, cityName, type City } from "@pray-times/core";
-import { Card, OutlineButton, Screen } from "@/components/ui";
+import { Card, DirectionalStack, OutlineButton, Screen } from "@/components/ui";
 import { Pressable, Text, TextInput, View } from "@/components/primitives";
 import { usePlaceSearch } from "@/features/prayer-times/queries";
 import { usePreferencesStore } from "@/store/preferences-store";
@@ -13,8 +13,10 @@ function PlaceRow({ city, detail, onPress }: { city: City; detail?: string; onPr
   const locale = usePreferencesStore((state) => state.locale);
   return (
     <Pressable className="border-nur/10 border-b py-4" onPress={onPress}>
-      <Text className="text-17 text-nur font-bold">{cityName(city, locale)}</Text>
-      {detail ? <Text className="text-13 text-muted mt-1">{detail}</Text> : null}
+      <DirectionalStack gap={4}>
+        <Text className="text-17 text-nur font-bold">{cityName(city, locale)}</Text>
+        {detail ? <Text className="text-13 text-muted">{detail}</Text> : null}
+      </DirectionalStack>
     </Pressable>
   );
 }
@@ -69,10 +71,10 @@ export default function PlacesScreen() {
 
   return (
     <Screen>
-      <View className="gap-1">
+      <DirectionalStack gap={4}>
         <Text className="text-29 text-nur font-bold">{t("chooseCity")}</Text>
         <Text className="text-15 text-muted">{t("verifiedTimes")}</Text>
-      </View>
+      </DirectionalStack>
 
       <OutlineButton onPress={() => void useLocation()}>
         {locating ? t("locating") : t("useLocation")}
