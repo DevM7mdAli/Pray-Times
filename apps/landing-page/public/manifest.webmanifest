@@ -1,7 +1,7 @@
 {
   "name": "Pray Times — أوقات الصلاة",
   "short_name": "Pray Times",
-  "description": "Verified prayer times and prayer alerts for Saudi cities.",
+  "description": "Verified prayer times anywhere, qibla direction, Ramadan guidance, and free alerts.",
   "start_url": "/Pray-Times/today/",
   "scope": "/Pray-Times/",
   "display": "standalone",

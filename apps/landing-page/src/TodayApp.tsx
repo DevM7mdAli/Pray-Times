@@ -9,6 +9,7 @@ import {
   cityWithMethod,
   dayTimeline,
   fastingStatusFor,
+  fetchAyah,
   fetchPrayerDay,
   formatHijriDate,
   formatPrayerTime,
@@ -29,6 +30,7 @@ import {
   resolveCity,
   VerificationError,
   sunriseName,
+  type Ayah,
   type City,
   type PrayerDay,
   type PrayerKey,
@@ -111,6 +113,12 @@ const COPY = {
     alertSent: "أُرسل التنبيه التجريبي. تحقق من إشعارات جهازك.",
     choosePrayers: "نبّهني عند",
     iosHelp: "على iPhone وiPad: أضف الصفحة إلى الشاشة الرئيسية أولًا، ثم افتحها وفعّل التنبيهات.",
+    ayahKicker: "آية مختارة",
+    ayahTitle: "وقفة هادئة من القرآن",
+    ayahLoading: "نختار لك آية…",
+    ayahError: "تعذّر جلب الآية الآن.",
+    ayahRefresh: "آية أخرى",
+    verseNumber: "الآية",
     footer: "لا يحتاج إلى تثبيت أو حساب. لا نحفظ اشتراكًا مجهولًا إلا عند تفعيل التنبيهات.",
   },
   en: {
@@ -162,12 +170,19 @@ const COPY = {
     choosePrayers: "Alert me for",
     iosHelp:
       "On iPhone and iPad, add this page to your Home Screen first, then open it and enable alerts.",
+    ayahKicker: "SELECTED AYAH",
+    ayahTitle: "A quiet moment from the Qur’an",
+    ayahLoading: "Choosing an ayah…",
+    ayahError: "The ayah is unavailable right now.",
+    ayahRefresh: "Another ayah",
+    verseNumber: "Verse",
     footer:
       "No installation or account needed. An anonymous subscription is stored only when you enable alerts.",
   },
 } as const;
 
 type LoadStatus = "loading" | "verified" | "cached" | "error" | "zone-mismatch";
+type AyahStatus = "loading" | "ready" | "error";
 type AlertStatus =
   | "checking"
   | "unconfigured"
@@ -257,6 +272,9 @@ export function TodayApp() {
   const [alertStatus, setAlertStatus] = useState<AlertStatus>("checking");
   const [alertBusy, setAlertBusy] = useState(false);
   const [enabledPrayers, setEnabledPrayers] = useState(initialAlertPrayers);
+  const [ayah, setAyah] = useState<Ayah>();
+  const [ayahStatus, setAyahStatus] = useState<AyahStatus>("loading");
+  const [ayahVersion, setAyahVersion] = useState(0);
 
   const city = useMemo(() => {
     const base = resolveCity(cityId, savedCities) ?? CITIES[0]!;
@@ -283,6 +301,24 @@ export function TodayApp() {
       document.removeEventListener("visibilitychange", refreshVisiblePage);
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    setAyah(undefined);
+    setAyahStatus("loading");
+    void fetchAyah()
+      .then((result) => {
+        if (!active) return;
+        setAyah(result);
+        setAyahStatus("ready");
+      })
+      .catch(() => {
+        if (active) setAyahStatus("error");
+      });
+    return () => {
+      active = false;
+    };
+  }, [ayahVersion]);
 
   useEffect(() => {
     let active = true;
@@ -668,6 +704,45 @@ export function TodayApp() {
         )}
 
         <QiblaCompass city={city} locale={locale} />
+
+        <section
+          className="today-ayah"
+          aria-labelledby="today-ayah-title"
+          aria-busy={ayahStatus === "loading"}
+        >
+          <div className="today-ayah-heading">
+            <div>
+              <p>{copy.ayahKicker}</p>
+              <h2 id="today-ayah-title">{copy.ayahTitle}</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAyahVersion((value) => value + 1)}
+              disabled={ayahStatus === "loading"}
+            >
+              {copy.ayahRefresh}
+            </button>
+          </div>
+          <div className="today-ayah-content" aria-live="polite">
+            {ayah ? (
+              <blockquote>
+                <p lang="ar" dir="rtl">
+                  ﴿{ayah.text}﴾
+                </p>
+                <cite>
+                  {locale === "en" && ayah.surah.englishName
+                    ? ayah.surah.englishName
+                    : ayah.surah.name}{" "}
+                  · {copy.verseNumber} {ayah.numberInSurah}
+                </cite>
+              </blockquote>
+            ) : (
+              <p className={ayahStatus === "error" ? "is-error" : ""}>
+                {ayahStatus === "error" ? copy.ayahError : copy.ayahLoading}
+              </p>
+            )}
+          </div>
+        </section>
 
         {day ? (
           <section className="today-verification" data-state={status} aria-live="polite">

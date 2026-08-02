@@ -139,6 +139,7 @@
 .today-schedule,
 .today-alerts,
 .today-qibla,
+.today-ayah,
 .today-verification,
 .today-error,
 .today-loading {
@@ -823,6 +824,123 @@
   font-size: 13px;
 }
 
+.today-ayah {
+  position: relative;
+  margin-top: 24px;
+  padding: 34px 38px 38px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(242, 214, 162, 0.13), transparent 24rem),
+    rgba(20, 36, 73, 0.72);
+}
+
+.today-ayah::before {
+  position: absolute;
+  inset-block: 34px;
+  inset-inline-start: 0;
+  width: 3px;
+  content: "";
+  border-radius: 999px;
+  background: linear-gradient(var(--raml), var(--fajr));
+}
+
+.today-ayah-heading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.today-ayah-heading p,
+.today-ayah-heading h2 {
+  margin: 0;
+}
+
+.today-ayah-heading p {
+  color: var(--raml);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+
+.today-ayah-heading h2 {
+  margin-top: 5px;
+  font:
+    700 24px "Alexandria",
+    sans-serif;
+}
+
+.today-ayah-heading button {
+  min-height: 42px;
+  flex: 0 0 auto;
+  padding-inline: 17px;
+  cursor: pointer;
+  border: 1px solid rgba(242, 214, 162, 0.36);
+  border-radius: 12px;
+  background: rgba(242, 214, 162, 0.08);
+  color: var(--raml);
+  font: inherit;
+  font-weight: 700;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.today-ayah-heading button:hover:not(:disabled) {
+  border-color: var(--raml);
+  background: var(--raml);
+  color: var(--layl);
+}
+
+.today-ayah-heading button:disabled {
+  cursor: progress;
+  opacity: 0.55;
+}
+
+.today-ayah-content {
+  position: relative;
+  z-index: 1;
+  min-height: 118px;
+  margin-top: 26px;
+}
+
+.today-ayah blockquote {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.today-ayah blockquote p {
+  max-width: 58rem;
+  margin: 0;
+  color: var(--nur);
+  font-family: "Amiri", "Traditional Arabic", serif;
+  font-size: clamp(27px, 3.4vw, 38px);
+  line-height: 1.95;
+}
+
+.today-ayah blockquote cite {
+  display: block;
+  margin-top: 12px;
+  color: var(--fajr);
+  font-family: "Alexandria", sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.today-ayah-content > p {
+  margin: 34px 0 0;
+  color: var(--muted);
+}
+
+.today-ayah-content > p.is-error {
+  color: var(--fajr);
+}
+
 .today-verification {
   margin-top: 24px;
   padding: 24px 28px;
@@ -1025,6 +1143,27 @@
 
   .today-schedule {
     padding: 22px 18px;
+  }
+
+  .today-ayah {
+    padding: 27px 22px 30px;
+  }
+
+  .today-ayah::before {
+    inset-block: 27px;
+  }
+
+  .today-ayah-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .today-ayah-heading button {
+    width: 100%;
+  }
+
+  .today-ayah blockquote p {
+    font-size: 27px;
   }
 
   .today-section-heading {

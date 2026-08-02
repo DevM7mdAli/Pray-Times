@@ -1,6 +1,6 @@
 # Pray Times
 
-A browser extension and landing page that show the next prayer in a selected Saudi city. Before a time is displayed, the app verifies the selected city’s coordinates, returned date, time zone, and calculation method.
+A browser extension and web dashboard that show the next prayer in any selected place. Before a time is displayed, the app verifies its coordinates, returned date, time zone, and calculation method.
 
 ## What is included
 

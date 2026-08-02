@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   CITIES,
   PRAYER_KEYS,
@@ -23,7 +23,8 @@ import {
 
 const REPOSITORY_URL = "https://github.com/DevM7mdAli/Pray-Times";
 const EXTENSION_URL = `${REPOSITORY_URL}/releases/latest`;
-const TODAY_URL = "/Pray-Times/today/";
+const BASE_URL = import.meta.env.BASE_URL;
+const TODAY_URL = `${BASE_URL}today/`;
 const LOCALE_STORAGE_KEY = "pray-times:landing-locale";
 
 const COPY = {
@@ -37,6 +38,7 @@ const COPY = {
     switchLanguage: "التبديل إلى الإنجليزية",
     homeLabel: "أوقات الصلاة، بداية الصفحة",
     navigationLabel: "التنقل الرئيسي",
+    featuresNav: "ما الجديد؟",
     verificationNav: "كيف نتحقق؟",
     privacyNav: "الخصوصية",
     openProject: "افتح المشروع",
@@ -44,9 +46,9 @@ const COPY = {
     getExtension: "احصل على الإضافة",
     heroEyebrow: "لا ينبغي أن يكون وقت الصلاة تخمينًا",
     heroLead:
-      "إضافة هادئة تعرض مسار يومك من الفجر إلى العشاء، وتتحقق من الإحداثيات والتاريخ وطريقة الحساب قبل أن تعرض الوقت.",
+      "اعرف الصلاة القادمة في أي مدينة، وحدد اتجاه القبلة، وتابع رمضان، وفعّل تنبيهات موثوقة من الويب أو الإضافة.",
     learnVerification: "تعرّف على طريقة التحقق",
-    localOnly: "تحفظ المدينة على جهازك فقط",
+    localOnly: "بلا حساب — تحفظ اختياراتك على جهازك",
     livePreview: "معاينة مباشرة للإضافة",
     liveLabel: "معاينة مباشرة",
     city: "المدينة",
@@ -61,20 +63,29 @@ const COPY = {
     verifiedNow: "تم التحقق الآن",
     daylineLead: "مواقيت الصلاة.",
     daylineAccent: "مسار واحد واضح.",
+    featuresEyebrow: "من مواقيت مدينة إلى رفيق يومي",
+    featuresTitle: "كل ما تحتاجه حول وقت الصلاة.",
+    featuresIntro:
+      "بدأ المشروع بعرض الصلاة القادمة لمدن سعودية محددة. الآن يرافقك في أي مكان ويضيف الأدوات التي تحتاجها قبل الصلاة وخلال يومك.",
+    beforeLabel: "سابقًا",
+    beforeText: "مدن سعودية جاهزة، مواقيت موثقة، وإضافة للمتصفح.",
+    nowLabel: "الآن",
+    nowText: "أي مدينة، تحديد اختياري للموقع، قبلة، رمضان، تنبيهات، وطريقة حساب تناسب المكان.",
     methodEyebrow: "دقة يفهمها المستخدم",
     methodLead: "لا نطلب منك أن تثق بنا بصمت.",
     methodBody:
       "الوقت المعروض يمر بثلاثة فحوص واضحة. إذا لم تطابق النتيجة المدينة أو اليوم أو طريقة الحساب، لا نعرضها.",
     coordinateTitle: "إحداثيات المدينة",
-    coordinateBody: "قائمة مدن منسقة بإحداثيات ثابتة، لا بحث نصي قد يخطئ موقعك.",
+    coordinateBody:
+      "اختر مدينة جاهزة، أو ابحث في أي مكان، أو استخدم موقعك باختيارك. نثبت الإحداثيات قبل التحقق من المواقيت.",
     dateTitle: "تاريخ ومنطقة زمنية",
     dateBody: "نقارن التاريخ والمنطقة الزمنية والإحداثيات التي يعيدها المزود قبل العرض.",
     methodTitle: "طريقة معلنة",
-    methodBodyCard: "أم القرى، مكة المكرمة. تظهر الطريقة دائمًا مع ملاحظة اختلاف الجهات المحلية.",
+    methodBodyCard: "نقترح طريقة الحساب حسب البلد ويمكنك تغييرها لكل مكان.",
     privacyEyebrow: "خصوصيتك جزء من الدقة",
     privacyLead: "الموقع ليس استعلامًا غامضًا.",
     privacyBody:
-      "تختار مدينة من قائمة واضحة. نحفظ هذا الاختيار في متصفحك فقط ونرسل إحداثياتها إلى مزود المواقيت للحصول على وقت اليوم. لا حساب، ولا تتبع، ولا ملف شخصي.",
+      "لا حساب ولا تتبع. تحفظ الأماكن والتفضيلات على جهازك، ويُرسل نص البحث فقط أثناء البحث عن مدينة. عند اختيار الموقع الحالي نقلل دقة الإحداثيات قبل استخدامها.",
     verseEyebrow: "مساحة هادئة",
     verseLead: "آية مختارة، بلا تشتيت.",
     verseUnavailable: "تظهر الآية عند توفر الاتصال.",
@@ -95,6 +106,7 @@ const COPY = {
     switchLanguage: "Switch to Arabic",
     homeLabel: "Pray Times, top of page",
     navigationLabel: "Main navigation",
+    featuresNav: "What’s new",
     verificationNav: "How we verify",
     privacyNav: "Privacy",
     openProject: "View project",
@@ -102,9 +114,9 @@ const COPY = {
     getExtension: "Get the extension",
     heroEyebrow: "Prayer time should not be a guess",
     heroLead:
-      "A calm companion for your path from Fajr to Isha. It checks coordinates, date, and calculation method before showing a time.",
+      "Know the next prayer in any city, find the qibla, follow Ramadan, and enable verified alerts on the web or in the extension.",
     learnVerification: "See how verification works",
-    localOnly: "Your city stays on this device",
+    localOnly: "No account — your choices stay on this device",
     livePreview: "Live extension preview",
     liveLabel: "LIVE PREVIEW",
     city: "City",
@@ -119,23 +131,31 @@ const COPY = {
     verifiedNow: "Verified now",
     daylineLead: "Prayer times.",
     daylineAccent: "One clear path.",
+    featuresEyebrow: "FROM CITY TIMES TO A DAILY COMPANION",
+    featuresTitle: "Everything around the prayer, in one place.",
+    featuresIntro:
+      "Pray Times began with verified schedules for selected Saudi cities. It now travels with you and adds the tools you need before prayer and throughout the day.",
+    beforeLabel: "Before",
+    beforeText: "Saudi city presets, verified prayer times, and a browser extension.",
+    nowLabel: "Now",
+    nowText:
+      "Any city, optional location detection, qibla, Ramadan guidance, alerts, and a calculation method suited to the place.",
     methodEyebrow: "Accuracy you can understand",
     methodLead: "Trust should not be silent.",
     methodBody:
       "Every displayed time passes three clear checks. If the city, day, or calculation method does not match, we do not show it.",
     coordinateTitle: "City coordinates",
     coordinateBody:
-      "A curated city list with fixed coordinates, not a text search that could place you incorrectly.",
+      "Choose an offline preset, search anywhere, or use your location by choice. Coordinates are pinned before prayer times are verified.",
     dateTitle: "Date and time zone",
     dateBody:
       "We compare the date, time zone, and coordinates returned by the provider before displaying a result.",
     methodTitle: "A declared method",
-    methodBodyCard:
-      "Umm Al-Qura, Makkah. The method is always shown alongside a note that local authorities may differ.",
+    methodBodyCard: "We suggest a calculation method by country, and you can change it per place.",
     privacyEyebrow: "Privacy supports accuracy",
     privacyLead: "Location is not a vague request.",
     privacyBody:
-      "Choose a city from a clear list. The selection stays in your browser, and only its coordinates are sent to the prayer-time provider for today’s result. No account, tracking, or profile.",
+      "No account or tracking. Places and preferences stay on your device; search text is sent only while finding a city, and current-location coordinates are reduced in precision before use.",
     verseEyebrow: "A quiet moment",
     verseLead: "A selected verse, without distraction.",
     verseUnavailable: "A verse appears when a connection is available.",
@@ -146,6 +166,73 @@ const COPY = {
     footer: "Made for the day, from Fajr to Isha.",
     providerError: "We could not verify prayer times with the provider.",
   },
+} as const;
+
+const FEATURES = {
+  ar: [
+    {
+      title: "أي مدينة في العالم",
+      body: "ابحث بالعربية أو الإنجليزية، أو اختر مدينة سعودية جاهزة تعمل حتى قبل البحث.",
+      tag: "بحث عالمي",
+    },
+    {
+      title: "موقعي باختياري",
+      body: "اطلب موقعك فقط عند الضغط، ثم نقلل دقة الإحداثيات ونثبت المنطقة الزمنية قبل الحساب.",
+      tag: "خصوصية أولًا",
+    },
+    {
+      title: "بوصلة القبلة",
+      body: "اتجاه محسوب من مكانك إلى الكعبة، مع إمكانية محاذاته بحساس اتجاه الجهاز.",
+      tag: "اتجاه واضح",
+    },
+    {
+      title: "رمضان والشروق",
+      body: "عداد للسحور والإفطار في رمضان، ووقت الشروق لمعرفة نهاية نافذة الفجر.",
+      tag: "سياق يومي",
+    },
+    {
+      title: "تنبيهات حيثما تستخدمه",
+      body: "تنبيهات ويب مجانية، وتنبيهات الإضافة، وعدّاد للصلاة القادمة على أيقونة المتصفح.",
+      tag: "حتى بعد الإغلاق",
+    },
+    {
+      title: "طريقة تناسب المكان",
+      body: "اقتراح حسب البلد مع اختيار يدوي لكل مكان، والتحقق من الطريقة قبل عرض أي وقت.",
+      tag: "شفافية ودقة",
+    },
+  ],
+  en: [
+    {
+      title: "Any city worldwide",
+      body: "Search in Arabic or English, or choose a built-in Saudi preset that is ready before you search.",
+      tag: "Worldwide search",
+    },
+    {
+      title: "Location, only by choice",
+      body: "Location is requested only after your tap, then coordinates are coarsened and the time zone is pinned.",
+      tag: "Privacy first",
+    },
+    {
+      title: "Qibla compass",
+      body: "A direction calculated from your place to the Kaaba, with optional alignment to your device heading.",
+      tag: "Clear direction",
+    },
+    {
+      title: "Ramadan and sunrise",
+      body: "Suhoor and iftar guidance during Ramadan, plus sunrise to show when the Fajr window closes.",
+      tag: "Daily context",
+    },
+    {
+      title: "Alerts wherever you use it",
+      body: "Free Web Push, extension notifications, and a next-prayer countdown on the browser toolbar.",
+      tag: "Even after closing",
+    },
+    {
+      title: "A method suited to the place",
+      body: "A country-based suggestion with a per-place override, verified before any time is displayed.",
+      tag: "Transparent accuracy",
+    },
+  ],
 } as const;
 
 type Copy = { [Key in keyof (typeof COPY)["ar"]]: string };
@@ -165,7 +252,7 @@ function initialLocale(): SupportedLocale {
 }
 
 function BrandMark({ className = "" }: { className?: string }) {
-  return <img className={className} src="/Pray-Times/icon.png" width="48" height="48" alt="" />;
+  return <img className={className} src={`${BASE_URL}icon.png`} width="48" height="48" alt="" />;
 }
 
 function ArrowIcon() {
@@ -257,6 +344,7 @@ function prayerCard(
 }
 
 export function App() {
+  const shellRef = useRef<HTMLDivElement>(null);
   const [locale, setLocale] = useState<SupportedLocale>(initialLocale);
   const [cityId, setCityId] = useState("riyadh");
   const [day, setDay] = useState<PrayerDay>();
@@ -266,6 +354,32 @@ export function App() {
 
   const copy = COPY[locale];
   const city = useMemo(() => cityById(cityId) ?? CITIES[0], [cityId]);
+
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!shell || reducedMotion || !("IntersectionObserver" in window)) return;
+
+    const targets = Array.from(shell.querySelectorAll<HTMLElement>("[data-reveal]"));
+    shell.classList.add("motion-ready");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-revealed");
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin: "0px 0px -8%", threshold: 0.12 }
+    );
+
+    targets.forEach((target) => observer.observe(target));
+    return () => {
+      observer.disconnect();
+      shell.classList.remove("motion-ready");
+    };
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -319,13 +433,14 @@ export function App() {
   }, [city]);
 
   return (
-    <div className="site-shell antialiased">
-      <header className="site-header">
+    <div ref={shellRef} className="site-shell antialiased">
+      <header className="site-header" data-reveal="down">
         <a className="site-brand" href="#top" aria-label={copy.homeLabel}>
           <BrandMark />
           <span>{copy.appName}</span>
         </a>
         <nav aria-label={copy.navigationLabel}>
+          <a href="#features">{copy.featuresNav}</a>
           <a href="#method">{copy.verificationNav}</a>
           <a href="#privacy">{copy.privacyNav}</a>
         </nav>
@@ -346,7 +461,7 @@ export function App() {
 
       <main id="top">
         <section className="hero section-wrap">
-          <div className="hero-copy">
+          <div className="hero-copy" data-reveal="up">
             <p className="eyebrow">
               <span /> {copy.heroEyebrow}
             </p>
@@ -379,7 +494,7 @@ export function App() {
             </p>
           </div>
 
-          <div className="hero-preview-wrap">
+          <div className="hero-preview-wrap" data-reveal="scale">
             <div className="light-aura" aria-hidden="true" />
             <section className="live-preview" aria-label={copy.livePreview}>
               <div className="preview-top">
@@ -411,11 +526,47 @@ export function App() {
           </div>
         </section>
 
+        <section id="features" className="features section-wrap">
+          <div className="features-heading" data-reveal="up">
+            <div>
+              <p className="eyebrow eyebrow-dark">
+                <span /> {copy.featuresEyebrow}
+              </p>
+              <h2>{copy.featuresTitle}</h2>
+            </div>
+            <p>{copy.featuresIntro}</p>
+          </div>
+
+          <div className="feature-comparison" aria-label={copy.featuresTitle} data-reveal="up">
+            <div>
+              <span>{copy.beforeLabel}</span>
+              <p>{copy.beforeText}</p>
+            </div>
+            <div className="is-now">
+              <span>{copy.nowLabel}</span>
+              <p>{copy.nowText}</p>
+            </div>
+          </div>
+
+          <div className="feature-grid">
+            {FEATURES[locale].map((feature, index) => (
+              <article key={index} data-reveal="up">
+                <div className="feature-number" aria-hidden="true">
+                  {String(index + 1).padStart(2, "0")}
+                </div>
+                <span>{feature.tag}</span>
+                <h3>{feature.title}</h3>
+                <p>{feature.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="dayline" aria-label={copy.prayerPath}>
-          <p>
+          <p data-reveal="up">
             {copy.daylineLead} <span>{copy.daylineAccent}</span>
           </p>
-          <div className="dayline-track">
+          <div className="dayline-track" data-reveal="up">
             {PRAYER_KEYS.map((key) => (
               <span key={key}>{prayerName(key, locale)}</span>
             ))}
@@ -423,14 +574,14 @@ export function App() {
         </section>
 
         <section id="method" className="method section-wrap">
-          <div className="method-intro">
+          <div className="method-intro" data-reveal="up">
             <p className="eyebrow eyebrow-dark">
               <span /> {copy.methodEyebrow}
             </p>
             <h2>{copy.methodLead}</h2>
             <p>{copy.methodBody}</p>
           </div>
-          <div className="verification-list">
+          <div className="verification-list" data-reveal="up">
             <article>
               <PinIcon />
               <div>
@@ -456,14 +607,14 @@ export function App() {
         </section>
 
         <section id="privacy" className="privacy section-wrap">
-          <div className="privacy-symbol" aria-hidden="true">
+          <div className="privacy-symbol" aria-hidden="true" data-reveal="scale">
             <span />
             <span />
             <span />
             <span />
             <span />
           </div>
-          <div>
+          <div data-reveal="up">
             <p className="eyebrow">
               <span /> {copy.privacyEyebrow}
             </p>
@@ -473,13 +624,13 @@ export function App() {
         </section>
 
         <section className="ayah-section section-wrap">
-          <div>
+          <div data-reveal="up">
             <p className="eyebrow eyebrow-dark">
               <span /> {copy.verseEyebrow}
             </p>
             <h2>{copy.verseLead}</h2>
           </div>
-          <blockquote>
+          <blockquote data-reveal="up">
             {ayah ? (
               <>
                 <p lang="ar" dir="rtl">
@@ -501,7 +652,7 @@ export function App() {
           </blockquote>
         </section>
 
-        <section className="closing section-wrap">
+        <section className="closing section-wrap" data-reveal="scale">
           <p className="eyebrow">
             <span /> {copy.closingEyebrow}
           </p>
