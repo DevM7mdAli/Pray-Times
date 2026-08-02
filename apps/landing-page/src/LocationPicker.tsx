@@ -144,10 +144,11 @@ export function LocationPicker({
   };
 
   return (
-    <div className="today-location">
-      <label className="today-city-picker">
+    <div className="col-start-2 row-span-3 row-start-1 grid min-w-[265px] max-w-md gap-4 max-tablet:col-start-1 max-tablet:row-auto max-tablet:mt-5 max-tablet:max-w-none">
+      <label className="grid gap-2 text-xs text-muted">
         <span>{copy.city}</span>
         <select
+          className="min-h-[54px] w-full rounded-15 border border-nur/[0.18] bg-layl-soft px-[17px] font-body text-15 font-bold text-nur"
           value={cityId}
           onChange={(event) => onSelect(event.target.value)}
           aria-label={copy.selectCity}
@@ -171,10 +172,13 @@ export function LocationPicker({
         </select>
       </label>
 
-      <div className="today-city-search">
-        <label htmlFor={`${listId}-input`}>{copy.searchLabel}</label>
+      <div className="relative grid gap-[7px]">
+        <label className="text-xs text-muted" htmlFor={`${listId}-input`}>
+          {copy.searchLabel}
+        </label>
         <input
           id={`${listId}-input`}
+          className="min-h-[46px] rounded-13 border border-nur/[0.16] bg-layl/60 px-[15px] text-nur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sama"
           type="search"
           value={query}
           placeholder={copy.searchPlaceholder}
@@ -184,40 +188,75 @@ export function LocationPicker({
           aria-controls={listId}
           onChange={(event) => setQuery(event.target.value)}
         />
-        {state === "searching" ? <p role="status">{copy.searching}</p> : null}
-        {state === "failed" ? <p role="status">{copy.failed}</p> : null}
+        {state === "searching" ? (
+          <p className="m-0 text-xs text-muted" role="status">
+            {copy.searching}
+          </p>
+        ) : null}
+        {state === "failed" ? (
+          <p className="m-0 text-xs text-muted" role="status">
+            {copy.failed}
+          </p>
+        ) : null}
         {state === "idle" && query.trim().length >= 2 && results.length === 0 ? (
-          <p role="status">{copy.noResults}</p>
+          <p className="m-0 text-xs text-muted" role="status">
+            {copy.noResults}
+          </p>
         ) : null}
         {results.length > 0 ? (
-          <ul id={listId} role="listbox" aria-label={copy.searchLabel}>
+          <ul
+            className="absolute inset-x-0 top-full z-[5] mt-1.5 max-h-[17rem] list-none overflow-y-auto rounded-15 border border-sama/[0.34] bg-layl-soft p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.42)]"
+            id={listId}
+            role="listbox"
+            aria-label={copy.searchLabel}
+          >
             {results.map((suggestion) => (
               <li key={suggestion.city.id}>
                 <button
+                  className="grid w-full cursor-pointer gap-0.5 rounded-10 border-0 bg-transparent px-3 py-2.5 text-start text-inherit hover:bg-sama/15 hover:outline-none focus-visible:bg-sama/15 focus-visible:outline-none"
                   type="button"
                   role="option"
                   aria-selected="false"
                   onClick={() => choose(suggestion)}
                 >
                   <strong>{cityName(suggestion.city, locale)}</strong>
-                  <span>{locale === "ar" ? suggestion.contextAr : suggestion.contextEn}</span>
+                  <span className="text-xs text-muted">
+                    {locale === "ar" ? suggestion.contextAr : suggestion.contextEn}
+                  </span>
                 </button>
               </li>
             ))}
           </ul>
         ) : null}
-        <p className="today-city-hint">{copy.hint}</p>
+        <p className="text-11">{copy.hint}</p>
       </div>
 
-      <div className="today-city-detect">
-        <button type="button" onClick={detect} disabled={detectState === "detecting"}>
+      <div className="grid justify-items-start gap-[7px]">
+        <button
+          className="min-h-10 cursor-pointer rounded-xl border border-nur/[0.18] bg-transparent px-[15px] text-13 font-bold text-nur disabled:cursor-progress disabled:opacity-60 [&:hover:not(:disabled)]:bg-nur/[0.08]"
+          type="button"
+          onClick={detect}
+          disabled={detectState === "detecting"}
+        >
           {detectState === "detecting" ? copy.detecting : copy.detect}
         </button>
-        {detectState === "denied" ? <p role="status">{copy.detectDenied}</p> : null}
-        {detectState === "failed" ? <p role="status">{copy.detectFailed}</p> : null}
-        {detectState === "unsupported" ? <p role="status">{copy.detectUnsupported}</p> : null}
-        <p className="today-city-hint">{copy.detectNote}</p>
-        <p className="today-city-hint">{copy.attribution}</p>
+        {detectState === "denied" ? (
+          <p className="m-0 text-xs text-muted" role="status">
+            {copy.detectDenied}
+          </p>
+        ) : null}
+        {detectState === "failed" ? (
+          <p className="m-0 text-xs text-muted" role="status">
+            {copy.detectFailed}
+          </p>
+        ) : null}
+        {detectState === "unsupported" ? (
+          <p className="m-0 text-xs text-muted" role="status">
+            {copy.detectUnsupported}
+          </p>
+        ) : null}
+        <p className="text-11">{copy.detectNote}</p>
+        <p className="text-11">{copy.attribution}</p>
       </div>
     </div>
   );

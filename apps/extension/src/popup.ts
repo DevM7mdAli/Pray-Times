@@ -169,7 +169,7 @@ function populateCities(): void {
     const group = document.createElement("optgroup");
     group.label = label;
     cities.forEach((city) => {
-      const option = document.createElement("option");
+      const option = element("option", "bg-layl-soft");
       option.value = city.id;
       option.textContent = cityName(city, locale);
       group.append(option);
@@ -193,11 +193,18 @@ function renderSearchResults(suggestions: readonly PlaceSuggestion[]): void {
   const fragment = document.createDocumentFragment();
   for (const suggestion of suggestions) {
     const item = document.createElement("li");
-    const button = element("button", "city-result");
+    const button = element(
+      "button",
+      "grid w-full cursor-pointer gap-px rounded-lg border-0 bg-transparent px-[9px] py-[7px] text-start text-inherit hover:bg-sama/[0.18] hover:outline-none focus-visible:bg-sama/[0.18] focus-visible:outline-none"
+    );
     button.type = "button";
-    button.append(element("strong", undefined, cityName(suggestion.city, locale)));
+    button.append(element("strong", "text-xs", cityName(suggestion.city, locale)));
     button.append(
-      element("span", undefined, locale === "ar" ? suggestion.contextAr : suggestion.contextEn)
+      element(
+        "span",
+        "text-10 text-muted",
+        locale === "ar" ? suggestion.contextAr : suggestion.contextEn
+      )
     );
     button.addEventListener("click", () => void selectPlace(suggestion.city));
     item.append(button);
@@ -295,25 +302,40 @@ function renderDate(day: PrayerDay): void {
 function ramadanPanel(day: PrayerDay): HTMLElement | undefined {
   const status = fastingStatusFor(day);
   if (!status) return undefined;
-  const panel = element("div", "ramadan-panel");
-  panel.append(element("p", "ramadan-kicker", text("ramadanKicker")));
-  const main = element("div", "ramadan-main");
+  const panel = element(
+    "div",
+    "mb-3.5 rounded-15 border border-raml/[0.32] px-[15px] py-[13px] bg-[linear-gradient(135deg,rgba(242,214,162,0.14),rgba(233,128,110,0.08))]"
+  );
+  panel.append(
+    element(
+      "p",
+      "mb-[5px] mt-0 text-10 font-extrabold tracking-[0.08em] text-raml",
+      text("ramadanKicker")
+    )
+  );
+  const main = element("div", "flex items-baseline gap-[9px]");
   if (status.phase === "completed") {
-    main.append(element("strong", undefined, text("fastCompleted")));
+    main.append(element("strong", "font-display text-[17px]", text("fastCompleted")));
     main.append(
       element(
         "span",
-        "ramadan-detail",
+        "text-11 text-muted",
         `${text("fastCompletedDetail")} ${formatPrayerTime(day.timings.Maghrib, locale)}`
       )
     );
   } else {
     const label = status.phase === "suhoor" ? text("suhoorLabel") : text("iftarLabel");
-    main.append(element("span", "ramadan-detail", label));
+    main.append(element("span", "text-11 text-muted", label));
     main.append(
-      element("strong", undefined, formatRemainingTime(status.minutesUntil ?? 0, locale))
+      element(
+        "strong",
+        "font-display text-[17px]",
+        formatRemainingTime(status.minutesUntil ?? 0, locale)
+      )
     );
-    main.append(element("time", "ramadan-time", formatPrayerTime(status.time ?? "", locale)));
+    main.append(
+      element("time", "ms-auto text-xs text-raml", formatPrayerTime(status.time ?? "", locale))
+    );
   }
   panel.append(main);
   return panel;
@@ -325,34 +347,56 @@ function renderPrayerDay(day: PrayerDay): void {
   const fragment = document.createDocumentFragment();
   const ramadan = ramadanPanel(day);
   if (ramadan) fragment.append(ramadan);
-  const summary = element("div", "next-prayer");
+  const summary = element(
+    "div",
+    "mt-1 rounded-21 border border-sama/[0.35] p-[19px] shadow-[inset_0_1px_rgba(245,248,255,0.08)] bg-[linear-gradient(135deg,rgba(77,168,218,0.15),rgba(20,36,73,0.66))]"
+  );
   summary.append(
     element(
       "p",
-      "next-prayer-label",
+      "mb-2 text-xs font-bold text-raml",
       next.isTomorrow ? text("nextPrayerTomorrow") : text("nextPrayer")
     )
   );
-  const main = element("div", "next-prayer-main");
-  main.append(element("strong", undefined, prayerNameForCity(next.key, day.city, locale)));
-  main.append(element("time", "next-prayer-time", formatPrayerTime(next.time, locale)));
+  const main = element("div", "flex items-end justify-between gap-3");
+  main.append(
+    element(
+      "strong",
+      "font-display text-27 leading-[1.1]",
+      prayerNameForCity(next.key, day.city, locale)
+    )
+  );
+  main.append(
+    element(
+      "time",
+      "font-display text-29 font-bold tracking-[-0.04em] tabular-nums",
+      formatPrayerTime(next.time, locale)
+    )
+  );
   summary.append(main);
   summary.append(
     element(
       "p",
-      "remaining-time",
+      "mb-0 mt-[13px] text-xs text-muted",
       `${text("remaining")} ${formatRemainingTime(next.minutesUntil, locale)}`
     )
   );
   fragment.append(summary);
 
-  const path = element("div", "light-path");
+  const path = element(
+    "div",
+    "light-path relative mx-0.5 mb-0 mt-[17px] grid auto-cols-fr grid-flow-col gap-[3px]"
+  );
   for (const entry of dayTimeline(day)) {
     const isNext = entry.kind === "prayer" && entry.key === next.key;
-    const classes = ["prayer-node"];
-    if (isNext) classes.push("is-next");
+    const isMarker = entry.kind === "sunrise";
+    const classes = [
+      "prayer-node",
+      "relative z-[1] grid justify-items-center gap-[5px] text-center text-10 text-muted",
+    ];
+    if (isNext) classes.push("is-next font-bold text-nur");
     // Sunrise divides the day without being a prayer, so it reads as a marker.
-    if (entry.kind === "sunrise") classes.push("is-marker");
+    if (isMarker) classes.push("is-marker opacity-[0.72]");
     const node = element("div", classes.join(" "));
     if (isNext) node.setAttribute("aria-current", "time");
     node.append(
@@ -364,7 +408,7 @@ function renderPrayerDay(day: PrayerDay): void {
           : prayerNameForCity(entry.key, day.city, locale)
       )
     );
-    node.append(element("time", undefined, formatPrayerTime(entry.time, locale)));
+    node.append(element("time", "tabular-nums text-inherit", formatPrayerTime(entry.time, locale)));
     path.append(node);
   }
   fragment.append(path);
@@ -374,37 +418,56 @@ function renderPrayerDay(day: PrayerDay): void {
 function renderNoCity(): void {
   dateLine.textContent = text("noCityDate");
   sourceLine.textContent = text("noCitySource");
-  const empty = element("div", "empty-state");
-  empty.append(element("span", "empty-orb"));
-  empty.append(element("p", undefined, text("noCityTitle")));
-  empty.append(element("span", undefined, text("noCityBody")));
+  const empty = element(
+    "div",
+    "grid min-h-[190px] place-content-center justify-items-center text-center text-muted"
+  );
+  empty.append(
+    element("span", "size-10 rounded-[50%_50%_50%_6px] border-8 border-sama opacity-75 rotate-45")
+  );
+  empty.append(element("p", "mb-0.5 mt-3 font-display text-base text-nur", text("noCityTitle")));
+  empty.append(element("span", "max-w-[220px] text-xs", text("noCityBody")));
   prayerPanel.replaceChildren(empty);
 }
 
 function renderLoading(city: City): void {
   dateLine.textContent = `${cityName(city, locale)} · ${text("loadingDate")}`;
   sourceLine.textContent = text("pendingSource");
-  const empty = element("div", "empty-state");
-  empty.append(element("span", "empty-orb"));
-  empty.append(element("p", undefined, text("loadingTitle")));
-  empty.append(element("span", undefined, text("loadingBody")));
+  const empty = element(
+    "div",
+    "grid min-h-[190px] place-content-center justify-items-center text-center text-muted"
+  );
+  empty.append(
+    element("span", "size-10 rounded-[50%_50%_50%_6px] border-8 border-sama opacity-75 rotate-45")
+  );
+  empty.append(element("p", "mb-0.5 mt-3 font-display text-base text-nur", text("loadingTitle")));
+  empty.append(element("span", "max-w-[220px] text-xs", text("loadingBody")));
   prayerPanel.replaceChildren(empty);
 }
 
 function renderError(city: City): void {
   dateLine.textContent = `${cityName(city, locale)} · ${text("unavailableDate")}`;
   sourceLine.textContent = text("pendingSource");
-  const empty = element("div", "empty-state");
-  empty.append(element("span", "empty-orb"));
-  empty.append(element("p", undefined, text("errorTitle")));
-  empty.append(element("span", undefined, text("errorBody")));
+  const empty = element(
+    "div",
+    "grid min-h-[190px] place-content-center justify-items-center text-center text-muted"
+  );
+  empty.append(
+    element("span", "size-10 rounded-[50%_50%_50%_6px] border-8 border-sama opacity-75 rotate-45")
+  );
+  empty.append(element("p", "mb-0.5 mt-3 font-display text-base text-nur", text("errorTitle")));
+  empty.append(element("span", "max-w-[220px] text-xs", text("errorBody")));
   prayerPanel.replaceChildren(empty);
 }
 
 function renderAyah(): void {
   if (currentAyah) {
     const fragment = document.createDocumentFragment();
-    const verse = element("p", "ayah-text", `﴿${currentAyah.text}﴾`);
+    const verse = element(
+      "p",
+      "m-0 font-quran text-xl leading-[1.8] text-raml-pale",
+      `﴿${currentAyah.text}﴾`
+    );
     verse.lang = "ar";
     verse.dir = "rtl";
     const reference =
@@ -415,7 +478,7 @@ function renderAyah(): void {
     fragment.append(
       element(
         "p",
-        "ayah-reference",
+        "mb-0 mt-[5px] text-11 text-muted",
         `${reference} · ${text("verseNumber")} ${currentAyah.numberInSurah}`
       )
     );
@@ -428,9 +491,7 @@ function renderAyah(): void {
       : ayahState === "loading"
         ? text("verseLoading")
         : text("verseError");
-  ayahContent.replaceChildren(
-    element("span", ayahState === "error" ? "ayah-error" : "ayah-loading", message)
-  );
+  ayahContent.replaceChildren(element("span", "text-xs text-muted", message));
 }
 
 function renderView(): void {

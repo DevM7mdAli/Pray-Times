@@ -138,26 +138,26 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
   }).format(Math.round(qibla.bearing));
 
   return (
-    <section className="today-qibla" aria-labelledby="qibla-title">
-      <p className="today-qibla-kicker">{copy.kicker}</p>
-      <h2 id="qibla-title">
+    <section className="today-card mt-6 px-[30px] py-[27px]" aria-labelledby="qibla-title">
+      <p className="section-kicker m-0">{copy.kicker}</p>
+      <h2 className="mb-[22px] mt-1 font-display text-2xl font-bold" id="qibla-title">
         {copy.heading} {cityName(city, locale)}
       </h2>
 
       {qibla.atHaram ? (
-        <div className="today-qibla-haram">
-          <strong>{copy.atHaram}</strong>
-          <p>{copy.atHaramBody}</p>
+        <div>
+          <strong className="font-display text-[24px] font-bold">{copy.atHaram}</strong>
+          <p className="mb-0 mt-1.5 text-13 text-muted">{copy.atHaramBody}</p>
         </div>
       ) : (
         <>
-          <div className="today-qibla-body">
+          <div className="flex flex-wrap items-center gap-8">
             <div
-              className="today-compass"
+              className="w-[190px] flex-none"
               role="img"
               aria-label={`${bearingLabel}° ${COMPASS_POINT_NAMES[locale][point]}`}
             >
-              <svg viewBox="0 0 200 200" aria-hidden="true">
+              <svg className="block h-auto w-full" viewBox="0 0 200 200" aria-hidden="true">
                 <g
                   style={{
                     transform: `rotate(${roseRotation}deg)`,
@@ -205,38 +205,56 @@ export function QiblaCompass({ city, locale }: { city: City; locale: SupportedLo
               </svg>
             </div>
 
-            <div className="today-qibla-facts">
-              <dl>
+            <div>
+              <dl className="m-0 grid gap-4">
                 <div>
-                  <dt>{copy.fromNorth}</dt>
-                  <dd>
-                    <strong>{bearingLabel}°</strong>
-                    <span>{COMPASS_POINT_NAMES[locale][point]}</span>
+                  <dt className="text-11 text-muted">{copy.fromNorth}</dt>
+                  <dd className="mb-0 mt-[3px] flex flex-wrap items-baseline gap-2.5">
+                    <strong className="font-display text-27 font-bold text-raml">
+                      {bearingLabel}°
+                    </strong>
+                    <span className="max-w-[26rem] text-xs text-muted">
+                      {COMPASS_POINT_NAMES[locale][point]}
+                    </span>
                   </dd>
                 </div>
                 <div>
-                  <dt>{copy.distance}</dt>
-                  <dd>
-                    <strong>
+                  <dt className="text-11 text-muted">{copy.distance}</dt>
+                  <dd className="mb-0 mt-[3px] flex flex-wrap items-baseline gap-2.5">
+                    <strong className="font-display text-27 font-bold text-raml">
                       {formatDistance(qibla.distanceKm, locale)} {locale === "ar" ? "كم" : "km"}
                     </strong>
                   </dd>
                 </div>
               </dl>
-              <p className="today-qibla-note">{copy.note}</p>
+              <p className="mb-0 mt-4 max-w-md text-xs text-muted">{copy.note}</p>
             </div>
           </div>
 
-          <div className="today-qibla-actions">
+          <div className="mt-[22px] flex flex-wrap items-center gap-3.5 border-t border-nur/10 pt-[18px]">
             {headingState === "live" ? (
-              <p role="status">{copy.aligning}</p>
+              <p className="m-0 text-xs text-muted" role="status">
+                {copy.aligning}
+              </p>
             ) : (
               <>
-                <button type="button" onClick={() => void enableCompass()}>
+                <button
+                  className="min-h-[42px] cursor-pointer rounded-xl border border-nur/[0.18] bg-transparent px-[18px] font-bold text-nur"
+                  type="button"
+                  onClick={() => void enableCompass()}
+                >
                   {copy.align}
                 </button>
-                {headingState === "unsupported" ? <p role="status">{copy.unsupported}</p> : null}
-                {headingState === "denied" ? <p role="status">{copy.denied}</p> : null}
+                {headingState === "unsupported" ? (
+                  <p className="m-0 text-xs text-muted" role="status">
+                    {copy.unsupported}
+                  </p>
+                ) : null}
+                {headingState === "denied" ? (
+                  <p className="m-0 text-xs text-muted" role="status">
+                    {copy.denied}
+                  </p>
+                ) : null}
               </>
             )}
           </div>

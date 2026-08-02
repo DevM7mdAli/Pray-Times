@@ -492,18 +492,38 @@ export function TodayApp() {
   };
 
   return (
-    <div className="today-shell antialiased">
-      <header className="today-header">
-        <a className="today-brand" href="/Pray-Times/">
-          <img src="/Pray-Times/icon.png" width="46" height="46" alt="" />
+    <div className="today-shell min-h-screen text-nur antialiased">
+      <header className="mx-auto flex min-h-[86px] w-today-shell items-center justify-between gap-6 border-b border-nur/10 max-mobile:min-h-[74px] max-mobile:w-[calc(100%-28px)]">
+        <a
+          className="flex items-center gap-[11px] font-display font-bold text-nur no-underline"
+          href="/Pray-Times/"
+        >
+          <img
+            className="rounded-13 shadow-[0_9px_25px_rgba(0,0,0,0.25)]"
+            src="/Pray-Times/icon.png"
+            width="46"
+            height="46"
+            alt=""
+          />
           <span>Pray Times</span>
         </a>
-        <nav aria-label={copy.title}>
-          <a href="/Pray-Times/">{copy.back}</a>
-          <a className="today-extension-link" href={EXTENSION_URL} target="_blank" rel="noreferrer">
+        <nav className="flex items-center gap-[18px]" aria-label={copy.title}>
+          <a
+            className="cursor-pointer border-0 bg-transparent text-muted no-underline hover:text-nur max-mobile:hidden"
+            href="/Pray-Times/"
+          >
+            {copy.back}
+          </a>
+          <a
+            className="rounded-full border border-raml/[0.42] px-[15px] py-2.5 text-raml no-underline max-mobile:hidden"
+            href={EXTENSION_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
             {copy.extension}
           </a>
           <button
+            className="cursor-pointer border-0 bg-transparent text-muted hover:text-nur"
             type="button"
             onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
             aria-label={copy.switchLanguage}
@@ -513,11 +533,15 @@ export function TodayApp() {
         </nav>
       </header>
 
-      <main className="today-main">
-        <section className="today-intro">
-          <p className="today-kicker">{locale === "ar" ? "مسار يومك" : "YOUR DAILY PATH"}</p>
-          <h1>{copy.title}</h1>
-          <p>{copy.subtitle}</p>
+      <main className="mx-auto w-today-shell pb-14 pt-[72px] max-mobile:w-[calc(100%-28px)] max-mobile:pb-[38px] max-mobile:pt-12">
+        <section className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-12 gap-y-3 max-tablet:grid-cols-1">
+          <p className="col-start-1 m-0 text-xs font-extrabold tracking-[0.14em] text-raml">
+            {locale === "ar" ? "مسار يومك" : "YOUR DAILY PATH"}
+          </p>
+          <h1 className="col-start-1 m-0 font-display text-display-hero leading-[1.08]">
+            {copy.title}
+          </h1>
+          <p className="col-start-1 m-0 text-17 text-muted">{copy.subtitle}</p>
           <LocationPicker
             cityId={cityId}
             savedCities={savedCities}
@@ -538,24 +562,33 @@ export function TodayApp() {
         </section>
 
         <section
-          className="today-alerts"
+          className="today-card mt-9 grid gap-[22px] bg-layl-soft/[0.72] bg-[image:linear-gradient(120deg,rgba(77,168,218,0.14),transparent_55%)] px-[30px] py-[27px] max-mobile:px-[19px] max-mobile:py-[22px]"
           data-state={alertStatus}
           aria-labelledby="web-alerts-title"
         >
-          <div className="today-alerts-heading">
+          <div className="flex items-center justify-between gap-7 max-mobile:flex-col max-mobile:items-stretch">
             <div>
-              <span className="today-alerts-badge">{copy.free}</span>
-              <h2 id="web-alerts-title">{copy.alertsTitle}</h2>
-              <p>{copy.alertsBody}</p>
+              <span className="me-2.5 inline-flex rounded-full border border-success/[0.38] px-[9px] py-1 text-10 font-extrabold uppercase text-success-pale">
+                {copy.free}
+              </span>
+              <h2 className="m-0 inline font-display text-22 font-bold" id="web-alerts-title">
+                {copy.alertsTitle}
+              </h2>
+              <p className="mb-0 mt-[5px] text-13 text-muted">{copy.alertsBody}</p>
             </div>
-            <div className="today-alert-actions">
+            <div className="flex shrink-0 gap-[9px] max-mobile:flex-col">
               {alertStatus === "enabled" || alertStatus === "sent" ? (
                 <>
-                  <button type="button" onClick={() => void sendTestAlert()} disabled={alertBusy}>
+                  <button
+                    className="min-h-[43px] cursor-pointer rounded-xl border-0 bg-raml px-[17px] font-extrabold text-layl disabled:cursor-not-allowed disabled:opacity-[0.48]"
+                    type="button"
+                    onClick={() => void sendTestAlert()}
+                    disabled={alertBusy}
+                  >
                     {copy.testAlert}
                   </button>
                   <button
-                    className="is-secondary"
+                    className="min-h-[43px] cursor-pointer rounded-xl border border-nur/[0.18] bg-transparent px-[17px] font-extrabold text-muted disabled:cursor-not-allowed disabled:opacity-[0.48]"
                     type="button"
                     onClick={() => void disableAlerts()}
                     disabled={alertBusy}
@@ -565,6 +598,7 @@ export function TodayApp() {
                 </>
               ) : (
                 <button
+                  className="min-h-[43px] cursor-pointer rounded-xl border-0 bg-raml px-[17px] font-extrabold text-layl disabled:cursor-not-allowed disabled:opacity-[0.48]"
                   type="button"
                   onClick={() => void enableAlerts()}
                   disabled={
@@ -581,106 +615,175 @@ export function TodayApp() {
             </div>
           </div>
 
-          <div className="today-alert-prayers" aria-label={copy.choosePrayers}>
-            <span>{copy.choosePrayers}</span>
-            <div>
+          <div
+            className="grid grid-cols-[auto_1fr] items-center gap-x-[22px] gap-y-3.5 border-y border-nur/10 py-[18px] max-mobile:grid-cols-1"
+            aria-label={copy.choosePrayers}
+          >
+            <span className="text-xs font-bold text-muted">{copy.choosePrayers}</span>
+            <div className="flex flex-wrap gap-2">
               {visiblePrayerKeys.map((key) => (
-                <label key={key}>
+                <label className="relative cursor-pointer" key={key}>
                   <input
+                    className="peer pointer-events-none absolute opacity-0"
                     type="checkbox"
                     checked={enabledPrayers[key]}
                     onChange={(event) =>
                       setEnabledPrayers((current) => ({ ...current, [key]: event.target.checked }))
                     }
                   />
-                  <span>{prayerNameForCity(key, city, locale)}</span>
+                  <span className="block rounded-full border border-nur/[0.13] px-[13px] py-2 text-xs text-muted transition-[border-color,background,color] duration-150 peer-checked:border-raml/[0.42] peer-checked:bg-raml/10 peer-checked:text-raml peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-sama">
+                    {prayerNameForCity(key, city, locale)}
+                  </span>
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="today-alert-status" role="status" aria-live="polite">
-            <span aria-hidden="true" />
-            <p>{alertMessage}</p>
+          <div className="flex items-center gap-[9px]" role="status" aria-live="polite">
+            <span
+              className={
+                alertStatus === "enabled" || alertStatus === "sent"
+                  ? "size-2 flex-none rounded-full bg-success shadow-[0_0_10px_rgba(105,212,162,0.65)]"
+                  : alertStatus === "error" || alertStatus === "denied"
+                    ? "size-2 flex-none rounded-full bg-fajr"
+                    : "size-2 flex-none rounded-full bg-muted"
+              }
+              aria-hidden="true"
+            />
+            <p className="m-0">{alertMessage}</p>
           </div>
-          <p className="today-alert-ios">{copy.iosHelp}</p>
+          <p className="mb-0 mt-[-11px] text-11">{copy.iosHelp}</p>
         </section>
 
         {day && fasting ? (
-          <section className="today-ramadan" data-phase={fasting.phase} aria-live="polite">
-            <p className="today-ramadan-kicker">{copy.ramadanKicker}</p>
+          <section
+            className="mt-6 rounded-22 border border-raml/[0.34] bg-layl-soft/[0.72] bg-[image:linear-gradient(120deg,rgba(242,214,162,0.16),rgba(233,128,110,0.08)_60%)] px-7 py-[22px]"
+            data-phase={fasting.phase}
+            aria-live="polite"
+          >
+            <p className="section-kicker mb-2.5 mt-0">{copy.ramadanKicker}</p>
             {fasting.phase === "completed" ? (
-              <div>
-                <strong>{copy.fastCompleted}</strong>
-                <span>
+              <div className="flex flex-wrap items-baseline gap-3.5">
+                <strong className="font-display text-display-stat leading-[1.1]">
+                  {copy.fastCompleted}
+                </strong>
+                <span className="text-13 text-muted">
                   {copy.fastCompletedDetail} {formatPrayerTime(day.timings.Maghrib, locale)}
                 </span>
               </div>
             ) : (
-              <div>
-                <span>{fasting.phase === "suhoor" ? copy.suhoorLabel : copy.iftarLabel}</span>
-                <strong>{formatRemainingTime(fasting.minutesUntil ?? 0, locale)}</strong>
-                <time dateTime={fasting.time}>{formatPrayerTime(fasting.time ?? "", locale)}</time>
+              <div className="flex flex-wrap items-baseline gap-3.5">
+                <span className="text-13 text-muted">
+                  {fasting.phase === "suhoor" ? copy.suhoorLabel : copy.iftarLabel}
+                </span>
+                <strong className="font-display text-display-stat leading-[1.1]">
+                  {formatRemainingTime(fasting.minutesUntil ?? 0, locale)}
+                </strong>
+                <time className="ms-auto text-xl text-raml" dateTime={fasting.time}>
+                  {formatPrayerTime(fasting.time ?? "", locale)}
+                </time>
               </div>
             )}
           </section>
         ) : null}
 
         {day ? (
-          <div className="today-dashboard">
-            <section className="today-next" aria-labelledby="next-prayer-title">
+          <div className="mt-[52px] grid grid-cols-[minmax(0,0.92fr)_minmax(420px,1.08fr)] gap-6 max-tablet:grid-cols-1">
+            <section
+              className="today-card relative min-h-[380px] overflow-hidden bg-layl-soft bg-[image:linear-gradient(145deg,rgba(77,168,218,0.23),rgba(20,36,73,0.76))] p-[35px] max-mobile:min-h-[330px] max-mobile:p-[26px]"
+              aria-labelledby="next-prayer-title"
+            >
               {next && nextDay ? (
                 <>
-                  <p id="next-prayer-title">
+                  <p className="relative z-[1] m-0 font-bold text-raml" id="next-prayer-title">
                     {nextDay.requestedDate !== day.requestedDate
                       ? copy.nextPrayerTomorrow
                       : copy.nextPrayer}
                   </p>
-                  <div className="today-next-main">
-                    <strong>{prayerNameForCity(next.key, nextDay.city, locale)}</strong>
-                    <time dateTime={next.time}>{formatPrayerTime(next.time, locale)}</time>
+                  <div className="relative z-[1] mt-12 grid gap-[5px]">
+                    <strong className="font-display text-display-today-hero leading-none">
+                      {prayerNameForCity(next.key, nextDay.city, locale)}
+                    </strong>
+                    <time className="text-display-stat-time text-raml" dateTime={next.time}>
+                      {formatPrayerTime(next.time, locale)}
+                    </time>
                   </div>
-                  <div className="today-countdown">
+                  <div className="absolute inset-x-[35px] bottom-8 z-[1] flex items-center justify-between border-t border-nur/[0.14] pt-5 text-muted max-mobile:inset-x-[26px]">
                     <span>{copy.remaining}</span>
-                    <b>{formatRemainingTime(next.minutesUntil, locale)}</b>
+                    <b className="text-xl text-nur">
+                      {formatRemainingTime(next.minutesUntil, locale)}
+                    </b>
                   </div>
                 </>
               ) : (
-                <div className="today-next-pending" aria-live="polite">
-                  <p id="next-prayer-title">{copy.nextPrayerTomorrow}</p>
-                  <strong>{copy.refreshing}</strong>
+                <div className="relative z-[1] mt-12 grid gap-4" aria-live="polite">
+                  <p className="relative z-[1] m-0 font-bold text-raml" id="next-prayer-title">
+                    {copy.nextPrayerTomorrow}
+                  </p>
+                  <strong className="max-w-[25rem] font-display text-display-stat font-semibold leading-[1.35] text-raml">
+                    {copy.refreshing}
+                  </strong>
                 </div>
               )}
-              <div className="today-glow" aria-hidden="true" />
+              <div
+                className="absolute -end-[70px] top-[-70px] h-[250px] w-[250px] rounded-full bg-fajr/20 blur-[15px]"
+                aria-hidden="true"
+              />
             </section>
 
-            <section className="today-schedule" aria-labelledby="today-schedule-title">
-              <div className="today-section-heading">
+            <section className="today-card p-[30px]" aria-labelledby="today-schedule-title">
+              <div className="mb-4 flex items-end justify-between gap-6 max-mobile:flex-col max-mobile:items-start max-mobile:gap-2">
                 <div>
-                  <p>{cityName(day.city, locale)}</p>
-                  <h2 id="today-schedule-title">{copy.schedule}</h2>
+                  <p className="m-0 text-[12px] text-muted">{cityName(day.city, locale)}</p>
+                  <h2
+                    className="m-0 mt-[3px] font-display text-2xl font-bold"
+                    id="today-schedule-title"
+                  >
+                    {copy.schedule}
+                  </h2>
                 </div>
-                <span>{formatHijriDate(day.hijri, locale)}</span>
+                <span className="text-[12px] text-muted">{formatHijriDate(day.hijri, locale)}</span>
               </div>
-              <div className="today-prayer-list">
+              <div>
                 {dayTimeline(day).map((entry) => {
                   const isNext =
                     entry.kind === "prayer" && entry.key === next?.key && nextDay === day;
+                  const isMarker = entry.kind === "sunrise";
                   return (
                     <div
-                      className={`${isNext ? "is-next" : ""}${entry.kind === "sunrise" ? " is-marker" : ""}`}
+                      className={
+                        isNext
+                          ? "-mx-2 grid min-h-[57px] grid-cols-[14px_1fr_auto] items-center gap-3 rounded-13 border border-sama/[0.35] bg-sama/10 px-[18px]"
+                          : "grid min-h-[57px] grid-cols-[14px_1fr_auto] items-center gap-3 border-t border-nur/10 px-2.5"
+                      }
                       key={entry.kind === "sunrise" ? "sunrise" : entry.key}
                     >
-                      <span className="prayer-marker" aria-hidden="true" />
-                      <div className="today-prayer-label">
-                        <strong>
+                      <span
+                        className={
+                          isNext
+                            ? "size-2 rounded-full border border-raml bg-raml shadow-[0_0_14px_rgba(242,214,162,0.7)]"
+                            : isMarker
+                              ? "size-1.5 rounded-full border border-dashed border-muted"
+                              : "size-2 rounded-full border border-muted"
+                        }
+                        aria-hidden="true"
+                      />
+                      <div className="grid gap-0.5">
+                        <strong className={isMarker ? "font-medium text-muted" : undefined}>
                           {entry.kind === "sunrise"
                             ? sunriseName(locale)
                             : prayerNameForCity(entry.key, day.city, locale)}
                         </strong>
-                        {entry.kind === "sunrise" ? <span>{copy.sunriseNote}</span> : null}
+                        {entry.kind === "sunrise" ? (
+                          <span className="text-11 text-muted">{copy.sunriseNote}</span>
+                        ) : null}
                       </div>
-                      <time dateTime={entry.time}>{formatPrayerTime(entry.time, locale)}</time>
+                      <time
+                        className={isNext ? "font-bold text-raml" : "text-muted"}
+                        dateTime={entry.time}
+                      >
+                        {formatPrayerTime(entry.time, locale)}
+                      </time>
                     </div>
                   );
                 })}
@@ -688,34 +791,58 @@ export function TodayApp() {
             </section>
           </div>
         ) : status === "error" || status === "zone-mismatch" ? (
-          <section className="today-error" role="alert">
-            <span aria-hidden="true">!</span>
-            <h2>{status === "zone-mismatch" ? copy.errorZoneTitle : copy.errorTitle}</h2>
-            <p>{status === "zone-mismatch" ? copy.errorZoneBody : copy.errorBody}</p>
-            <button type="button" onClick={() => setRefreshVersion((value) => value + 1)}>
+          <section className="today-card mt-[52px] px-[30px] py-[54px] text-center" role="alert">
+            <span
+              className="mx-auto mb-4 mt-0 grid size-[52px] place-items-center rounded-full border border-fajr/[0.55] font-extrabold text-fajr"
+              aria-hidden="true"
+            >
+              !
+            </span>
+            <h2 className="mb-2">
+              {status === "zone-mismatch" ? copy.errorZoneTitle : copy.errorTitle}
+            </h2>
+            <p className="text-muted">
+              {status === "zone-mismatch" ? copy.errorZoneBody : copy.errorBody}
+            </p>
+            <button
+              className="min-h-11 cursor-pointer rounded-xl border-0 bg-raml px-[22px] font-extrabold text-layl"
+              type="button"
+              onClick={() => setRefreshVersion((value) => value + 1)}
+            >
               {copy.retry}
             </button>
           </section>
         ) : (
-          <section className="today-loading" aria-live="polite">
-            <span aria-hidden="true" />
-            <p>{copy.refreshing}</p>
+          <section
+            className="today-card mt-[52px] px-[30px] py-[54px] text-center"
+            aria-live="polite"
+          >
+            <span
+              className="mx-auto mb-4 mt-0 grid size-[52px] animate-spin place-items-center rounded-full border border-sama/[0.55] border-t-transparent font-extrabold text-fajr"
+              aria-hidden="true"
+            />
+            <p className="text-muted">{copy.refreshing}</p>
           </section>
         )}
 
         <QiblaCompass city={city} locale={locale} />
 
         <section
-          className="today-ayah"
+          className="today-card today-ayah relative mt-6 overflow-hidden bg-layl-soft/[0.72] bg-[image:radial-gradient(circle_at_88%_0%,rgba(242,214,162,0.13),transparent_24rem)] px-[38px] pb-[38px] pt-[34px] max-mobile:px-[22px] max-mobile:pb-[30px] max-mobile:pt-[27px]"
           aria-labelledby="today-ayah-title"
           aria-busy={ayahStatus === "loading"}
         >
-          <div className="today-ayah-heading">
+          <div className="relative z-[1] flex items-center justify-between gap-6 max-mobile:flex-col max-mobile:items-start">
             <div>
-              <p>{copy.ayahKicker}</p>
-              <h2 id="today-ayah-title">{copy.ayahTitle}</h2>
+              <p className="m-0 text-11 font-extrabold tracking-[0.09em] text-raml">
+                {copy.ayahKicker}
+              </p>
+              <h2 className="m-0 mt-[5px] font-display text-2xl font-bold" id="today-ayah-title">
+                {copy.ayahTitle}
+              </h2>
             </div>
             <button
+              className="min-h-[42px] flex-none cursor-pointer rounded-xl border border-raml/[0.36] bg-raml/[0.08] px-[17px] font-bold text-raml transition-[color,border-color,background] duration-150 disabled:cursor-progress disabled:opacity-55 max-mobile:w-full [&:hover:not(:disabled)]:border-raml [&:hover:not(:disabled)]:bg-raml [&:hover:not(:disabled)]:text-layl"
               type="button"
               onClick={() => setAyahVersion((value) => value + 1)}
               disabled={ayahStatus === "loading"}
@@ -723,13 +850,17 @@ export function TodayApp() {
               {copy.ayahRefresh}
             </button>
           </div>
-          <div className="today-ayah-content" aria-live="polite">
+          <div className="relative z-[1] mt-[26px] min-h-[118px]" aria-live="polite">
             {ayah ? (
-              <blockquote>
-                <p lang="ar" dir="rtl">
+              <blockquote className="m-0 border-0 p-0">
+                <p
+                  className="m-0 max-w-[58rem] font-quran text-display-ayah text-nur"
+                  lang="ar"
+                  dir="rtl"
+                >
                   ﴿{ayah.text}﴾
                 </p>
-                <cite>
+                <cite className="mt-3 block font-display text-xs font-bold not-italic text-fajr">
                   {locale === "en" && ayah.surah.englishName
                     ? ayah.surah.englishName
                     : ayah.surah.name}{" "}
@@ -737,7 +868,9 @@ export function TodayApp() {
                 </cite>
               </blockquote>
             ) : (
-              <p className={ayahStatus === "error" ? "is-error" : ""}>
+              <p
+                className={`mb-0 mt-[34px] ${ayahStatus === "error" ? "text-fajr" : "text-muted"}`}
+              >
                 {ayahStatus === "error" ? copy.ayahError : copy.ayahLoading}
               </p>
             )}
@@ -745,10 +878,17 @@ export function TodayApp() {
         </section>
 
         {day ? (
-          <section className="today-verification" data-state={status} aria-live="polite">
-            <div>
-              <span className="verification-dot" aria-hidden="true" />
-              <p>
+          <section className="today-card mt-6 px-7 py-6" data-state={status} aria-live="polite">
+            <div className="flex items-center gap-[9px]">
+              <span
+                className={
+                  status === "cached"
+                    ? "h-[9px] w-[9px] rounded-full bg-raml shadow-[0_0_12px_rgba(242,214,162,0.6)]"
+                    : "h-[9px] w-[9px] rounded-full bg-success shadow-[0_0_12px_rgba(105,212,162,0.7)]"
+                }
+                aria-hidden="true"
+              />
+              <p className="m-0 text-sm font-bold text-nur">
                 {status === "verified"
                   ? copy.verified
                   : status === "cached"
@@ -756,21 +896,23 @@ export function TodayApp() {
                     : copy.refreshing}
               </p>
             </div>
-            <dl>
-              <div>
-                <dt>{copy.refreshed}</dt>
-                <dd>{formatUpdatedAt(day.fetchedAt, day.city.timeZone, locale)}</dd>
+            <dl className="mb-3.5 mt-5 flex flex-wrap gap-x-[42px] gap-y-4">
+              <div className="grid gap-[3px]">
+                <dt className="text-11 text-muted">{copy.refreshed}</dt>
+                <dd className="m-0 text-raml">
+                  {formatUpdatedAt(day.fetchedAt, day.city.timeZone, locale)}
+                </dd>
               </div>
-              <div>
-                <dt>
+              <div className="grid gap-[3px]">
+                <dt className="text-11 text-muted">
                   <label htmlFor="method-select">
                     {locale === "ar" ? "طريقة الحساب" : "Calculation"}
                   </label>
                 </dt>
-                <dd>
+                <dd className="m-0 text-raml">
                   <select
+                    className="min-h-[38px] max-w-full rounded-11 border border-nur/[0.18] bg-layl-soft px-[11px] text-13 text-nur"
                     id="method-select"
-                    className="today-method-select"
                     value={
                       methodOverrides[city.id] === undefined ? "" : String(methodOverrides[city.id])
                     }
@@ -800,19 +942,23 @@ export function TodayApp() {
                     ))}
                   </select>
                   {methodOverrides[city.id] === undefined ? null : (
-                    <span className="today-method-hint">{copy.methodOverridden}</span>
+                    <span className="mt-[5px] block text-11 text-raml">
+                      {copy.methodOverridden}
+                    </span>
                   )}
                 </dd>
               </div>
             </dl>
-            <p>{copy.accuracy}</p>
+            <p className="text-xs text-muted">{copy.accuracy}</p>
           </section>
         ) : null}
       </main>
 
-      <footer className="today-footer">
-        <p>{copy.footer}</p>
-        <a href="/Pray-Times/">Pray Times</a>
+      <footer className="flex justify-between gap-5 border-t border-nur/10 pb-[38px] pt-[25px] text-xs text-muted max-mobile:flex-col">
+        <p className="m-0">{copy.footer}</p>
+        <a className="text-raml no-underline" href="/Pray-Times/">
+          Pray Times
+        </a>
       </footer>
     </div>
   );

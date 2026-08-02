@@ -6,19 +6,39 @@
     <link rel="stylesheet" href="styles.css" />
     <title>أوقات الصلاة</title>
   </head>
-  <body>
-    <main class="popup-shell antialiased" aria-labelledby="app-title">
-      <header class="topbar">
-        <div class="brand-lockup">
-          <img class="brand-mark" src="icons/icon-48.png" width="40" height="40" alt="" />
+  <body class="m-0 min-w-[360px] bg-layl font-body text-sm leading-normal text-nur">
+    <main
+      class="popup-shell min-h-[552px] w-[min(100%,400px)] overflow-hidden p-5 antialiased"
+      aria-labelledby="app-title"
+    >
+      <header class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <img
+            class="size-10 rounded-xl shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
+            src="icons/icon-48.png"
+            width="40"
+            height="40"
+            alt=""
+          />
           <div>
-            <p class="brand-kicker" data-i18n="brandKicker">مسار اليوم</p>
-            <h1 id="app-title" data-i18n="extensionName">أوقات الصلاة</h1>
+            <p
+              class="mb-px mt-0 text-11 font-bold tracking-[0.08em] text-raml"
+              data-i18n="brandKicker"
+            >
+              مسار اليوم
+            </p>
+            <h1
+              class="mb-0 font-display text-lg leading-[1.2]"
+              id="app-title"
+              data-i18n="extensionName"
+            >
+              أوقات الصلاة
+            </h1>
           </div>
         </div>
-        <div class="topbar-actions">
+        <div class="flex items-center gap-2">
           <button
-            class="language-button"
+            class="icon-btn size-10 rounded-xl font-display text-xs font-bold"
             id="language-button"
             type="button"
             aria-label="التبديل إلى الإنجليزية"
@@ -26,13 +46,17 @@
             EN
           </button>
           <button
-            class="icon-button"
+            class="icon-btn"
             id="settings-button"
             type="button"
             data-i18n-aria-label="settingsLabel"
             aria-label="إعدادات المدينة وطريقة الحساب"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
+            <svg
+              class="size-[19px] fill-none stroke-current stroke-[1.7]"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path
                 d="M12 8.2A3.8 3.8 0 1 0 12 15.8 3.8 3.8 0 0 0 12 8.2Zm8.3 4.55-1.77.73a6.9 6.9 0 0 1-.53 1.27l.71 1.78-1.82 1.82-1.78-.71a6.9 6.9 0 0 1-1.27.53l-.73 1.77h-2.58l-.73-1.77a6.9 6.9 0 0 1-1.27-.53l-1.78.71-1.82-1.82.71-1.78a6.9 6.9 0 0 1-.53-1.27l-1.77-.73v-2.58l1.77-.73c.13-.44.3-.87.53-1.27l-.71-1.78 1.82-1.82 1.78.71c.4-.23.83-.4 1.27-.53l.73-1.77h2.58l.73 1.77c.44.13.87.3 1.27.53l1.78-.71 1.82 1.82-.71 1.78c.23.4.4.83.53 1.27l1.77.73v2.58Z"
               />
@@ -41,30 +65,45 @@
         </div>
       </header>
 
-      <section class="location-bar" data-i18n-aria-label="cityArea" aria-label="اختيار المدينة">
-        <label for="city-select" data-i18n="city">المدينة</label>
-        <select id="city-select" aria-describedby="city-help"></select>
-        <span id="city-help" class="sr-only" data-i18n="cityHelp"
+      <section
+        class="mt-5 flex flex-wrap items-center gap-2 rounded-15 border border-nur/[0.12] bg-layl-soft/[0.68] pb-[9px] pl-[7px] pr-[10px] pt-[9px]"
+        data-i18n-aria-label="cityArea"
+        aria-label="اختيار المدينة"
+      >
+        <label class="whitespace-nowrap text-xs text-muted" for="city-select" data-i18n="city"
+          >المدينة</label
+        >
+        <select
+          class="min-w-0 flex-1 cursor-pointer border-0 bg-transparent font-bold text-nur"
+          id="city-select"
+          aria-describedby="city-help"
+        ></select>
+        <span class="sr-only" id="city-help" data-i18n="cityHelp"
           >اختيار المدينة يحفظ على هذا الجهاز فقط.</span
         >
         <button
-          class="refresh-button"
+          class="icon-btn size-9 rounded-10 border-0"
           id="refresh-button"
           type="button"
           data-i18n-aria-label="refreshTimes"
           aria-label="تحديث المواقيت"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            class="size-[19px] fill-none stroke-current stroke-[1.7]"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path
               d="M20 11a8 8 0 0 0-14.9-4L3 9.1M4 4v5.1h5.1M4 13a8 8 0 0 0 14.9 4l2.1-2.1M20 20v-5.1h-5.1"
             />
           </svg>
         </button>
-        <div class="city-search">
+        <div class="relative grid basis-full gap-[5px]">
           <label class="sr-only" for="city-search" data-i18n="searchCity"
             >ابحث عن مدينة في أي مكان</label
           >
           <input
+            class="min-h-9 w-full rounded-11 border border-nur/[0.16] bg-layl/[0.55] px-3 text-xs text-nur focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-raml"
             id="city-search"
             type="search"
             autocomplete="off"
@@ -72,48 +111,83 @@
             placeholder="ابحث عن مدينة…"
           />
           <p
-            class="city-search-status"
+            class="m-0 text-11 text-muted empty:hidden"
             id="city-search-status"
             role="status"
             aria-live="polite"
           ></p>
-          <ul class="city-search-results" id="city-search-results" hidden></ul>
-          <button class="detect-button" id="detect-button" type="button" data-i18n="detectLocation">
+          <ul
+            class="absolute inset-x-0 top-full z-[6] mt-1 max-h-[190px] list-none overflow-y-auto rounded-xl border border-sama/[0.34] bg-layl-soft p-1 shadow-[0_18px_42px_rgba(0,0,0,0.45)]"
+            id="city-search-results"
+            hidden
+          ></ul>
+          <button
+            class="cursor-pointer justify-self-start rounded-10 border border-nur/[0.18] bg-transparent px-[11px] py-1.5 text-11 font-bold text-muted disabled:cursor-progress disabled:opacity-60 [&:hover:not(:disabled)]:bg-nur/[0.08] [&:hover:not(:disabled)]:text-nur"
+            id="detect-button"
+            type="button"
+            data-i18n="detectLocation"
+          >
             استخدم موقعي الحالي
           </button>
         </div>
       </section>
 
-      <p class="date-line" id="date-line" aria-live="polite">اختر مدينة لعرض مواقيت اليوم</p>
-      <p class="status-line" id="status-line" role="status" aria-live="polite"></p>
+      <p class="mx-0.5 mb-0 mt-[15px] text-xs text-muted" id="date-line" aria-live="polite">
+        اختر مدينة لعرض مواقيت اليوم
+      </p>
+      <p
+        class="mx-0.5 mb-0 mt-[3px] min-h-5 text-xs text-raml data-[state=error]:text-fajr-pale"
+        id="status-line"
+        role="status"
+        aria-live="polite"
+      ></p>
 
       <section
         id="prayer-panel"
-        class="prayer-panel"
+        class="min-h-52"
         aria-live="polite"
         data-i18n-aria-label="extensionName"
         aria-label="مواقيت الصلاة"
       ></section>
 
-      <section class="ayah-panel" aria-labelledby="ayah-heading">
-        <div class="section-heading">
-          <span class="section-rule" aria-hidden="true"></span>
-          <h2 id="ayah-heading" data-i18n="verseTitle">آية مختارة</h2>
+      <section
+        class="mt-[15px] border-t border-nur/[0.12] pt-[15px]"
+        aria-labelledby="ayah-heading"
+      >
+        <div class="flex items-center gap-2 text-raml">
+          <span
+            class="h-px w-[22px] bg-[linear-gradient(90deg,transparent,#f2d6a2)]"
+            aria-hidden="true"
+          ></span>
+          <h2 class="m-0 text-xs" id="ayah-heading" data-i18n="verseTitle">آية مختارة</h2>
         </div>
-        <div id="ayah-content" class="ayah-content" aria-live="polite"></div>
+        <div class="min-h-[58px] px-px pb-0 pt-2.5" id="ayah-content" aria-live="polite"></div>
       </section>
 
-      <footer class="popup-footer" id="source-line">اختر مدينة لعرض طريقة الحساب</footer>
+      <footer class="mt-[13px] border-t border-nur/10 pt-3 text-10 text-muted" id="source-line">
+        اختر مدينة لعرض طريقة الحساب
+      </footer>
     </main>
 
-    <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
-      <div class="settings-head">
+    <dialog
+      class="rounded-21 max-h-[min(720px,calc(100vh-28px))] w-[min(calc(100%-28px),372px)] overflow-y-auto border border-nur/[0.18] bg-layl-soft p-[19px] text-nur shadow-[0_24px_90px_rgba(0,0,0,0.5)] backdrop:bg-[rgba(2,8,24,0.72)] backdrop:backdrop-blur-[3px]"
+      id="settings-dialog"
+      aria-labelledby="settings-title"
+    >
+      <div class="flex items-center justify-between gap-3">
         <div>
-          <p class="brand-kicker" data-i18n="settingsKicker">دقة البيانات</p>
-          <h2 id="settings-title" data-i18n="settingsTitle">كيف نعرض الوقت؟</h2>
+          <p
+            class="mb-px mt-0 text-11 font-bold tracking-[0.08em] text-raml"
+            data-i18n="settingsKicker"
+          >
+            دقة البيانات
+          </p>
+          <h2 class="m-0 font-display text-xl" id="settings-title" data-i18n="settingsTitle">
+            كيف نعرض الوقت؟
+          </h2>
         </div>
         <button
-          class="icon-button"
+          class="icon-btn"
           id="close-settings"
           type="button"
           data-i18n-aria-label="closeSettings"
@@ -122,100 +196,151 @@
           ×
         </button>
       </div>
-      <dl class="settings-list">
-        <div>
-          <dt data-i18n="locationLabel">الموقع</dt>
-          <dd data-i18n="locationDetail">إحداثيات ثابتة للمدينة التي تختارها</dd>
-        </div>
-        <div>
-          <dt><label for="method-select" data-i18n="methodLabel">طريقة الحساب</label></dt>
-          <dd>
-            <select id="method-select"></select>
-            <span class="method-hint" id="method-hint"></span>
+      <dl class="my-[19px]">
+        <div class="border-b border-nur/10 py-3">
+          <dt class="font-bold text-raml" data-i18n="locationLabel">الموقع</dt>
+          <dd class="mb-0 mt-[3px] text-xs text-muted" data-i18n="locationDetail">
+            إحداثيات ثابتة للمدينة التي تختارها
           </dd>
         </div>
-        <div>
-          <dt data-i18n="verificationLabel">التحقق</dt>
-          <dd data-i18n="verificationDetail">
+        <div class="border-b border-nur/10 py-3">
+          <dt class="font-bold text-raml">
+            <label for="method-select" data-i18n="methodLabel">طريقة الحساب</label>
+          </dt>
+          <dd class="mb-0 mt-[3px] text-xs text-muted">
+            <select
+              class="min-h-[34px] w-full rounded-10 border border-nur/[0.18] bg-layl-soft px-[9px] text-xs text-nur"
+              id="method-select"
+            ></select>
+            <span class="mt-1 block text-10 text-raml" id="method-hint"></span>
+          </dd>
+        </div>
+        <div class="border-b border-nur/10 py-3">
+          <dt class="font-bold text-raml" data-i18n="verificationLabel">التحقق</dt>
+          <dd class="mb-0 mt-[3px] text-xs text-muted" data-i18n="verificationDetail">
             نرفض النتيجة إذا اختلف التاريخ أو الإحداثيات أو المنطقة الزمنية
           </dd>
         </div>
       </dl>
-      <p class="accuracy-note" data-i18n="accuracyNote">
+      <p class="mb-4 mt-0 text-xs text-nur/90" data-i18n="accuracyNote">
         قد تختلف المواقيت المحسوبة دقائق عن إعلان المسجد أو الجهة المحلية.
       </p>
-      <section class="notification-settings" aria-labelledby="badge-title">
-        <div class="notification-heading">
+      <section
+        class="mb-[18px] mt-0 rounded-2xl border border-sama/[0.28] bg-layl/[0.46] p-[15px]"
+        aria-labelledby="badge-title"
+      >
+        <div class="flex items-start justify-between gap-3.5">
           <div>
-            <h3 id="badge-title" data-i18n="badgeTitle">العد التنازلي على الأيقونة</h3>
-            <p data-i18n="badgeDescription">
+            <h3 class="mb-[3px] mt-0 font-display text-sm" id="badge-title" data-i18n="badgeTitle">
+              العد التنازلي على الأيقونة
+            </h3>
+            <p class="m-0 text-11 text-muted" data-i18n="badgeDescription">
               يظهر الوقت المتبقي للصلاة القادمة على أيقونة الإضافة دون فتح النافذة.
             </p>
           </div>
-          <label class="switch-control">
+          <label class="relative inline-flex flex-none">
             <span class="sr-only" data-i18n="badgeToggle">تفعيل العد التنازلي على الأيقونة</span>
-            <input id="badge-toggle" type="checkbox" />
-            <span aria-hidden="true"></span>
+            <input
+              class="peer pointer-events-none absolute opacity-0"
+              id="badge-toggle"
+              type="checkbox"
+            />
+            <span
+              class="h-[25px] w-11 cursor-pointer rounded-full border border-nur/20 bg-nur/[0.12] transition-colors duration-200 after:absolute after:m-0.5 after:block after:size-[19px] after:rounded-full after:bg-nur after:transition-transform after:duration-200 after:content-[''] peer-checked:bg-sama peer-checked:after:translate-x-[19px] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-raml rtl:peer-checked:after:-translate-x-[19px]"
+              aria-hidden="true"
+            ></span>
           </label>
         </div>
       </section>
-      <section class="notification-settings" aria-labelledby="notifications-title">
-        <div class="notification-heading">
+      <section
+        class="mb-[18px] mt-0 rounded-2xl border border-sama/[0.28] bg-layl/[0.46] p-[15px]"
+        aria-labelledby="notifications-title"
+      >
+        <div class="flex items-start justify-between gap-3.5">
           <div>
-            <h3 id="notifications-title" data-i18n="notificationsTitle">تنبيهات الصلاة</h3>
-            <p data-i18n="notificationsDescription">
+            <h3
+              class="mb-[3px] mt-0 font-display text-sm"
+              id="notifications-title"
+              data-i18n="notificationsTitle"
+            >
+              تنبيهات الصلاة
+            </h3>
+            <p class="m-0 text-11 text-muted" data-i18n="notificationsDescription">
               إشعار عند دخول وقت الصلاة أو نافذة الجمع، حتى عندما تكون النافذة مغلقة.
             </p>
           </div>
-          <label class="switch-control">
+          <label class="relative inline-flex flex-none">
             <span class="sr-only" data-i18n="notificationsToggle">تفعيل تنبيهات الصلاة</span>
-            <input id="notification-toggle" type="checkbox" />
-            <span aria-hidden="true"></span>
+            <input
+              class="peer pointer-events-none absolute opacity-0"
+              id="notification-toggle"
+              type="checkbox"
+            />
+            <span
+              class="h-[25px] w-11 cursor-pointer rounded-full border border-nur/20 bg-nur/[0.12] transition-colors duration-200 after:absolute after:m-0.5 after:block after:size-[19px] after:rounded-full after:bg-nur after:transition-transform after:duration-200 after:content-[''] peer-checked:bg-sama peer-checked:after:translate-x-[19px] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-raml rtl:peer-checked:after:-translate-x-[19px]"
+              aria-hidden="true"
+            ></span>
           </label>
         </div>
-        <p class="permission-status" id="notification-permission" role="status"></p>
-        <fieldset id="prayer-notification-options">
-          <legend data-i18n="prayerNotifications">الصلوات التي تريد تنبيهًا لها</legend>
-          <div class="prayer-toggle-grid">
-            <label
-              ><input id="prayer-toggle-Fajr" type="checkbox" /><span
+        <p
+          class="m-0 mt-2.5 min-h-[17px] text-11 text-raml data-[state=error]:text-fajr-pale"
+          id="notification-permission"
+          role="status"
+        ></p>
+        <fieldset
+          class="mb-3 mt-[13px] border-0 p-0 disabled:opacity-50"
+          id="prayer-notification-options"
+        >
+          <legend class="mb-[7px] text-11 text-nur/90" data-i18n="prayerNotifications">
+            الصلوات التي تريد تنبيهًا لها
+          </legend>
+          <div class="grid grid-cols-3 gap-[7px]">
+            <label class="[&[hidden]]:hidden">
+              <input class="accent-sama" id="prayer-toggle-Fajr" type="checkbox" /><span
+                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Fajr"
-              ></span
-            ></label>
-            <label
-              ><input id="prayer-toggle-Dhuhr" type="checkbox" /><span
+              ></span>
+            </label>
+            <label class="[&[hidden]]:hidden">
+              <input class="accent-sama" id="prayer-toggle-Dhuhr" type="checkbox" /><span
+                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Dhuhr"
-              ></span
-            ></label>
-            <label
-              ><input id="prayer-toggle-Asr" type="checkbox" /><span data-prayer-label="Asr"></span
-            ></label>
-            <label
-              ><input id="prayer-toggle-Maghrib" type="checkbox" /><span
+              ></span>
+            </label>
+            <label class="[&[hidden]]:hidden">
+              <input class="accent-sama" id="prayer-toggle-Asr" type="checkbox" /><span
+                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
+                data-prayer-label="Asr"
+              ></span>
+            </label>
+            <label class="[&[hidden]]:hidden">
+              <input class="accent-sama" id="prayer-toggle-Maghrib" type="checkbox" /><span
+                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Maghrib"
-              ></span
-            ></label>
-            <label
-              ><input id="prayer-toggle-Isha" type="checkbox" /><span
+              ></span>
+            </label>
+            <label class="[&[hidden]]:hidden">
+              <input class="accent-sama" id="prayer-toggle-Isha" type="checkbox" /><span
+                class="rounded-9 flex min-h-[34px] items-center gap-[5px] border border-nur/[0.12] px-2 py-1.5 text-11 text-nur/95"
                 data-prayer-label="Isha"
-              ></span
-            ></label>
+              ></span>
+            </label>
           </div>
         </fieldset>
         <button
-          class="secondary-button"
+          class="min-h-[38px] w-full cursor-pointer rounded-10 border border-raml/[0.35] bg-raml/[0.08] font-bold text-raml disabled:cursor-not-allowed disabled:opacity-45"
           id="test-notification"
           type="button"
           data-i18n="testNotification"
         >
           إرسال إشعار تجريبي
         </button>
-        <p class="notification-note" data-i18n="notificationTimingNote">
+        <p class="mt-[9px] text-11 leading-normal text-muted" data-i18n="notificationTimingNote">
           لا يستطيع المتصفح إيقاظ الجهاز من السكون. يظهر التنبيه المتأخر خلال ١٠ دقائق فقط.
         </p>
       </section>
       <button
-        class="primary-button"
+        class="min-h-11 w-full cursor-pointer rounded-13 border-0 bg-raml font-extrabold text-layl transition-[transform,filter] duration-200 hover:-translate-y-px hover:brightness-105"
         id="close-settings-primary"
         type="button"
         data-i18n="understood"
