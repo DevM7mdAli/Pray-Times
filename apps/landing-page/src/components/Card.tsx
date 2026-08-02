@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { HTMLAttributes, ReactNode } from "react";
 
 /**
@@ -15,7 +16,10 @@ export function Card({
 >) {
   return (
     <section
-      className={`rounded-27 border border-nur/[0.13] shadow-[0_24px_80px_rgba(0,0,0,0.16)] ${className}`}
+      className={clsx(
+        "rounded-27 border border-nur/[0.13] shadow-[0_24px_80px_rgba(0,0,0,0.16)]",
+        className
+      )}
       {...rest}
     >
       {children}
@@ -26,6 +30,8 @@ export function Card({
 /** Small all-caps label that opens a dashboard panel. */
 export function Kicker({ className = "", children }: { className?: string; children: ReactNode }) {
   return (
-    <p className={`text-11 font-extrabold tracking-[0.09em] text-raml ${className}`}>{children}</p>
+    <p className={clsx("text-11 font-extrabold tracking-[0.09em] text-raml", className)}>
+      {children}
+    </p>
   );
 }

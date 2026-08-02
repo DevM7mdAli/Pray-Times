@@ -36,8 +36,10 @@ import {
   type PrayerMethodId,
 } from "@pray-times/core";
 import { useDocumentLocale, useLocale, useToggleLocale } from "./i18n/useLocale";
+import { EXTENSION_URL, HOME_PATH, ICON_URL } from "./lib/urls";
+import { AyahQuote } from "./components/AyahQuote";
+import { Card, Kicker } from "./components/Card";
 import { LocationPicker } from "./LocationPicker";
-import { Card, Kicker } from "./TodayUi";
 import { QiblaCompass } from "./QiblaCompass";
 import {
   currentWebPushSubscription,
@@ -47,13 +49,12 @@ import {
   supportsWebPush,
   syncWebPush,
   testWebPush,
-} from "./web-push";
+} from "./lib/web-push";
 
 const CITY_STORAGE_KEY = "pray-times:today-city";
 const ALERT_PRAYERS_STORAGE_KEY = "pray-times:web-alert-prayers";
 const SAVED_CITIES_STORAGE_KEY = "pray-times:saved-places:v1";
 const METHOD_OVERRIDES_STORAGE_KEY = "pray-times:method-overrides:v1";
-const EXTENSION_URL = "https://github.com/DevM7mdAli/Pray-Times/releases/latest";
 
 const ALL_PRAYERS_ENABLED: Record<PrayerKey, boolean> = {
   Fajr: true,
@@ -360,11 +361,11 @@ export function TodayApp() {
       <header className="mx-auto flex min-h-[86px] w-shell-today items-center justify-between gap-6 border-b border-nur/10 max-mobile:min-h-[74px] max-mobile:w-[calc(100%-28px)]">
         <a
           className="flex items-center gap-[11px] font-display font-bold text-nur no-underline"
-          href="/Pray-Times/"
+          href={HOME_PATH}
         >
           <img
             className="rounded-13 shadow-[0_9px_25px_rgba(0,0,0,0.25)]"
-            src="/Pray-Times/icon.png"
+            src={ICON_URL}
             width="46"
             height="46"
             alt=""
@@ -374,7 +375,7 @@ export function TodayApp() {
         <nav className="flex items-center gap-[18px]" aria-label={t("title")}>
           <a
             className="cursor-pointer border-0 bg-transparent text-muted no-underline hover:text-nur max-mobile:hidden"
-            href="/Pray-Times/"
+            href={HOME_PATH}
           >
             {t("back")}
           </a>
@@ -716,19 +717,7 @@ export function TodayApp() {
           <div className="relative z-[1] mt-[26px] min-h-[118px]" aria-live="polite">
             {ayah ? (
               <blockquote className="m-0 border-0 p-0">
-                <p
-                  className="m-0 max-w-[58rem] font-quran text-display-md text-nur"
-                  lang="ar"
-                  dir="rtl"
-                >
-                  ﴿{ayah.text}﴾
-                </p>
-                <cite className="mt-3 block font-display text-xs font-bold not-italic text-fajr">
-                  {locale === "en" && ayah.surah.englishName
-                    ? ayah.surah.englishName
-                    : ayah.surah.name}{" "}
-                  · {t("common:verseNumber")} {ayah.numberInSurah}
-                </cite>
+                <AyahQuote ayah={ayah} className="max-w-[58rem] text-nur" />
               </blockquote>
             ) : (
               <p
@@ -821,7 +810,7 @@ export function TodayApp() {
 
       <footer className="flex justify-between gap-5 border-t border-nur/10 pb-[38px] pt-[25px] text-xs text-muted max-mobile:flex-col">
         <p className="m-0">{t("footer")}</p>
-        <a className="text-raml no-underline" href="/Pray-Times/">
+        <a className="text-raml no-underline" href={HOME_PATH}>
           Pray Times
         </a>
       </footer>

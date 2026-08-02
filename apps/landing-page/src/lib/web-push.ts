@@ -1,4 +1,5 @@
 import { PRAYER_KEYS, type City, type PrayerKey, type SupportedLocale } from "@pray-times/core";
+import { PUSH_CONFIG_URL, SERVICE_WORKER_SCOPE, SERVICE_WORKER_URL } from "./urls";
 
 export type WebAlertSettings = {
   /** The whole place, since a searched or detected one is not in the catalog. */
@@ -25,7 +26,7 @@ export async function loadPushApiUrl(): Promise<string | undefined> {
   const environmentUrl = normalizeApiBaseUrl(import.meta.env.VITE_PUSH_API_URL);
   if (environmentUrl) return environmentUrl;
   try {
-    const response = await fetch("/Pray-Times/push-config.json", { cache: "no-store" });
+    const response = await fetch(PUSH_CONFIG_URL, { cache: "no-store" });
     if (!response.ok) return undefined;
     const config = (await response.json()) as PushConfig;
     return normalizeApiBaseUrl(config.apiBaseUrl);
@@ -48,7 +49,7 @@ function applicationServerKey(value: string): ArrayBuffer {
 }
 
 async function registration(): Promise<ServiceWorkerRegistration> {
-  await navigator.serviceWorker.register("/Pray-Times/sw.js", { scope: "/Pray-Times/" });
+  await navigator.serviceWorker.register(SERVICE_WORKER_URL, { scope: SERVICE_WORKER_SCOPE });
   return navigator.serviceWorker.ready;
 }
 

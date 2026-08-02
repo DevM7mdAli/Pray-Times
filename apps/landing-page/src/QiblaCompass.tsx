@@ -8,7 +8,7 @@ import {
   type SupportedLocale,
 } from "@pray-times/core";
 import { useLocale } from "./i18n/useLocale";
-import { Card, Kicker } from "./TodayUi";
+import { Card, Kicker } from "./components/Card";
 
 type HeadingState = "idle" | "live" | "unsupported" | "denied";
 

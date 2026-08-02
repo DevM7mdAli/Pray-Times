@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
   CITIES,
@@ -19,90 +19,13 @@ import {
   type PrayerDay,
 } from "@pray-times/core";
 import { useDocumentLocale, useLocale, useToggleLocale } from "./i18n/useLocale";
-import { Reveal } from "./Reveal";
-
-const REPOSITORY_URL = "https://github.com/DevM7mdAli/Pray-Times";
-const EXTENSION_URL = `${REPOSITORY_URL}/releases/latest`;
-const BASE_URL = import.meta.env.BASE_URL;
-const TODAY_URL = `${BASE_URL}today/`;
-
-function BrandMark({ className = "" }: { className?: string }) {
-  return <img className={className} src={`${BASE_URL}icon.png`} width="48" height="48" alt="" />;
-}
-
-const ICON_BASE = "fill-none stroke-current";
-
-function ArrowIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={`${ICON_BASE} ${className}`}>
-      <path d="M5 12h13M13 6l6 6-6 6" />
-    </svg>
-  );
-}
-
-function ShieldIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={`${ICON_BASE} ${className}`}>
-      <path d="M12 3 5 6v5c0 4.6 2.9 8.8 7 10 4.1-1.2 7-5.4 7-10V6l-7-3Zm0 6v5m0 3h.01" />
-    </svg>
-  );
-}
-
-function PinIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={`${ICON_BASE} ${className}`}>
-      <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Zm-8 3a3 3 0 1 0 0-6 3 3 0 0 6Z" />
-    </svg>
-  );
-}
-
-function CheckIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={`${ICON_BASE} ${className}`}>
-      <path d="m5 12 4 4L19 6" />
-    </svg>
-  );
-}
-
-/** Page-content column, shared by every top-level section. */
-function Shell({
-  as: Tag = "section",
-  className = "",
-  children,
-  ...rest
-}: {
-  as?: "section" | "header";
-  className?: string;
-  children: ReactNode;
-} & Omit<HTMLAttributes<HTMLElement>, "className" | "children">) {
-  return (
-    <Tag className={`mx-auto w-shell max-mobile:w-[calc(100%-32px)] ${className}`} {...rest}>
-      {children}
-    </Tag>
-  );
-}
-
-/** Small all-caps label above a section heading, with its leading hairline. */
-function Eyebrow({ tone, children }: { tone: "raml" | "fajr"; children: ReactNode }) {
-  return (
-    <p
-      className={`mb-[18px] mt-0 flex items-center gap-[9px] text-11 font-extrabold tracking-[0.075em] ${
-        tone === "raml" ? "text-raml" : "text-fajr"
-      }`}
-    >
-      <span
-        className="block h-px w-7 bg-[image:linear-gradient(90deg,transparent,currentColor)]"
-        aria-hidden="true"
-      />
-      {children}
-    </p>
-  );
-}
-
-const HEADING = "m-0 font-display font-bold tracking-[-0.045em]";
-const BUTTON =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-13 px-[15px] py-2.5 text-13 font-extrabold transition-[transform,box-shadow,background] duration-200 hover:-translate-y-0.5 hover:shadow-lift";
-const BUTTON_PRIMARY = `${BUTTON} bg-raml text-layl shadow-[inset_0_1px_rgba(255,255,255,0.55),0_8px_18px_rgba(235,194,118,0.25)]`;
+import { AyahQuote } from "./components/AyahQuote";
+import { Eyebrow } from "./components/Eyebrow";
+import { Reveal } from "./components/Reveal";
+import { Shell } from "./components/Shell";
+import { ArrowIcon, BrandMark, CheckIcon, PinIcon, ShieldIcon } from "./components/icons";
+import { EXTENSION_URL, REPOSITORY_URL, TODAY_PATH } from "./lib/urls";
+import { BUTTON, BUTTON_PRIMARY, HEADING } from "./styles/tokens";
 
 /** The extension preview inside the hero, showing one city's day. */
 function PrayerPreviewCard({
@@ -274,7 +197,7 @@ export function App() {
           </button>
           <a
             className={`${BUTTON} bg-layl text-nur max-mobile:px-3 max-mobile:text-11`}
-            href={TODAY_URL}
+            href={TODAY_PATH}
           >
             {t("useOnWeb")} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
           </a>
@@ -296,7 +219,7 @@ export function App() {
               {t("heroLead")}
             </p>
             <div className="mt-[31px] flex flex-wrap items-center gap-[21px]">
-              <a className={BUTTON_PRIMARY} href={TODAY_URL}>
+              <a className={BUTTON_PRIMARY} href={TODAY_PATH}>
                 {t("useOnWeb")} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
               </a>
               <a
@@ -523,17 +446,7 @@ export function App() {
             className="m-0 border-s-2 border-raml ps-[35px] max-mobile:ps-[22px]"
           >
             {ayah ? (
-              <>
-                <p className="m-0 font-quran text-display-md text-layl-soft" lang="ar" dir="rtl">
-                  ﴿{ayah.text}﴾
-                </p>
-                <cite className="mt-3 block font-display text-xs font-bold not-italic text-fajr">
-                  {locale === "en" && ayah.surah.englishName
-                    ? ayah.surah.englishName
-                    : ayah.surah.name}{" "}
-                  · {t("common:verseNumber")} {ayah.numberInSurah}
-                </cite>
-              </>
+              <AyahQuote ayah={ayah} className="text-layl-soft" />
             ) : (
               <>
                 <p className="m-0 font-body text-display-sm text-layl-soft">
@@ -560,7 +473,7 @@ export function App() {
               components={{ br: <br />, accent: <em className="not-italic text-fajr" /> }}
             />
           </h2>
-          <a className={`${BUTTON_PRIMARY} mt-8`} href={TODAY_URL}>
+          <a className={`${BUTTON_PRIMARY} mt-8`} href={TODAY_PATH}>
             {t("useOnWeb")} <ArrowIcon className="size-[17px] stroke-2 rtl:rotate-180" />
           </a>
         </Reveal>

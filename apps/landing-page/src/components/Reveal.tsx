@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useLayoutEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 
 type RevealTag = "div" | "header" | "section" | "article" | "blockquote" | "p";
@@ -76,7 +77,12 @@ export function Reveal({
   return (
     <Tag
       ref={ref as never}
-      className={`transition-[opacity,translate,scale] duration-reveal ease-reveal ${DELAY[delay]} ${state} ${className}`}
+      className={clsx(
+        "transition-[opacity,translate,scale] duration-reveal ease-reveal",
+        DELAY[delay],
+        state,
+        className
+      )}
       {...rest}
     >
       {children}
