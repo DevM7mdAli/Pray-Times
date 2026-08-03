@@ -140,6 +140,12 @@ export default function SettingsScreen() {
       >
         <Text className="text-nur font-bold">{t("choosePlace")}</Text>
       </Pressable>
+
+      <View className="border-nur/10 border-t pt-5">
+        <Text align="center" className="text-13 text-muted leading-6">
+          {t("dedication")}
+        </Text>
+      </View>
     </Screen>
   );
 }

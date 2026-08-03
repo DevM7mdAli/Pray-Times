@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { isSupportedLocale, localeDirection, type SupportedLocale } from "@pray-times/core";
 
@@ -29,7 +29,7 @@ export function useDocumentLocale(meta: { title: string; description?: string })
   const locale = useLocale();
   const { title, description } = meta;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
     root.lang = locale;
     root.dir = localeDirection(locale);

@@ -48,6 +48,8 @@ export const resources = {
       calculation: "Calculation method",
       defaultMethod: "Country default",
       alertMeFor: "Alert me for",
+      dedication:
+        "This work was created by Mohammed Alajmi, and its reward is dedicated to the soul of my father, Ali Ahmed Alajmi.",
     },
   },
   ar: {
@@ -96,6 +98,8 @@ export const resources = {
       calculation: "طريقة الحساب",
       defaultMethod: "الافتراضي للدولة",
       alertMeFor: "نبّهني عند",
+      dedication:
+        "تم صناعة هذا العمل بواسطة محمد العجمي و يهدى ثواب هذا العمل الى روح والدي علي احمد العجمي",
     },
   },
 } as const;

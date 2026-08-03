@@ -85,6 +85,8 @@ export const EXTENSION_COPY = {
       "لا يستطيع المتصفح إيقاظ الجهاز من السكون. يظهر التنبيه المتأخر خلال ١٠ دقائق فقط.",
     understood: "فهمت",
     footer: "طريقة معلنة · يتحقق من التاريخ والإحداثيات قبل العرض",
+    dedication:
+      "تم صناعة هذا العمل بواسطة محمد العجمي و يهدى ثواب هذا العمل الى روح والدي علي احمد العجمي",
     verseNumber: "الآية",
   },
   en: {
@@ -179,6 +181,8 @@ export const EXTENSION_COPY = {
       "The browser cannot wake a sleeping device. Late alerts are shown for up to 10 minutes.",
     understood: "Got it",
     footer: "Declared method · date and coordinates checked before display",
+    dedication:
+      "This work was created by Mohammed Alajmi, and its reward is dedicated to the soul of my father, Ali Ahmed Alajmi.",
     verseNumber: "Verse",
   },
 } as const;

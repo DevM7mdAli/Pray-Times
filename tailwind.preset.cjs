@@ -104,6 +104,7 @@ module.exports = {
       screens: {
         mobile: "600px",
         tablet: "830px",
+        nav: "1040px",
       },
       transitionTimingFunction: {
         reveal: "cubic-bezier(0.22, 1, 0.36, 1)",

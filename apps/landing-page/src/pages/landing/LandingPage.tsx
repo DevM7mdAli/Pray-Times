@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
+import { SiteFooter } from "../../components/SiteFooter";
 import { useDocumentLocale } from "../../i18n/useLocale";
-import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { ClosingSection } from "./sections/ClosingSection";
 import { DaylineSection } from "./sections/DaylineSection";
@@ -17,7 +17,7 @@ export function LandingPage() {
   useDocumentLocale({ title: t("documentTitle"), description: t("documentDescription") });
 
   return (
-    <div className="overflow-hidden bg-nur antialiased">
+    <div className="overflow-x-clip bg-nur antialiased">
       <SiteHeader />
       <main id="top">
         <HeroSection />

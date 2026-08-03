@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
+import { SiteFooter } from "../../components/SiteFooter";
 import { usePrayerDays } from "../../hooks/usePrayerDays";
 import { useDocumentLocale } from "../../i18n/useLocale";
 import { QiblaCompass } from "./components/QiblaCompass";
-import { TodayFooter } from "./components/TodayFooter";
 import { TodayHeader } from "./components/TodayHeader";
 import { AyahPanel } from "./sections/AyahPanel";
 import { DayStatePanel } from "./sections/DayStatePanel";
@@ -44,7 +44,7 @@ export function TodayPage() {
         {day ? <VerificationPanel day={day} city={city} status={status} /> : null}
       </main>
 
-      <TodayFooter />
+      <SiteFooter />
     </div>
   );
 }
