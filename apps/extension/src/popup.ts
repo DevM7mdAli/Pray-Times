@@ -154,6 +154,7 @@ function setStatus(key?: Status["key"], state: Status["state"] = "info"): void {
 function populateCities(): void {
   const selected =
     citySelect.value ||
+    extensionSettings.cityId ||
     (() => {
       try {
         return localStorage.getItem(CITY_STORAGE_KEY) ?? "";
@@ -529,7 +530,9 @@ function renderMethodSettings(): void {
   const base = resolveCity(extensionSettings.cityId, extensionSettings.savedCities);
   methodSelect.disabled = !base;
   if (!base) {
-    methodSelect.replaceChildren();
+    const placeholder = element("option", undefined, text("methodNeedsCity"));
+    placeholder.value = "";
+    methodSelect.replaceChildren(placeholder);
     methodHint.textContent = "";
     return;
   }
@@ -731,6 +734,7 @@ function installEvents(): void {
   citySelect.addEventListener("change", () => {
     void (async () => {
       await persistSettings({ ...extensionSettings, cityId: citySelect.value });
+      renderMethodSettings();
       await renderNotificationSettings();
       await loadSelectedCity();
     })();
