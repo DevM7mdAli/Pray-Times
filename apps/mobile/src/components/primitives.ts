@@ -30,7 +30,11 @@ type DirectionalTextProps = TextProps & {
   contentDirection?: NonNullable<TextStyle["writingDirection"]>;
 };
 
-type DirectionalTextInputProps = TextInputProps & { className?: string };
+type DirectionalTextInputProps = TextInputProps & {
+  align?: NonNullable<TextStyle["textAlign"]>;
+  className?: string;
+  contentDirection?: NonNullable<TextStyle["writingDirection"]>;
+};
 
 const StyledText = createStyled(NativeText as ComponentType<TextProps>, { className: "style" });
 const StyledTextInput = createStyled(NativeTextInput as ComponentType<TextInputProps>, {
@@ -60,12 +64,24 @@ export function Text({
   });
 }
 
-export function TextInput({ className = "", style, ...props }: DirectionalTextInputProps) {
+export function TextInput({
+  align,
+  className = "",
+  contentDirection,
+  style,
+  ...props
+}: DirectionalTextInputProps) {
   const { isRtl } = useAppDirection();
   return createElement(StyledTextInput, {
     ...props,
     className,
-    style: [style, { textAlign: isRtl ? "right" : "left" }],
+    style: [
+      style,
+      {
+        textAlign: align ?? (isRtl ? "right" : "left"),
+        writingDirection: contentDirection ?? (isRtl ? "rtl" : "ltr"),
+      },
+    ],
   });
 }
 

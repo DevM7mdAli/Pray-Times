@@ -11,9 +11,11 @@ import {
   formatHijriDate,
   formatPrayerTime,
   formatRemainingTime,
+  iqamahTimeFor,
   nextPrayerFor,
   prayerNameForCity,
   sunriseName,
+  sunsetName,
 } from "@pray-times/core";
 import {
   Card,
@@ -49,6 +51,7 @@ export default function TodayScreen() {
       cityId: state.cityId,
       savedCities: state.savedCities,
       methodOverrides: state.methodOverrides,
+      iqamahByCity: state.iqamahByCity,
       enabledPrayers: state.enabledPrayers,
       notificationsEnabled: state.notificationsEnabled,
     }))
@@ -208,21 +211,34 @@ export default function TodayScreen() {
               {dayTimeline(day).map((entry) => {
                 const isNext =
                   entry.kind === "prayer" && nextDay === day && entry.key === next?.key;
-                const isSunrise = entry.kind === "sunrise";
+                const isMarker = entry.kind !== "prayer";
+                const iqamah =
+                  entry.kind === "prayer"
+                    ? preferences.iqamahByCity[day.city.id]?.[entry.key]
+                    : undefined;
                 return (
                   <View
                     className={`border-nur/10 flex-row items-center gap-3 border-t py-4 ${isNext ? "rounded-13 bg-sama/10 px-3" : ""}`}
-                    key={entry.kind === "prayer" ? entry.key : "sunrise"}
+                    key={entry.kind === "prayer" ? entry.key : entry.kind}
                   >
                     <View className={`size-2 rounded-full ${isNext ? "bg-raml" : "bg-muted"}`} />
                     <View className="flex-1 gap-0.5">
-                      <Text className={isSunrise ? "text-muted" : "text-nur font-bold"}>
-                        {isSunrise
-                          ? sunriseName(preferences.locale)
-                          : prayerNameForCity(entry.key, day.city, preferences.locale)}
+                      <Text className={isMarker ? "text-muted" : "text-nur font-bold"}>
+                        {entry.kind === "prayer"
+                          ? prayerNameForCity(entry.key, day.city, preferences.locale)
+                          : entry.kind === "sunrise"
+                            ? sunriseName(preferences.locale)
+                            : sunsetName(preferences.locale)}
                       </Text>
-                      {isSunrise ? (
-                        <Text className="text-11 text-muted">{t("sunriseNote")}</Text>
+                      {entry.kind !== "prayer" ? (
+                        <Text className="text-11 text-muted">
+                          {t(entry.kind === "sunrise" ? "sunriseNote" : "sunsetNote")}
+                        </Text>
+                      ) : iqamah ? (
+                        <Text className="text-11 text-raml">
+                          {t("iqamahShort")} ·{" "}
+                          {formatPrayerTime(iqamahTimeFor(entry.time, iqamah), preferences.locale)}
+                        </Text>
                       ) : null}
                     </View>
                     <Text className={isNext ? "text-raml font-bold" : "text-muted"}>

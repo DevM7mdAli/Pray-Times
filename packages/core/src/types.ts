@@ -4,6 +4,12 @@ export const PRAYER_KEYS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 
 export type PrayerKey = (typeof PRAYER_KEYS)[number];
 
+export type IqamahTimeSetting =
+  { mode: "offset"; minutes: number } | { mode: "exact"; time: string };
+
+export type PrayerIqamahSettings = Partial<Record<PrayerKey, IqamahTimeSetting>>;
+export type IqamahSettingsByCity = Record<string, PrayerIqamahSettings>;
+
 /**
  * Where a place came from.
  *
@@ -54,6 +60,8 @@ export type PrayerDay = {
    * Days cached before this was parsed also arrive without it.
    */
   sunrise?: string;
+  /** Solar sunset (Al-Ghurub), kept distinct from the calculated Maghrib time. */
+  sunset?: string;
   /**
    * The end of suhoor, shortly before Fajr. Optional for the same reason as
    * sunrise: it enriches Ramadan but must never block a verified day.

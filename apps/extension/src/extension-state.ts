@@ -3,6 +3,7 @@ import {
   cityWithMethod,
   isSupportedLocale,
   isUsablePrayerDay,
+  parseIqamahSettingsByCity,
   parseMethodOverrides,
   parseSavedCities,
   prayerMethodForCity,
@@ -11,6 +12,7 @@ import {
   type PrayerDay,
   type PrayerMethodId,
   type PrayerKey,
+  type IqamahSettingsByCity,
   type PrayerScheduleEntry,
   type SupportedLocale,
 } from "@pray-times/core";
@@ -32,6 +34,8 @@ export type ExtensionSettings = {
   savedCities: City[];
   /** Per-place authority chosen by the reader, overriding the country default. */
   methodOverrides: Record<string, PrayerMethodId>;
+  /** User-entered congregation times, kept separate from verified adhan times. */
+  iqamahByCity: IqamahSettingsByCity;
 };
 
 export const ALL_PRAYERS_ENABLED: Record<PrayerKey, boolean> = {
@@ -52,6 +56,7 @@ export function defaultExtensionSettings(locale: SupportedLocale = "en"): Extens
     enabledPrayers: { ...ALL_PRAYERS_ENABLED },
     savedCities: [],
     methodOverrides: {},
+    iqamahByCity: {},
   };
 }
 
@@ -78,6 +83,7 @@ function normalizeSettings(value: unknown): ExtensionSettings {
     // Stored places are re-validated on every read rather than trusted.
     savedCities: parseSavedCities(candidate.savedCities),
     methodOverrides: parseMethodOverrides(candidate.methodOverrides),
+    iqamahByCity: parseIqamahSettingsByCity(candidate.iqamahByCity),
   };
 }
 

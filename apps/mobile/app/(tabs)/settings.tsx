@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Switch } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -10,14 +10,80 @@ import {
   prayerMethodForCity,
   prayerMethodName,
   prayerNameForCity,
+  type IqamahTimeSetting,
 } from "@pray-times/core";
 import { Card, DirectionalStack, Kicker, Screen } from "@/components/ui";
-import { Pressable, Text, View } from "@/components/primitives";
+import { Pressable, Text, TextInput, View } from "@/components/primitives";
 import {
   disablePrayerNotifications,
   requestNotificationPermission,
 } from "@/features/notifications/service";
+import { usePrayerDays } from "@/features/prayer-times/queries";
 import { selectedCityForPreferences, usePreferencesStore } from "@/store/preferences-store";
+
+function SettingButton({
+  active,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      className={`rounded-10 flex-1 p-2 ${active ? "bg-sama/20" : "border-nur/10 border"}`}
+      onPress={onPress}
+    >
+      <Text align="center" className={`text-11 font-bold ${active ? "text-nur" : "text-muted"}`}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function OffsetInput({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+  return (
+    <TextInput
+      className="rounded-10 border-nur/15 bg-layl text-nur h-10 border px-3 text-center"
+      align="center"
+      contentDirection="ltr"
+      keyboardType="number-pad"
+      maxLength={3}
+      value={draft}
+      onBlur={() => {
+        const candidate = Number(draft);
+        if (!Number.isFinite(candidate)) setDraft(String(value));
+        else onChange(Math.min(180, Math.max(0, Math.round(candidate))));
+      }}
+      onChangeText={setDraft}
+    />
+  );
+}
+
+function ExactTimeInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  return (
+    <TextInput
+      className="rounded-10 border-nur/15 bg-layl text-nur h-10 border px-3 text-center"
+      align="center"
+      contentDirection="ltr"
+      keyboardType="numbers-and-punctuation"
+      maxLength={5}
+      placeholder="HH:MM"
+      placeholderTextColor="#667592"
+      value={draft}
+      onBlur={() => {
+        if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(draft)) onChange(draft);
+        else setDraft(value);
+      }}
+      onChangeText={setDraft}
+    />
+  );
+}
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -27,6 +93,7 @@ export default function SettingsScreen() {
       cityId: state.cityId,
       savedCities: state.savedCities,
       methodOverrides: state.methodOverrides,
+      iqamahByCity: state.iqamahByCity,
       enabledPrayers: state.enabledPrayers,
       notificationsEnabled: state.notificationsEnabled,
     }))
@@ -35,7 +102,10 @@ export default function SettingsScreen() {
   const setNotificationsEnabled = usePreferencesStore((state) => state.setNotificationsEnabled);
   const setPrayerEnabled = usePreferencesStore((state) => state.setPrayerEnabled);
   const setMethodOverride = usePreferencesStore((state) => state.setMethodOverride);
+  const setIqamahSetting = usePreferencesStore((state) => state.setIqamahSetting);
   const city = useMemo(() => selectedCityForPreferences(preferences), [preferences]);
+  const now = useMemo(() => new Date(), []);
+  const { today } = usePrayerDays(city, now);
   const [notificationError, setNotificationError] = useState<string>();
 
   const changeNotifications = async (enabled: boolean) => {
@@ -104,6 +174,67 @@ export default function SettingsScreen() {
             />
           </View>
         ))}
+      </Card>
+
+      <Card className="gap-4">
+        <DirectionalStack gap={4}>
+          <Text className="text-17 text-nur font-bold">{t("iqamahTitle")}</Text>
+          <Text className="text-13 text-muted">{t("iqamahDescription")}</Text>
+        </DirectionalStack>
+        {prayerKeysForCity(city).map((key) => {
+          const setting = preferences.iqamahByCity[city.id]?.[key];
+          const setMode = (mode?: IqamahTimeSetting["mode"]) => {
+            const next =
+              mode === undefined
+                ? undefined
+                : mode === "offset"
+                  ? ({ mode, minutes: 20 } as const)
+                  : ({ mode, time: today.data?.timings[key].slice(0, 5) ?? "00:00" } as const);
+            setIqamahSetting(city.id, key, next);
+          };
+          return (
+            <View className="border-nur/10 gap-3 border-t pt-4" key={key}>
+              <Text className="text-nur font-bold">
+                {prayerNameForCity(key, city, preferences.locale)}
+              </Text>
+              <View className="flex-row gap-2">
+                <SettingButton
+                  active={!setting}
+                  label={t("iqamahNotSet")}
+                  onPress={() => setMode()}
+                />
+                <SettingButton
+                  active={setting?.mode === "offset"}
+                  label={t("iqamahOffset")}
+                  onPress={() => setMode("offset")}
+                />
+                <SettingButton
+                  active={setting?.mode === "exact"}
+                  label={t("iqamahExact")}
+                  onPress={() => setMode("exact")}
+                />
+              </View>
+              {setting?.mode === "offset" ? (
+                <View className="flex-row items-center gap-3">
+                  <View className="flex-1">
+                    <OffsetInput
+                      value={setting.minutes}
+                      onChange={(minutes) =>
+                        setIqamahSetting(city.id, key, { mode: "offset", minutes })
+                      }
+                    />
+                  </View>
+                  <Text className="text-13 text-muted">{t("iqamahMinutes")}</Text>
+                </View>
+              ) : setting?.mode === "exact" ? (
+                <ExactTimeInput
+                  value={setting.time}
+                  onChange={(time) => setIqamahSetting(city.id, key, { mode: "exact", time })}
+                />
+              ) : null}
+            </View>
+          );
+        })}
       </Card>
 
       <Card className="gap-3">

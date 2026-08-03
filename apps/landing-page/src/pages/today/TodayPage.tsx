@@ -6,6 +6,7 @@ import { QiblaCompass } from "./components/QiblaCompass";
 import { TodayHeader } from "./components/TodayHeader";
 import { AyahPanel } from "./sections/AyahPanel";
 import { DayStatePanel } from "./sections/DayStatePanel";
+import { IqamahSettingsPanel } from "./sections/IqamahSettingsPanel";
 import { NextPrayerCard } from "./sections/NextPrayerCard";
 import { RamadanPanel } from "./sections/RamadanPanel";
 import { ScheduleCard } from "./sections/ScheduleCard";
@@ -30,10 +31,13 @@ export function TodayPage() {
         {day && fasting ? <RamadanPanel day={day} fasting={fasting} /> : null}
 
         {day ? (
-          <div className="mt-[52px] grid grid-cols-[minmax(0,0.92fr)_minmax(420px,1.08fr)] gap-6 max-tablet:grid-cols-1">
-            <NextPrayerCard day={day} next={next} nextDay={nextDay} />
-            <ScheduleCard day={day} next={next} isNextToday={nextDay === day} />
-          </div>
+          <>
+            <div className="mt-[52px] grid grid-cols-[minmax(0,0.92fr)_minmax(420px,1.08fr)] gap-6 max-tablet:grid-cols-1">
+              <NextPrayerCard day={day} next={next} nextDay={nextDay} />
+              <ScheduleCard day={day} next={next} isNextToday={nextDay === day} />
+            </div>
+            <IqamahSettingsPanel day={day} />
+          </>
         ) : (
           <DayStatePanel status={status} onRetry={retry} />
         )}

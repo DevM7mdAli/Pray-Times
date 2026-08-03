@@ -34,8 +34,10 @@ import {
   isRamadan,
   isSupportedTimeZone,
   isUsablePrayerDay,
+  iqamahTimeFor,
   nextPrayerFor,
   parseAyahResponse,
+  parseIqamahSettingsByCity,
   parsePrayerDayResponse,
   prayerCacheKey,
   parseMethodOverrides,
@@ -70,6 +72,7 @@ function prayerPayload(overrides: Record<string, unknown> = {}): unknown {
       timings: {
         Fajr: "03:54",
         Sunrise: "05:24",
+        Sunset: "18:31",
         Dhuhr: "12:00",
         Asr: "15:26",
         Maghrib: "18:38",
@@ -373,12 +376,18 @@ test("sunrise is parsed when offered and never blocks a verified day", () => {
   }
 });
 
-test("the day timeline places sunrise by its own clock time", () => {
+test("sunset is parsed as Al-Ghurub without replacing Maghrib", () => {
+  const day = parsePrayerDayResponse(prayerPayload(), riyadh, "31-07-2026");
+  assert.equal(day.sunset, "18:31");
+  assert.equal(day.timings.Maghrib, "18:38");
+});
+
+test("the day timeline places solar markers by their own clock times", () => {
   const day = parsePrayerDayResponse(prayerPayload(), riyadh, "31-07-2026");
   const timeline = dayTimeline(day);
   assert.deepEqual(
-    timeline.map((entry) => (entry.kind === "sunrise" ? "sunrise" : entry.key)),
-    ["Fajr", "sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"]
+    timeline.map((entry) => (entry.kind === "prayer" ? entry.key : entry.kind)),
+    ["Fajr", "sunrise", "Dhuhr", "Asr", "sunset", "Maghrib", "Isha"]
   );
   // Times stay in ascending order across the whole timeline.
   const minutes = timeline.map((entry) => entry.time);
@@ -392,12 +401,40 @@ test("the day timeline places sunrise by its own clock time", () => {
     "31-07-2026"
   );
   assert.deepEqual(
-    dayTimeline(combinedDay).map((entry) => (entry.kind === "sunrise" ? "sunrise" : entry.key)),
-    ["Fajr", "sunrise", "Dhuhr", "Maghrib"]
+    dayTimeline(combinedDay).map((entry) => (entry.kind === "prayer" ? entry.key : entry.kind)),
+    ["Fajr", "sunrise", "Dhuhr", "sunset", "Maghrib"]
   );
 
-  // Without sunrise the timeline is exactly the prayers.
-  assert.deepEqual(dayTimeline({ ...day, sunrise: undefined }).length, 5);
+  // Without solar markers the timeline is exactly the prayers.
+  assert.deepEqual(dayTimeline({ ...day, sunrise: undefined, sunset: undefined }).length, 5);
+});
+
+test("iqamah supports an exact time or a bounded offset after adhan", () => {
+  assert.equal(iqamahTimeFor("12:00", { mode: "offset", minutes: 20 }), "12:20");
+  assert.equal(iqamahTimeFor("23:50", { mode: "offset", minutes: 20 }), "00:10");
+  assert.equal(iqamahTimeFor("05:04", { mode: "exact", time: "05:35" }), "05:35");
+  assert.throws(() => iqamahTimeFor("12:00", { mode: "offset", minutes: 181 }), RangeError);
+});
+
+test("stored iqamah settings are validated at the persistence boundary", () => {
+  assert.deepEqual(
+    parseIqamahSettingsByCity({
+      riyadh: {
+        Fajr: { mode: "offset", minutes: 20 },
+        Dhuhr: { mode: "exact", time: "12:30" },
+      },
+    }),
+    {
+      riyadh: {
+        Fajr: { mode: "offset", minutes: 20 },
+        Dhuhr: { mode: "exact", time: "12:30" },
+      },
+    }
+  );
+  assert.deepEqual(
+    parseIqamahSettingsByCity({ riyadh: { Fajr: { mode: "offset", minutes: 181 } } }),
+    {}
+  );
 });
 
 test("Ramadan is detected by month number, not by month name", () => {

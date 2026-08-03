@@ -90,6 +90,7 @@ export function parsePrayerDayResponse(
   }
 
   const sunrise = supplementaryTime(timingsSource, "Sunrise");
+  const sunset = supplementaryTime(timingsSource, "Sunset");
   const imsak = supplementaryTime(timingsSource, "Imsak");
 
   const date = recordField(data, "date");
@@ -129,6 +130,7 @@ export function parsePrayerDayResponse(
     method: expectedMethod,
     timings,
     ...(sunrise ? { sunrise } : {}),
+    ...(sunset ? { sunset } : {}),
     ...(imsak ? { imsak } : {}),
     hijri: {
       day: stringField(hijri, "day"),

@@ -3,14 +3,17 @@ import {
   cityName,
   dayTimeline,
   formatHijriDate,
+  iqamahTimeFor,
   formatPrayerTime,
   prayerNameForCity,
   sunriseName,
+  sunsetName,
   type NextPrayer,
   type PrayerDay,
 } from "@pray-times/core";
 import { Card } from "../../../components/Card";
 import { useLocale } from "../../../i18n/useLocale";
+import { usePreferences } from "../../../stores/preferences";
 
 const ROW = "grid min-h-[57px] grid-cols-[14px_1fr_auto] items-center gap-3";
 
@@ -26,6 +29,7 @@ export function ScheduleCard({
 }) {
   const { t } = useTranslation("today");
   const locale = useLocale();
+  const iqamahByCity = usePreferences((state) => state.iqamahByCity);
 
   return (
     <Card className="bg-layl-soft/[0.72] p-7.5" aria-labelledby="today-schedule-title">
@@ -41,7 +45,9 @@ export function ScheduleCard({
       <div>
         {dayTimeline(day).map((entry) => {
           const isNext = entry.kind === "prayer" && entry.key === next?.key && isNextToday;
-          const isMarker = entry.kind === "sunrise";
+          const isMarker = entry.kind !== "prayer";
+          const iqamah =
+            entry.kind === "prayer" ? iqamahByCity[day.city.id]?.[entry.key] : undefined;
           return (
             <div
               className={
@@ -49,7 +55,7 @@ export function ScheduleCard({
                   ? `-mx-2 ${ROW} rounded-13 border border-sama/[0.35] bg-sama/10 px-[18px]`
                   : `${ROW} border-t border-nur/10 px-2.5`
               }
-              key={entry.kind === "sunrise" ? "sunrise" : entry.key}
+              key={entry.kind === "prayer" ? entry.key : entry.kind}
             >
               <span
                 className={
@@ -63,12 +69,21 @@ export function ScheduleCard({
               />
               <div className="grid gap-0.5">
                 <strong className={isMarker ? "font-medium text-muted" : undefined}>
-                  {entry.kind === "sunrise"
-                    ? sunriseName(locale)
-                    : prayerNameForCity(entry.key, day.city, locale)}
+                  {entry.kind === "prayer"
+                    ? prayerNameForCity(entry.key, day.city, locale)
+                    : entry.kind === "sunrise"
+                      ? sunriseName(locale)
+                      : sunsetName(locale)}
                 </strong>
-                {entry.kind === "sunrise" ? (
-                  <span className="text-11 text-muted">{t("sunriseNote")}</span>
+                {entry.kind !== "prayer" ? (
+                  <span className="text-11 text-muted">
+                    {t(entry.kind === "sunrise" ? "sunriseNote" : "sunsetNote")}
+                  </span>
+                ) : iqamah ? (
+                  <span className="text-11 text-raml">
+                    {t("iqamahShort")} ·{" "}
+                    {formatPrayerTime(iqamahTimeFor(entry.time, iqamah), locale)}
+                  </span>
                 ) : null}
               </div>
               <time className={isNext ? "font-bold text-raml" : "text-muted"} dateTime={entry.time}>

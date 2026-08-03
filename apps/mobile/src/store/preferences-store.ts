@@ -8,9 +8,11 @@ import {
   SUPPORTED_LOCALES,
   citySchema,
   cityWithMethod,
+  iqamahSettingsByCitySchema,
   isPrayerMethodId,
   resolveCity,
   type City,
+  type IqamahTimeSetting,
   type PrayerKey,
   type PrayerMethodId,
   type SupportedLocale,
@@ -36,6 +38,7 @@ const preferencesDataSchema = z.object({
       .int()
       .refine((value): value is PrayerMethodId => isPrayerMethodId(value))
   ),
+  iqamahByCity: iqamahSettingsByCitySchema.default({}),
   enabledPrayers: enabledPrayersSchema,
   notificationsEnabled: z.boolean(),
 });
@@ -49,6 +52,7 @@ type PreferencesStore = PreferencesData & {
   selectCity: (cityId: string) => void;
   saveCity: (city: City) => void;
   setMethodOverride: (cityId: string, methodId?: PrayerMethodId) => void;
+  setIqamahSetting: (cityId: string, key: PrayerKey, setting?: IqamahTimeSetting) => void;
   setPrayerEnabled: (key: PrayerKey, enabled: boolean) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
 };
@@ -70,6 +74,7 @@ const initialPreferences: PreferencesData = {
   cityId: "riyadh",
   savedCities: [],
   methodOverrides: {},
+  iqamahByCity: {},
   enabledPrayers: ALL_PRAYERS_ENABLED,
   notificationsEnabled: false,
 };
@@ -114,6 +119,16 @@ export const usePreferencesStore = create<PreferencesStore>()(
           else methodOverrides[cityId] = methodId;
           return { methodOverrides };
         }),
+      setIqamahSetting: (cityId, key, setting) =>
+        set((state) => {
+          const iqamahByCity = { ...state.iqamahByCity };
+          const citySettings = { ...(iqamahByCity[cityId] ?? {}) };
+          if (setting) citySettings[key] = setting;
+          else delete citySettings[key];
+          if (Object.keys(citySettings).length === 0) delete iqamahByCity[cityId];
+          else iqamahByCity[cityId] = citySettings;
+          return { iqamahByCity };
+        }),
       setPrayerEnabled: (key, enabled) =>
         set((state) => ({ enabledPrayers: { ...state.enabledPrayers, [key]: enabled } })),
       setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
@@ -127,6 +142,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
         cityId: state.cityId,
         savedCities: state.savedCities,
         methodOverrides: state.methodOverrides,
+        iqamahByCity: state.iqamahByCity,
         enabledPrayers: state.enabledPrayers,
         notificationsEnabled: state.notificationsEnabled,
       }),

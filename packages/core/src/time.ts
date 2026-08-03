@@ -4,6 +4,7 @@ import {
   type City,
   type FastingStatus,
   type HijriDate,
+  type IqamahTimeSetting,
   type NextPrayer,
   type PrayerDay,
   type PrayerKey,
@@ -66,6 +67,19 @@ export function formatPrayerTime(value: string, locale: SupportedLocale): string
 export function minutesSinceMidnight(value: string): number {
   const { hour, minute } = parseTime(value);
   return hour * 60 + minute;
+}
+
+/** Resolves a congregation time without changing the verified prayer time. */
+export function iqamahTimeFor(prayerTime: string, setting: IqamahTimeSetting): string {
+  if (setting.mode === "exact") {
+    const { hour, minute } = parseTime(setting.time);
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  }
+  if (!Number.isInteger(setting.minutes) || setting.minutes < 0 || setting.minutes > 180) {
+    throw new RangeError("Iqamah offset must be an integer from 0 to 180 minutes");
+  }
+  const total = (minutesSinceMidnight(prayerTime) + setting.minutes) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
 export function localDateFor(timeZone: string, now = new Date()): string {
@@ -278,14 +292,21 @@ export function fastingStatusFor(day: PrayerDay, now = new Date()): FastingStatu
 }
 
 const SUNRISE_NAMES: Record<SupportedLocale, string> = { ar: "الشروق", en: "Sunrise" };
+const SUNSET_NAMES: Record<SupportedLocale, string> = { ar: "الغروب", en: "Al-Ghurub" };
 
 export function sunriseName(locale: SupportedLocale): string {
   return SUNRISE_NAMES[locale];
 }
 
-/** A prayer, or a marker such as sunrise that only divides the day. */
+export function sunsetName(locale: SupportedLocale): string {
+  return SUNSET_NAMES[locale];
+}
+
+/** A prayer, or a solar marker that only divides the day. */
 export type DayTimelineEntry =
-  { kind: "prayer"; key: PrayerKey; time: string } | { kind: "sunrise"; time: string };
+  | { kind: "prayer"; key: PrayerKey; time: string }
+  | { kind: "sunrise"; time: string }
+  | { kind: "sunset"; time: string };
 
 /**
  * The day's rows in clock order, with sunrise placed by its own time rather
@@ -298,13 +319,15 @@ export function dayTimeline(day: PrayerDay): DayTimelineEntry[] {
     key,
     time: day.timings[key],
   }));
-  if (!day.sunrise) return entries;
-  const sunrise: DayTimelineEntry = { kind: "sunrise", time: day.sunrise };
-  const minutes = minutesSinceMidnight(day.sunrise);
-  const index = entries.findIndex((entry) => minutesSinceMidnight(entry.time) > minutes);
-  if (index === -1) entries.push(sunrise);
-  else entries.splice(index, 0, sunrise);
-  return entries;
+  if (day.sunrise) entries.push({ kind: "sunrise", time: day.sunrise });
+  if (day.sunset) entries.push({ kind: "sunset", time: day.sunset });
+  return entries.sort((left, right) => {
+    const difference = minutesSinceMidnight(left.time) - minutesSinceMidnight(right.time);
+    if (difference !== 0) return difference;
+    // When sunset and Maghrib coincide, keep the solar event visibly distinct
+    // before the prayer rather than hiding it after an identical time.
+    return left.kind === "prayer" ? 1 : right.kind === "prayer" ? -1 : 0;
+  });
 }
 
 /** Roughly what a toolbar badge can show before the engine truncates it. */

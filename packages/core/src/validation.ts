@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PRAYER_METHOD_IDS, type PrayerMethodId } from "./methods.js";
-import { PRAYER_KEYS, type City, type PrayerDay } from "./types.js";
+import { PRAYER_KEYS, type City, type IqamahSettingsByCity, type PrayerDay } from "./types.js";
 
 const prayerMethodIdSchema = z
   .number()
@@ -39,12 +39,47 @@ const prayerMethodSchema = z.object({
   combinesPrayers: z.boolean().optional(),
 });
 
+export const iqamahTimeSettingSchema = z.discriminatedUnion("mode", [
+  z.object({ mode: z.literal("offset"), minutes: z.number().int().gte(0).lte(180) }),
+  z.object({ mode: z.literal("exact"), time: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/) }),
+]);
+
+export const prayerIqamahSettingsSchema = z.object({
+  Fajr: iqamahTimeSettingSchema.optional(),
+  Dhuhr: iqamahTimeSettingSchema.optional(),
+  Asr: iqamahTimeSettingSchema.optional(),
+  Maghrib: iqamahTimeSettingSchema.optional(),
+  Isha: iqamahTimeSettingSchema.optional(),
+});
+
+export const iqamahSettingsByCitySchema = z.record(z.string().min(1), prayerIqamahSettingsSchema);
+
+export function parseIqamahSettingsByCity(value: unknown): IqamahSettingsByCity {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const result: IqamahSettingsByCity = {};
+  for (const [cityId, rawSettings] of Object.entries(value)) {
+    if (!cityId || !rawSettings || typeof rawSettings !== "object" || Array.isArray(rawSettings)) {
+      continue;
+    }
+    const settings: IqamahSettingsByCity[string] = {};
+    for (const key of PRAYER_KEYS) {
+      const parsed = iqamahTimeSettingSchema.safeParse(
+        (rawSettings as Record<string, unknown>)[key]
+      );
+      if (parsed.success) settings[key] = parsed.data;
+    }
+    if (Object.keys(settings).length > 0) result[cityId] = settings;
+  }
+  return result;
+}
+
 export const prayerDaySchema = z.object({
   requestedDate: z.string().regex(/^\d{2}-\d{2}-\d{4}$/),
   city: citySchema,
   method: prayerMethodSchema,
   timings: prayerTimingsSchema,
   sunrise: z.string().min(1).optional(),
+  sunset: z.string().min(1).optional(),
   imsak: z.string().min(1).optional(),
   hijri: z.object({
     day: z.string().min(1),

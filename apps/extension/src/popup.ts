@@ -14,6 +14,7 @@ import {
   formatPrayerTime,
   formatRemainingTime,
   formatUpdatedAt,
+  iqamahTimeFor,
   isPrayerMethodId,
   isSupportedLocale,
   localeDirection,
@@ -28,11 +29,13 @@ import {
   resolveCity,
   searchPlaces,
   sunriseName,
+  sunsetName,
   VerificationError,
   type Ayah,
   type City,
   type PlaceSuggestion,
   type PrayerDay,
+  type IqamahTimeSetting,
   type PrayerKey,
   type SupportedLocale,
 } from "@pray-times/core";
@@ -102,6 +105,7 @@ const languageButton = requiredElement<HTMLButtonElement>("language-button");
 const settingsDialog = requiredElement<HTMLDialogElement>("settings-dialog");
 const methodSelect = requiredElement<HTMLSelectElement>("method-select");
 const methodHint = requiredElement<HTMLElement>("method-hint");
+const iqamahSettings = requiredElement<HTMLElement>("iqamah-settings");
 const badgeToggle = requiredElement<HTMLInputElement>("badge-toggle");
 const notificationToggle = requiredElement<HTMLInputElement>("notification-toggle");
 const notificationPermission = requiredElement<HTMLElement>("notification-permission");
@@ -233,6 +237,7 @@ async function selectPlace(place: City): Promise<void> {
   populateCities();
   citySelect.value = place.id;
   renderMethodSettings();
+  renderIqamahSettings();
   await renderNotificationSettings();
   await loadSelectedCity();
 }
@@ -393,7 +398,7 @@ function renderPrayerDay(day: PrayerDay): void {
   );
   for (const entry of dayTimeline(day)) {
     const isNext = entry.kind === "prayer" && entry.key === next.key;
-    const isMarker = entry.kind === "sunrise";
+    const isMarker = entry.kind !== "prayer";
     const classes = [PRAYER_NODE];
     if (isNext) classes.push(PRAYER_NODE_NEXT, "font-bold text-nur");
     // Sunrise divides the day without being a prayer, so it reads as a marker.
@@ -405,12 +410,26 @@ function renderPrayerDay(day: PrayerDay): void {
       element(
         "span",
         undefined,
-        entry.kind === "sunrise"
-          ? sunriseName(locale)
-          : prayerNameForCity(entry.key, day.city, locale)
+        entry.kind === "prayer"
+          ? prayerNameForCity(entry.key, day.city, locale)
+          : entry.kind === "sunrise"
+            ? sunriseName(locale)
+            : sunsetName(locale)
       )
     );
     node.append(element("time", "tabular-nums text-inherit", formatPrayerTime(entry.time, locale)));
+    if (entry.kind === "prayer") {
+      const iqamah = extensionSettings.iqamahByCity[day.city.id]?.[entry.key];
+      if (iqamah) {
+        node.append(
+          element(
+            "span",
+            "font-bold tabular-nums text-raml",
+            `${text("iqamahShort")} ${formatPrayerTime(iqamahTimeFor(entry.time, iqamah), locale)}`
+          )
+        );
+      }
+    }
     path.append(node);
   }
   fragment.append(path);
@@ -522,6 +541,22 @@ async function persistSettings(settings: ExtensionSettings): Promise<void> {
   await settingsWriteQueue;
 }
 
+async function updateIqamahSetting(
+  cityId: string,
+  key: PrayerKey,
+  setting?: IqamahTimeSetting
+): Promise<void> {
+  const iqamahByCity = { ...extensionSettings.iqamahByCity };
+  const citySettings = { ...(iqamahByCity[cityId] ?? {}) };
+  if (setting) citySettings[key] = setting;
+  else delete citySettings[key];
+  if (Object.keys(citySettings).length === 0) delete iqamahByCity[cityId];
+  else iqamahByCity[cityId] = citySettings;
+  await persistSettings({ ...extensionSettings, iqamahByCity });
+  renderIqamahSettings();
+  renderView();
+}
+
 /**
  * The authority selector, defaulting to whatever the place's country follows.
  * Choosing one pins it for that place only.
@@ -554,6 +589,104 @@ function renderMethodSettings(): void {
   methodSelect.replaceChildren(fragment);
   methodSelect.value = override === undefined ? "" : String(override);
   methodHint.textContent = override === undefined ? "" : text("methodOverridden");
+}
+
+function renderIqamahSettings(): void {
+  const city = currentCity();
+  if (!city) {
+    iqamahSettings.replaceChildren(element("p", "m-0 text-11 text-raml", text("iqamahNeedsCity")));
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  const configured = extensionSettings.iqamahByCity[city.id] ?? {};
+  for (const key of prayerKeysForCity(city)) {
+    const setting = configured[key];
+    const row = element(
+      "div",
+      "grid grid-cols-3 items-center gap-2 rounded-10 border border-nur/10 bg-layl/30 p-2"
+    );
+    row.append(element("strong", "text-11 text-nur", prayerNameForCity(key, city, locale)));
+
+    const mode = element(
+      "select",
+      "min-w-0 rounded-lg border border-nur/15 bg-layl px-2 py-1.5 text-10 text-nur"
+    );
+    const modes = [
+      { value: "none", label: text("iqamahNotSet") },
+      { value: "offset", label: text("iqamahOffset") },
+      { value: "exact", label: text("iqamahExact") },
+    ];
+    for (const item of modes) {
+      const option = element("option", undefined, item.label);
+      option.value = item.value;
+      mode.append(option);
+    }
+    mode.value = setting?.mode ?? "none";
+    mode.setAttribute(
+      "aria-label",
+      `${prayerNameForCity(key, city, locale)} · ${text("iqamahTitle")}`
+    );
+    mode.addEventListener("change", () => {
+      if (mode.value === "none") void updateIqamahSetting(city.id, key);
+      else if (mode.value === "offset") {
+        void updateIqamahSetting(city.id, key, { mode: "offset", minutes: 20 });
+      } else {
+        const prayerTime = currentDay?.city.id === city.id ? currentDay.timings[key] : "00:00";
+        void updateIqamahSetting(city.id, key, { mode: "exact", time: prayerTime });
+      }
+    });
+    row.append(mode);
+
+    if (setting?.mode === "offset") {
+      const editor = element("label", "flex min-w-0 items-center gap-1 text-10 text-muted");
+      const input = element(
+        "input",
+        "min-w-0 w-full rounded-lg border border-nur/15 bg-layl px-2 py-1.5 text-center text-10 text-nur"
+      );
+      input.type = "number";
+      input.min = "0";
+      input.max = "180";
+      input.step = "1";
+      input.value = String(setting.minutes);
+      input.setAttribute(
+        "aria-label",
+        `${prayerNameForCity(key, city, locale)} · ${text("iqamahOffset")}`
+      );
+      input.addEventListener("change", () => {
+        const candidate = Number(input.value);
+        if (!Number.isFinite(candidate)) {
+          renderIqamahSettings();
+          return;
+        }
+        const minutes = Math.min(180, Math.max(0, Math.round(candidate)));
+        void updateIqamahSetting(city.id, key, { mode: "offset", minutes });
+      });
+      editor.append(input, element("span", "shrink-0", text("iqamahMinutes")));
+      row.append(editor);
+    } else if (setting?.mode === "exact") {
+      const input = element(
+        "input",
+        "min-w-0 w-full rounded-lg border border-nur/15 bg-layl px-2 py-1.5 text-center text-10 text-nur"
+      );
+      input.type = "time";
+      input.value = iqamahTimeFor(setting.time, setting);
+      input.setAttribute(
+        "aria-label",
+        `${prayerNameForCity(key, city, locale)} · ${text("iqamahExact")}`
+      );
+      input.addEventListener("change", () => {
+        if (input.value) {
+          void updateIqamahSetting(city.id, key, { mode: "exact", time: input.value });
+        }
+      });
+      row.append(input);
+    } else {
+      row.append(element("span", "text-center text-10 text-muted", "—"));
+    }
+    fragment.append(row);
+  }
+  iqamahSettings.replaceChildren(fragment);
 }
 
 function renderBadgeSettings(): void {
@@ -726,6 +859,7 @@ function applyLocale(): void {
   });
   renderView();
   renderMethodSettings();
+  renderIqamahSettings();
   renderBadgeSettings();
   void renderNotificationSettings();
 }
@@ -735,6 +869,7 @@ function installEvents(): void {
     void (async () => {
       await persistSettings({ ...extensionSettings, cityId: citySelect.value });
       renderMethodSettings();
+      renderIqamahSettings();
       await renderNotificationSettings();
       await loadSelectedCity();
     })();
@@ -762,6 +897,7 @@ function installEvents(): void {
       else overrides[base.id] = chosen;
       await persistSettings({ ...extensionSettings, methodOverrides: overrides });
       renderMethodSettings();
+      renderIqamahSettings();
       // The stored day was calculated by the old authority, so it is refetched.
       await loadSelectedCity(true);
     })();
@@ -832,6 +968,7 @@ async function initialize(): Promise<void> {
     : "";
   installEvents();
   renderMethodSettings();
+  renderIqamahSettings();
   renderBadgeSettings();
   await renderNotificationSettings();
   await loadSelectedCity();

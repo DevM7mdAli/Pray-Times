@@ -5,10 +5,13 @@ import {
   CITIES,
   PRAYER_KEYS,
   cityWithMethod,
+  parseIqamahSettingsByCity,
   parseMethodOverrides,
   parseSavedCities,
   resolveCity,
   type City,
+  type IqamahSettingsByCity,
+  type IqamahTimeSetting,
   type PrayerKey,
   type PrayerMethodId,
 } from "@pray-times/core";
@@ -19,6 +22,7 @@ const KEYS = {
   enabledPrayers: "pray-times:web-alert-prayers",
   savedCities: "pray-times:saved-places:v1",
   methodOverrides: "pray-times:method-overrides:v1",
+  iqamahByCity: "pray-times:iqamah-by-city:v1",
 } as const;
 
 const DEFAULT_CITY_ID = "riyadh";
@@ -35,6 +39,7 @@ export type Preferences = {
   cityId: string;
   savedCities: City[];
   methodOverrides: Record<string, PrayerMethodId>;
+  iqamahByCity: IqamahSettingsByCity;
   enabledPrayers: Record<PrayerKey, boolean>;
 };
 
@@ -42,6 +47,7 @@ export type PreferencesStore = Preferences & {
   selectCity: (id: string) => void;
   savePlace: (place: City) => void;
   setMethodOverride: (cityId: string, method: PrayerMethodId | undefined) => void;
+  setIqamahSetting: (cityId: string, key: PrayerKey, setting?: IqamahTimeSetting) => void;
   setPrayerEnabled: (key: PrayerKey, enabled: boolean) => void;
 };
 
@@ -64,7 +70,7 @@ function parseEnabledPrayers(value: unknown): Record<PrayerKey, boolean> {
 }
 
 /**
- * Reads and writes the four keys this app has always used rather than one blob
+ * Reads and writes the existing preference keys rather than one opaque blob
  * under a new name, so upgrading does not silently reset anyone's city, saved
  * places, calculation methods or alert choices. Validation is core's — the same
  * parsers that guarded these values before.
@@ -79,6 +85,7 @@ const storage: PersistStorage<Preferences> = {
           cityId: localStorage.getItem(KEYS.cityId) ?? DEFAULT_CITY_ID,
           savedCities: parseSavedCities(read(KEYS.savedCities)),
           methodOverrides: parseMethodOverrides(read(KEYS.methodOverrides)),
+          iqamahByCity: parseIqamahSettingsByCity(read(KEYS.iqamahByCity)),
           enabledPrayers: parseEnabledPrayers(read(KEYS.enabledPrayers)),
         },
       };
@@ -89,6 +96,7 @@ const storage: PersistStorage<Preferences> = {
           cityId: DEFAULT_CITY_ID,
           savedCities: [],
           methodOverrides: {},
+          iqamahByCity: {},
           enabledPrayers: { ...ALL_PRAYERS_ENABLED },
         },
       };
@@ -99,6 +107,7 @@ const storage: PersistStorage<Preferences> = {
       localStorage.setItem(KEYS.cityId, value.state.cityId);
       localStorage.setItem(KEYS.savedCities, JSON.stringify(value.state.savedCities));
       localStorage.setItem(KEYS.methodOverrides, JSON.stringify(value.state.methodOverrides));
+      localStorage.setItem(KEYS.iqamahByCity, JSON.stringify(value.state.iqamahByCity));
       localStorage.setItem(KEYS.enabledPrayers, JSON.stringify(value.state.enabledPrayers));
     } catch {
       // Preferences remain available for this visit.
@@ -119,6 +128,7 @@ export const usePreferences = create<PreferencesStore>()(
       cityId: DEFAULT_CITY_ID,
       savedCities: [],
       methodOverrides: {},
+      iqamahByCity: {},
       enabledPrayers: { ...ALL_PRAYERS_ENABLED },
 
       selectCity: (id) => set({ cityId: id }),
@@ -141,6 +151,17 @@ export const usePreferences = create<PreferencesStore>()(
           if (method === undefined) delete methodOverrides[cityId];
           else methodOverrides[cityId] = method;
           return { methodOverrides };
+        }),
+
+      setIqamahSetting: (cityId, key, setting) =>
+        set((state) => {
+          const iqamahByCity = { ...state.iqamahByCity };
+          const citySettings = { ...(iqamahByCity[cityId] ?? {}) };
+          if (setting) citySettings[key] = setting;
+          else delete citySettings[key];
+          if (Object.keys(citySettings).length === 0) delete iqamahByCity[cityId];
+          else iqamahByCity[cityId] = citySettings;
+          return { iqamahByCity };
         }),
 
       setPrayerEnabled: (key, enabled) =>
