@@ -1,7 +1,7 @@
 {
   "name": "@pray-times/extension",
   "private": true,
-  "version": "1.7.0",
+  "version": "1.8.0",
   "type": "module",
   "scripts": {
     "dev": "pnpm exec tailwindcss -c tailwind.config.cjs -i src/input.css -o dist/chrome/styles.css --watch",
