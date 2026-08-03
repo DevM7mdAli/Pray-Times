@@ -1,11 +1,16 @@
 import {
   cityName,
+  dayTimeline,
   formatHijriDate,
   formatPrayerTime,
+  iqamahTimeFor,
   prayerKeysForCity,
   prayerNameForCity,
   prayerTimestamp,
+  sunriseName,
+  sunsetName,
   type City,
+  type IqamahSettingsByCity,
   type PrayerDay,
   type PrayerKey,
   type SupportedLocale,
@@ -16,11 +21,22 @@ export type WidgetPrayerEntry = {
   name: string;
   time: string;
   timestampMs: number;
+  iqamahTime?: string;
+};
+
+export type WidgetTimelineEntry = {
+  id: string;
+  kind: "prayer" | "sunrise" | "sunset";
+  prayerKey?: PrayerKey;
+  name: string;
+  time: string;
+  iqamahTime?: string;
 };
 
 export type WidgetDayPayload = {
   date: string;
   prayers: WidgetPrayerEntry[];
+  timeline: WidgetTimelineEntry[];
 };
 
 export type WidgetPayload = {
@@ -33,15 +49,47 @@ export type WidgetPayload = {
   tomorrow: WidgetDayPayload;
 };
 
-function buildDayPayload(day: PrayerDay, locale: SupportedLocale): WidgetDayPayload {
+function buildDayPayload(
+  day: PrayerDay,
+  locale: SupportedLocale,
+  iqamahByCity: IqamahSettingsByCity
+): WidgetDayPayload {
+  const cityIqamah = iqamahByCity[day.city.id] ?? {};
   return {
     date: day.requestedDate,
-    prayers: prayerKeysForCity(day.city).map((key) => ({
-      key,
-      name: prayerNameForCity(key, day.city, locale),
-      time: formatPrayerTime(day.timings[key], locale),
-      timestampMs: prayerTimestamp(day, key),
-    })),
+    prayers: prayerKeysForCity(day.city).map((key) => {
+      const iqamah = cityIqamah[key];
+      return {
+        key,
+        name: prayerNameForCity(key, day.city, locale),
+        time: formatPrayerTime(day.timings[key], locale),
+        timestampMs: prayerTimestamp(day, key),
+        ...(iqamah
+          ? { iqamahTime: formatPrayerTime(iqamahTimeFor(day.timings[key], iqamah), locale) }
+          : {}),
+      };
+    }),
+    timeline: dayTimeline(day).map((entry) => {
+      if (entry.kind !== "prayer") {
+        return {
+          id: entry.kind,
+          kind: entry.kind,
+          name: entry.kind === "sunrise" ? sunriseName(locale) : sunsetName(locale),
+          time: formatPrayerTime(entry.time, locale),
+        };
+      }
+      const iqamah = cityIqamah[entry.key];
+      return {
+        id: entry.key,
+        kind: entry.kind,
+        prayerKey: entry.key,
+        name: prayerNameForCity(entry.key, day.city, locale),
+        time: formatPrayerTime(entry.time, locale),
+        ...(iqamah
+          ? { iqamahTime: formatPrayerTime(iqamahTimeFor(entry.time, iqamah), locale) }
+          : {}),
+      };
+    }),
   };
 }
 
@@ -51,16 +99,17 @@ export function buildWidgetPayload(options: {
   city: City;
   locale: SupportedLocale;
   isRtl: boolean;
+  iqamahByCity: IqamahSettingsByCity;
 }): WidgetPayload {
-  const { today, tomorrow, city, locale, isRtl } = options;
+  const { today, tomorrow, city, locale, isRtl, iqamahByCity } = options;
   return {
     locale,
     isRtl,
     cityName: cityName(city, locale),
     hijriDate: formatHijriDate(today.hijri, locale),
     updatedAt: Date.now(),
-    today: buildDayPayload(today, locale),
-    tomorrow: buildDayPayload(tomorrow, locale),
+    today: buildDayPayload(today, locale, iqamahByCity),
+    tomorrow: buildDayPayload(tomorrow, locale, iqamahByCity),
   };
 }
 

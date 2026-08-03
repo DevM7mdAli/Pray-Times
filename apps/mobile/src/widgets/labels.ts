@@ -10,11 +10,13 @@ const WIDGET_LABELS = {
     nextPrayer: "Next prayer",
     nextPrayerTomorrow: "Next prayer tomorrow",
     schedule: "Today’s schedule",
+    iqamah: "Iqamah",
   },
   ar: {
     nextPrayer: "الصلاة القادمة",
     nextPrayerTomorrow: "الصلاة القادمة غدًا",
     schedule: "مواقيت اليوم",
+    iqamah: "الإقامة",
   },
 } as const satisfies Record<SupportedLocale, Record<string, string>>;
 

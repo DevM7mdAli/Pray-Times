@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Platform } from "react-native";
 import { ExtensionStorage } from "@bacons/apple-targets";
-import type { City, PrayerDay, SupportedLocale } from "@pray-times/core";
+import type { City, IqamahSettingsByCity, PrayerDay, SupportedLocale } from "@pray-times/core";
 import { appStorage } from "@/lib/storage";
 import { buildWidgetPayload } from "./payload";
 import { pushAndroidWidgetUpdate } from "./push-update";
@@ -18,12 +18,13 @@ export function useSyncWidgets(options: {
   city: City;
   locale: SupportedLocale;
   isRtl: boolean;
+  iqamahByCity: IqamahSettingsByCity;
 }) {
-  const { today, tomorrow, city, locale, isRtl } = options;
+  const { today, tomorrow, city, locale, isRtl, iqamahByCity } = options;
 
   useEffect(() => {
     if (!today || !tomorrow) return;
-    const payload = buildWidgetPayload({ today, tomorrow, city, locale, isRtl });
+    const payload = buildWidgetPayload({ today, tomorrow, city, locale, isRtl, iqamahByCity });
     const serialized = JSON.stringify(payload);
 
     if (Platform.OS === "ios") {
@@ -35,5 +36,5 @@ export function useSyncWidgets(options: {
         void pushAndroidWidgetUpdate(payload);
       });
     }
-  }, [today, tomorrow, city, locale, isRtl]);
+  }, [today, tomorrow, city, locale, isRtl, iqamahByCity]);
 }

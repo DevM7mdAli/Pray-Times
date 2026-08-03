@@ -51,6 +51,12 @@ private struct SmallPrayerView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(Color("gold"))
 
+            if let iqamahTime = next.iqamahTime {
+                Text("\(WidgetLabels.iqamah(locale: payload.locale)) \(iqamahTime)")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color("muted"))
+            }
+
             Spacer(minLength: 6)
 
             Rectangle()
@@ -95,6 +101,11 @@ private struct MediumPrayerView: View {
                 Text(next.time)
                     .font(.system(size: 14))
                     .foregroundStyle(Color("gold"))
+                if let iqamahTime = next.iqamahTime {
+                    Text("\(WidgetLabels.iqamah(locale: payload.locale)) \(iqamahTime)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color("muted"))
+                }
                 Text(targetDate, style: .relative)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(Color("muted"))
@@ -106,25 +117,30 @@ private struct MediumPrayerView: View {
                 .fill(Color("divider"))
                 .frame(width: 1)
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(WidgetLabels.schedule(locale: payload.locale))
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Color("muted"))
 
-                ForEach(payload.today.prayers, id: \.key) { row in
-                    let isNext = !isTomorrow && row.key == next.key
+                ForEach(payload.today.scheduleRows) { row in
+                    let isNext = !isTomorrow && row.prayerKey == next.key
                     HStack {
                         Text(row.name)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Color("textPrimary"))
+                            .font(.system(size: 11, weight: row.kind == "prayer" ? .bold : .regular))
+                            .foregroundStyle(row.kind == "prayer" ? Color("textPrimary") : Color("muted"))
                             .lineLimit(1)
                         Spacer()
                         Text(row.time)
-                            .font(.system(size: 13, weight: isNext ? .bold : .regular))
+                            .font(.system(size: 10, weight: isNext ? .bold : .regular))
                             .foregroundStyle(isNext ? Color("gold") : Color("muted"))
+                        if let iqamahTime = row.iqamahTime {
+                            Text("· \(iqamahTime)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Color("gold"))
+                        }
                     }
                     .padding(.horizontal, isNext ? 6 : 0)
-                    .padding(.vertical, 2)
+                    .padding(.vertical, 1)
                     .background(isNext ? Color("blue").opacity(0.14) : .clear)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                 }

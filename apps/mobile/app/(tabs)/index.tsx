@@ -86,6 +86,7 @@ export default function TodayScreen() {
     city,
     locale: preferences.locale,
     isRtl,
+    iqamahByCity: preferences.iqamahByCity,
   });
 
   const day = today.data;

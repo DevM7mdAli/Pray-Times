@@ -14,4 +14,8 @@ enum WidgetLabels {
     static func schedule(locale: String) -> String {
         locale == "ar" ? "مواقيت اليوم" : "Today’s schedule"
     }
+
+    static func iqamah(locale: String) -> String {
+        locale == "ar" ? "الإقامة" : "Iqamah"
+    }
 }

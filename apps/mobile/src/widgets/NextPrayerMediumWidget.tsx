@@ -12,9 +12,19 @@ export function NextPrayerMediumWidget({ payload }: { payload: WidgetPayload }) 
   const align = isRtl ? "right" : "left";
   // Today's full timeline, like the in-app schedule card — not filtered to
   // "remaining only" — matches app/(tabs)/index.tsx's dayTimeline rendering.
-  const rows = payload.today.prayers.map((entry) => ({
+  const timeline =
+    payload.today.timeline ??
+    payload.today.prayers.map((entry) => ({
+      id: entry.key,
+      kind: "prayer" as const,
+      prayerKey: entry.key,
+      name: entry.name,
+      time: entry.time,
+      iqamahTime: entry.iqamahTime,
+    }));
+  const rows = timeline.map((entry) => ({
     ...entry,
-    isNext: !next?.isTomorrow && entry.key === next?.key,
+    isNext: !next?.isTomorrow && entry.prayerKey === next?.key,
   }));
 
   const nextBlock = (
@@ -42,6 +52,12 @@ export function NextPrayerMediumWidget({ payload }: { payload: WidgetPayload }) 
         text={next?.time ?? ""}
         style={{ fontSize: 14, color: widgetColors.gold, textAlign: align, marginTop: 2 }}
       />
+      {next?.iqamahTime ? (
+        <TextWidget
+          text={`${widgetLabel(payload.locale, "iqamah")} ${next.iqamahTime}`}
+          style={{ fontSize: 10, color: widgetColors.muted, textAlign: align, marginTop: 2 }}
+        />
+      ) : null}
       {next ? (
         <TextWidget
           text={formatRemainingTime(
@@ -89,13 +105,13 @@ export function NextPrayerMediumWidget({ payload }: { payload: WidgetPayload }) 
       />
       {rows.map((row) => (
         <FlexWidget
-          key={row.key}
+          key={row.id}
           style={{
             flexDirection: "row",
             width: "match_parent",
             justifyContent: "space-between",
             alignItems: "center",
-            paddingVertical: 3,
+            paddingVertical: 1,
             paddingHorizontal: row.isNext ? 6 : 0,
             borderRadius: 8,
             backgroundColor: row.isNext ? "#1A4da8da" : undefined,
@@ -107,22 +123,29 @@ export function NextPrayerMediumWidget({ payload }: { payload: WidgetPayload }) 
               maxLines={1}
               truncate="END"
               style={{
-                fontSize: 13,
-                fontWeight: "700",
-                color: widgetColors.white,
+                fontSize: 11,
+                fontWeight: row.kind === "prayer" ? "700" : "normal",
+                color: row.kind === "prayer" ? widgetColors.white : widgetColors.muted,
                 textAlign: align,
               }}
             />
           </FlexWidget>
-          <TextWidget
-            text={row.time}
-            style={{
-              fontSize: 13,
-              fontWeight: row.isNext ? "700" : "normal",
-              color: row.isNext ? widgetColors.gold : widgetColors.muted,
-              marginLeft: 8,
-            }}
-          />
+          <FlexWidget style={{ flexDirection: "row", alignItems: "center", marginLeft: 6 }}>
+            <TextWidget
+              text={row.time}
+              style={{
+                fontSize: 10,
+                fontWeight: row.isNext ? "700" : "normal",
+                color: row.isNext ? widgetColors.gold : widgetColors.muted,
+              }}
+            />
+            {row.iqamahTime ? (
+              <TextWidget
+                text={` · ${row.iqamahTime}`}
+                style={{ fontSize: 10, fontWeight: "700", color: widgetColors.gold }}
+              />
+            ) : null}
+          </FlexWidget>
         </FlexWidget>
       ))}
     </FlexWidget>

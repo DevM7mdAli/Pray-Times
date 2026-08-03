@@ -78,6 +78,18 @@ export function NextPrayerSmallWidget({ payload }: { payload: WidgetPayload }) {
             marginTop: 2,
           }}
         />
+        {next?.iqamahTime ? (
+          <TextWidget
+            text={`${widgetLabel(payload.locale, "iqamah")} ${next.iqamahTime}`}
+            style={{
+              fontSize: 11,
+              fontWeight: "700",
+              color: widgetColors.muted,
+              textAlign: align,
+              marginTop: 2,
+            }}
+          />
+        ) : null}
       </FlexWidget>
 
       {next ? (
