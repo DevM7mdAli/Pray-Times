@@ -190,7 +190,8 @@ The built-in `GITHUB_TOKEN` is used by default. If branch protection prevents th
 
 # Privacy policy
 
-Pray Times has no accounts, no analytics, and no advertising. There is no server
+Pray Times has no accounts and no advertising. Cloudflare Web Analytics collects
+aggregate site-usage measurements; no custom analytics events are sent. There is no server
 that belongs to this project other than the optional web push service described
 below, and nothing you do is tied to an identity.
 
