@@ -6,8 +6,8 @@ import { routes } from "../routes";
  * GitHub Pages has no SPA rewrite, so both `index.html` and `today/index.html`
  * stay real static entries — a cold hit on either must return a genuine 200,
  * not a 404-then-redirect flash in front of a push notification or a PWA
- * launch. Both load this same router; `basename` strips the deployment prefix
- * (`/Pray-Times/`) so the routes in routes.tsx can match plain paths.
+ * launch. Both load this same router; `basename` is Vite's `base` so routes
+ * in routes.tsx can match plain paths.
  */
 function RouteTree() {
   return useRoutes(routes);

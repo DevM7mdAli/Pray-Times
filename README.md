@@ -136,7 +136,7 @@ Three things are derived rather than displayed verbatim, and all three live in `
 pnpm build:landing
 ```
 
-The deployable site is written to `apps/landing-page/dist`. Vite is configured for the GitHub Pages base path `/Pray-Times/`; the no-install daily prayer experience is available at `/Pray-Times/today/`.
+The deployable site is written to `apps/landing-page/dist`. Vite `base` is `/` for the custom domain `pray-times.mohammed-alajmi.me`; the no-install daily prayer experience is at `/today/`.
 
 ### Free web notifications
 

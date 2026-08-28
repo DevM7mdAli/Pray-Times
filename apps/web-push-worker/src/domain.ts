@@ -111,7 +111,7 @@ export function notificationPayload(
     title: locale === "ar" ? `حان الآن وقت صلاة ${prayer}` : `It is time for ${prayer}`,
     body: locale === "ar" ? `${city} · ${day.timings[key]}` : `${city} · ${day.timings[key]}`,
     tag: `prayer-${day.requestedDate}-${key.toLowerCase()}`,
-    url: `${siteOrigin}/Pray-Times/today/?lang=${locale}`,
+    url: `${siteOrigin}/today/?lang=${locale}`,
     locale,
   };
 }

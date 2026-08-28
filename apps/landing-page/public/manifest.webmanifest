@@ -2,14 +2,14 @@
   "name": "Pray Times — أوقات الصلاة",
   "short_name": "Pray Times",
   "description": "Verified prayer times anywhere, qibla direction, Ramadan guidance, and free alerts.",
-  "start_url": "/Pray-Times/today/",
-  "scope": "/Pray-Times/",
+  "start_url": "/today/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b1736",
   "theme_color": "#0b1736",
   "icons": [
     {
-      "src": "/Pray-Times/icon.png",
+      "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

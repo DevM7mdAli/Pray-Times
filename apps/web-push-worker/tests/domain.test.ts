@@ -106,7 +106,7 @@ test("next enabled prayer skips disabled prayers", () => {
 test("notification payload is localized and links to the web dashboard", () => {
   const payload = notificationPayload(day, "Maghrib", "ar", "https://example.com");
   assert.match(payload.title, /المغرب/);
-  assert.equal(payload.url, "https://example.com/Pray-Times/today/?lang=ar");
+  assert.equal(payload.url, "https://example.com/today/?lang=ar");
 });
 
 test("a method that combines the pairs is named that way in a notification", () => {

@@ -424,7 +424,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
               ? "ستصلك التنبيهات حتى بعد إغلاق الصفحة."
               : "You will receive alerts even after closing the page.",
           tag: "prayer-alert-test",
-          url: `${origin}/Pray-Times/today/?lang=${input.locale}`,
+          url: `${origin}/today/?lang=${input.locale}`,
           locale: input.locale,
         }
       );
