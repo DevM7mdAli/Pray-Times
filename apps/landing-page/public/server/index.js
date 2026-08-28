@@ -1,4 +1,4 @@
-/* global URL, Response, Request */
+/* global URL, Request */
 
 export default {
   async fetch(request, env) {
