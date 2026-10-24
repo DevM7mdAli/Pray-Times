@@ -1,0 +1,42 @@
+{
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "name": "@pray-times/tooling",
+  "projectType": "library",
+  "tags": ["type:tooling"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "tsc -p tsconfig.json --noEmit"
+      }
+    },
+    "check-tailwind": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/check-tailwind.mjs",
+        "^production",
+        "{workspaceRoot}/apps/*/tailwind.config.cjs",
+        "{workspaceRoot}/apps/{landing-page,extension,mobile}/**/*.{ts,tsx,html}",
+        "{workspaceRoot}/apps/**/*.css",
+        {
+          "externalDependencies": ["tailwindcss"]
+        }
+      ],
+      "outputs": [],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "node check-tailwind.mjs"
+      }
+    },
+    "set-version": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "node --import tsx release/set-version.ts"
+      }
+    }
+  }
+}

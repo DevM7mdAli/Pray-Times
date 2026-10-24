@@ -6,10 +6,5 @@
   "main": "./index.cjs",
   "exports": {
     ".": "./index.cjs"
-  },
-  "nx": {
-    "tags": [
-      "type:config"
-    ]
   }
 }

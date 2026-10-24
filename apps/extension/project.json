@@ -1,0 +1,81 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@pray-times/extension",
+  "projectType": "application",
+  "sourceRoot": "apps/extension/src",
+  "tags": ["type:app"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "tailwindcss -c tailwind.config.cjs -i src/input.css -o dist/chrome/styles.css --watch"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "production",
+        "^production",
+        {
+          "externalDependencies": ["esbuild", "tailwindcss", "tsx"]
+        }
+      ],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "node --import tsx ../../tooling/extension/build.ts"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "tsc -p tsconfig.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "node --test"
+      }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["build"],
+      "inputs": [
+        "production",
+        "^production",
+        {
+          "externalDependencies": ["tsx"]
+        }
+      ],
+      "outputs": [
+        "{workspaceRoot}/artifacts/pray-times-*.zip",
+        "{workspaceRoot}/artifacts/pray-times-*.zip.sha256"
+      ],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "node --import tsx ../../tooling/extension/package.ts"
+      }
+    },
+    "lint-firefox": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["build"],
+      "inputs": [
+        "production",
+        "^production",
+        {
+          "externalDependencies": ["web-ext"]
+        }
+      ],
+      "outputs": [],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "web-ext lint --source-dir dist/firefox --no-config-discovery"
+      }
+    }
+  }
+}

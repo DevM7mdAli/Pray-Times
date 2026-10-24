@@ -7,7 +7,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node --import tsx tooling/release/set-version.ts ${nextRelease.version} && pnpm package:extension"
+        "prepareCmd": "pnpm exec nx run @pray-times/tooling:set-version ${nextRelease.version} && pnpm package:extension"
       }
     ],
     [

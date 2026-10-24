@@ -1,0 +1,61 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@pray-times/landing-page",
+  "projectType": "application",
+  "sourceRoot": "apps/landing-page/src",
+  "tags": ["type:app"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "vite"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build", "typecheck"],
+      "inputs": [
+        "production",
+        "^production",
+        {
+          "env": "VITE_PUSH_API_URL"
+        },
+        {
+          "externalDependencies": ["vite", "tailwindcss", "postcss", "autoprefixer"]
+        }
+      ],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "vite build"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "vite preview"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "tsc -b --pretty false"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "...",
+        {
+          "externalDependencies": ["tsx"]
+        }
+      ],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "node --import tsx --test tests/*.test.ts"
+      }
+    }
+  }
+}

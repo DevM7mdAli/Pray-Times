@@ -3,13 +3,6 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "typecheck": "tsc -b --pretty false",
-    "test": "node --import tsx --test tests/*.test.ts",
-    "preview": "vite preview"
-  },
   "dependencies": {
     "@pray-times/core": "workspace:*",
     "@tanstack/react-query": "^5.101.4",
@@ -31,21 +24,5 @@
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17"
-  },
-  "nx": {
-    "tags": [
-      "type:app"
-    ],
-    "targets": {
-      "build": {
-        "inputs": [
-          "production",
-          "^production",
-          {
-            "env": "VITE_PUSH_API_URL"
-          }
-        ]
-      }
-    }
   }
 }

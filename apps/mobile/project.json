@@ -1,0 +1,107 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@pray-times/mobile",
+  "projectType": "application",
+  "sourceRoot": "apps/mobile/src",
+  "tags": ["type:app"],
+  "targets": {
+    "start": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "expo start",
+        "tty": true
+      }
+    },
+    "android": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "expo run:android",
+        "tty": true
+      }
+    },
+    "ios": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "cwd": "{projectRoot}",
+        "commands": ["node scripts/ensure-ios-native.mjs", "expo run:ios"],
+        "parallel": false,
+        "tty": true
+      }
+    },
+    "prebuild": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "expo prebuild"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "production",
+        "^production",
+        {
+          "externalDependencies": [
+            "expo",
+            "react-native",
+            "nativewind",
+            "react-native-css",
+            "tailwindcss",
+            "@tailwindcss/postcss"
+          ]
+        }
+      ],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "expo export --platform ios --platform android --output-dir dist"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "tsc --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "node --test"
+      }
+    },
+    "store-release": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "npx eas-cli@latest build --profile production --auto-submit -p all",
+        "tty": true
+      }
+    },
+    "store-release-android": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "npx eas-cli@latest build --profile production --auto-submit -p android",
+        "tty": true
+      }
+    },
+    "store-release-ios": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "npx eas-cli@latest build --profile production --auto-submit -p ios",
+        "tty": true
+      }
+    }
+  }
+}

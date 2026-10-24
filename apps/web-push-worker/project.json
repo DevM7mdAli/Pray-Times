@@ -1,0 +1,78 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@pray-times/web-push-worker",
+  "projectType": "application",
+  "sourceRoot": "apps/web-push-worker/src",
+  "tags": ["type:app"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "wrangler dev"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "production",
+        "^production",
+        {
+          "externalDependencies": ["wrangler"]
+        }
+      ],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "wrangler deploy --dry-run --outdir dist",
+        "env": {
+          "WRANGLER_SEND_METRICS": "false"
+        }
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "tsc --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "...",
+        {
+          "externalDependencies": ["tsx"]
+        }
+      ],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "node --import tsx --test tests/*.test.ts"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build", "typecheck", "test"],
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "wrangler deploy"
+      }
+    },
+    "db-migrate-local": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "wrangler d1 migrations apply pray-times-push --local"
+      }
+    },
+    "db-migrate-remote": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "wrangler d1 migrations apply pray-times-push --remote"
+      }
+    }
+  }
+}

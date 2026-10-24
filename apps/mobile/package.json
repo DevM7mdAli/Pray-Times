@@ -3,18 +3,6 @@
   "private": true,
   "version": "0.1.0",
   "main": "./index.ts",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "preios": "node scripts/ensure-ios-native.mjs",
-    "ios": "expo run:ios",
-    "prebuild": "expo prebuild",
-    "release": "npx eas-cli@latest build -p all --profile production --auto-submit",
-    "release:android": "npx eas-cli@latest build -p android --profile production --auto-submit",
-    "release:ios": "npx eas-cli@latest build -p ios --profile production --auto-submit",
-    "typecheck": "tsc --noEmit",
-    "test": "node --test"
-  },
   "dependencies": {
     "@bacons/apple-targets": "^5.0.0",
     "@pray-times/core": "workspace:*",
@@ -56,29 +44,5 @@
     "@types/react": "~19.2.2",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11"
-  },
-  "nx": {
-    "tags": [
-      "type:app"
-    ],
-    "includedScripts": [
-      "start",
-      "android",
-      "ios",
-      "prebuild",
-      "typecheck",
-      "test"
-    ],
-    "targets": {
-      "start": {
-        "continuous": true
-      },
-      "android": {
-        "continuous": true
-      },
-      "ios": {
-        "continuous": true
-      }
-    }
   }
 }

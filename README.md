@@ -38,7 +38,7 @@ pnpm check
 
 ## Workspace
 
-This is a pnpm workspace orchestrated by [Nx](https://nx.dev). Each project is a package with its own `package.json`; its scripts are its Nx targets, and its `nx` field holds the tags and any target settings that differ from the defaults in `nx.json`.
+This is a pnpm workspace orchestrated by [Nx](https://nx.dev). Each project keeps two files: `package.json` declares only what it is and what it depends on, and `project.json` declares its tags and every task it can run, each an `nx:run-commands` target with its command, inputs, outputs, and the tasks it waits for. Settings every project shares (named inputs, caching, `^build` ordering, lint inference) live once in `nx.json`.
 
 | Project                       | Path                       | Tag            |
 | ----------------------------- | -------------------------- | -------------- |
@@ -52,7 +52,7 @@ This is a pnpm workspace orchestrated by [Nx](https://nx.dev). Each project is a
 
 The `@nx/enforce-module-boundaries` lint rule keeps the dependency direction one-way: apps may use libraries, config, and tooling but never each other; `core` depends only on other libraries; tooling may read libraries and config but no app. A dependency becomes visible to Nx, and to the cache, once it is declared in `package.json` with `workspace:*`.
 
-Nx caches `build`, `typecheck`, `lint`, `test`, `check-tailwind`, `package`, and `lint-firefox` by their inputs, so a task whose sources, dependencies, and tool versions have not changed replays its result instead of running again.
+Nx caches `build`, `typecheck`, `lint`, `test`, `check-tailwind`, `package`, and `lint-firefox`. Each one hashes its project's files, the production files of what it depends on, and only the tool packages it actually runs (for example `vite` for the landing build, `esbuild` and `tailwindcss` for the extension), so a task whose inputs have not changed replays its result, and an unrelated dependency bump does not invalidate it. Every app has a cached `build`: the worker is bundled with a Wrangler dry run, and the mobile app's JavaScript is exported for iOS and Android with `expo export`. Servers, deploys, migrations, and store releases are never cached.
 
 ```bash
 pnpm exec nx build @pray-times/landing-page   # one task, plus whatever it depends on
@@ -181,8 +181,8 @@ pnpm --filter @pray-times/web-push-worker exec web-push generate-vapid-keys
 Copy the D1 database ID into `apps/web-push-worker/wrangler.jsonc`. Add both generated keys with `wrangler secret put VAPID_PUBLIC_KEY` and `wrangler secret put VAPID_PRIVATE_KEY`, then run:
 
 ```bash
-pnpm --filter @pray-times/web-push-worker db:migrate:remote
-pnpm --filter @pray-times/web-push-worker run deploy
+pnpm exec nx db-migrate-remote @pray-times/web-push-worker
+pnpm deploy:worker
 ```
 
 The push cache is keyed by exactly what a response is verified against — coordinates, time zone, calculation method, and date — rather than by a catalog id. Everyone at the same position shares one upstream fetch, and a place whose zone or authority differs never reads a day that was verified for someone else. Detected coordinates are rounded again on the server rather than trusting the browser to have done it, and a claimed catalog id always resolves to the bundled entry, so a caller cannot relocate a known city.

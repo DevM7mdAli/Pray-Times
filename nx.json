@@ -38,7 +38,13 @@
     },
     "typecheck": {
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": [
+        "default",
+        "^production",
+        {
+          "externalDependencies": ["typescript"]
+        }
+      ],
       "outputs": []
     },
     "test": {
@@ -69,6 +75,9 @@
     "preview": {
       "continuous": true,
       "dependsOn": ["build"]
+    },
+    "start": {
+      "continuous": true
     }
   }
 }

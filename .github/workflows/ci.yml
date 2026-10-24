@@ -215,7 +215,7 @@ jobs:
             exit 0
           fi
           VERSION="$(node -p 'JSON.parse(require("node:fs").readFileSync("apps/extension/manifest.base.json", "utf8")).version')"
-          node --import tsx tooling/release/set-version.ts "$VERSION"
+          pnpm exec nx run @pray-times/tooling:set-version "$VERSION"
           pnpm package:extension
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
