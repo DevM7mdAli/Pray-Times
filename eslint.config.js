@@ -71,6 +71,17 @@ export default tseslint.config(
     },
   },
   {
+    // CommonJS by necessity: Expo require()s config plugins synchronously.
+    files: ["apps/mobile/plugins/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: globals.node,
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  {
     files: ["**/public/sw.js"],
     languageOptions: {
       globals: globals.serviceworker,

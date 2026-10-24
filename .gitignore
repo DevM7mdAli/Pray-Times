@@ -14,3 +14,6 @@ artifacts/*.sha256
 !.dev.vars.example
 .env
 .env*.local
+
+# Store keys downloaded during mobile release setup (docs/mobile-release.md)
+apps/mobile/credentials/

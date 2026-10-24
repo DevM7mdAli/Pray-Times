@@ -5,6 +5,7 @@
     "scheme": "praytimes",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "experiments": {
       "typedRoutes": true,
@@ -12,11 +13,29 @@
     },
     "plugins": [
       "expo-router",
-      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 260,
+          "resizeMode": "contain",
+          "backgroundColor": "#091B3F"
+        }
+      ],
+      "./plugins/with-ios-local-notifications-only.js",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#4DA8DA"
+        }
+      ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Pray Times uses your location only to calculate and verify prayer times for your current place."
+          "locationWhenInUsePermission": "Pray Times uses your location only to calculate and verify prayer times for your current place.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false
         }
       ],
       "@bacons/apple-targets",
@@ -51,14 +70,28 @@
       ]
     ],
     "ios": {
-      "supportsTablet": true,
       "bundleIdentifier": "com.devm7mdali.praytimes",
+      "appleTeamId": "QTB7497H9Y",
+      "supportsTablet": true,
       "entitlements": {
         "com.apple.security.application-groups": ["group.com.devm7mdali.praytimes"]
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.devm7mdali.praytimes"
-    }
+      "package": "com.devm7mdali.praytimes",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#091B3F"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "564570e3-9949-460f-8d0b-6e5267698d37"
+      }
+    },
+    "owner": "devm7mdali"
   }
 }

@@ -9,6 +9,9 @@
     "preios": "node scripts/ensure-ios-native.mjs",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
+    "release": "npx eas-cli@latest build -p all --profile production --auto-submit",
+    "release:android": "npx eas-cli@latest build -p android --profile production --auto-submit",
+    "release:ios": "npx eas-cli@latest build -p ios --profile production --auto-submit",
     "typecheck": "tsc --noEmit",
     "test": "node --test"
   },

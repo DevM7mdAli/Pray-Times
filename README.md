@@ -136,7 +136,7 @@ Three things are derived rather than displayed verbatim, and all three live in `
 pnpm build:landing
 ```
 
-The deployable site is written to `apps/landing-page/dist`. Vite `base` is `/` for the custom domain `pray-times.mohammed-alajmi.me`; the no-install daily prayer experience is at `/today/`.
+The deployable site is written to `apps/landing-page/dist`. Vite `base` is `/` for the custom domain `pray-times.mohammed.win`; the no-install daily prayer experience is at `/today/`.
 
 ### Free web notifications
 
@@ -160,6 +160,10 @@ pnpm --filter @pray-times/web-push-worker run deploy
 The push cache is keyed by exactly what a response is verified against — coordinates, time zone, calculation method, and date — rather than by a catalog id. Everyone at the same position shares one upstream fetch, and a place whose zone or authority differs never reads a day that was verified for someone else. Detected coordinates are rounded again on the server rather than trusting the browser to have done it, and a claimed catalog id always resolves to the bundled entry, so a caller cannot relocate a known city.
 
 Set the GitHub Actions repository variable `PUSH_API_URL` to the deployed `workers.dev` URL. The next landing-page deployment will enable the notification controls. For local development, copy `.dev.vars.example` to `.dev.vars`, add the generated keys, and set `VITE_PUSH_API_URL` to the local Worker URL.
+
+## Mobile apps
+
+The Expo app in `apps/mobile` ships to Google Play and the App Store through EAS Build and EAS Submit (project `@devm7mdali/pray-times`). `pnpm mobile:release` builds both platforms in the cloud and submits them to TestFlight and the Play internal track; EAS holds the signing credentials and the build numbers. The one-time account setup, the first-upload caveats, and the store-listing checklists are in [docs/mobile-release.md](docs/mobile-release.md).
 
 ## Continuous deployment
 
