@@ -7,13 +7,54 @@
     "dev": "pnpm exec tailwindcss -c tailwind.config.cjs -i src/input.css -o dist/chrome/styles.css --watch",
     "build": "node --import tsx ../../tooling/extension/build.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test"
+    "test": "node --test",
+    "package": "node --import tsx ../../tooling/extension/package.ts",
+    "lint-firefox": "web-ext lint --source-dir dist/firefox --no-config-discovery"
   },
   "dependencies": {
     "@pray-times/core": "workspace:*"
   },
   "devDependencies": {
+    "@pray-times/tailwind-preset": "workspace:*",
+    "@pray-times/tooling": "workspace:*",
     "esbuild": "^0.25.9",
     "tailwindcss": "^3.4.17"
+  },
+  "nx": {
+    "tags": [
+      "type:app"
+    ],
+    "targets": {
+      "package": {
+        "cache": true,
+        "dependsOn": [
+          "build"
+        ],
+        "inputs": [
+          "production",
+          "^production"
+        ],
+        "outputs": [
+          "{workspaceRoot}/artifacts/pray-times-*.zip",
+          "{workspaceRoot}/artifacts/pray-times-*.zip.sha256"
+        ]
+      },
+      "lint-firefox": {
+        "cache": true,
+        "dependsOn": [
+          "build"
+        ],
+        "inputs": [
+          "production",
+          "^production",
+          {
+            "externalDependencies": [
+              "web-ext"
+            ]
+          }
+        ],
+        "outputs": []
+      }
+    }
   }
 }

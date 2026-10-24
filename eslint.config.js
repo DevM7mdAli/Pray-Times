@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
+import nx from "@nx/eslint-plugin";
 import globals from "globals";
 import tailwindcss from "eslint-plugin-tailwindcss";
 import tseslint from "typescript-eslint";
@@ -12,6 +13,7 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/node_modules/**",
+      ".nx/**",
       "artifacts/**",
       "CSS/**",
       "JS/**",
@@ -21,11 +23,38 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  ...nx.configs["flat/base"],
+  {
+    // Every project carries one `type:*` tag in its package.json. Apps sit on
+    // top and never import each other; the shared core stays free of app code;
+    // config and tooling packages never reach into runtime code they serve.
+    files: ["**/*.{js,mjs,ts,tsx}"],
+    rules: {
+      "@nx/enforce-module-boundaries": [
+        "error",
+        {
+          allow: [],
+          depConstraints: [
+            {
+              sourceTag: "type:app",
+              onlyDependOnLibsWithTags: ["type:lib", "type:config", "type:tooling"],
+            },
+            { sourceTag: "type:lib", onlyDependOnLibsWithTags: ["type:lib"] },
+            { sourceTag: "type:config", onlyDependOnLibsWithTags: ["type:config"] },
+            {
+              sourceTag: "type:tooling",
+              onlyDependOnLibsWithTags: ["type:lib", "type:config"],
+            },
+          ],
+        },
+      ],
+    },
+  },
   {
     // Scoped to the Tailwind/NativeWind apps — elsewhere the plugin has no config to
     // resolve and only adds noise. The plugin doesn't probe .cjs by default,
     // so each app's config is pointed at explicitly (it extends the shared
-    // tailwind.preset.cjs, so this still sees the full custom theme).
+    // @pray-times/tailwind-preset, so this still sees the full custom theme).
     files: ["apps/landing-page/**/*.{ts,tsx}"],
     ...tailwindcss.configs["flat/recommended"][1],
     settings: {

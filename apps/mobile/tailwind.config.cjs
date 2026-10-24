@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  presets: [require("../../tailwind.preset.cjs")],
+  presets: [require("@pray-times/tailwind-preset")],
   content: ["./src/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}"],
 };

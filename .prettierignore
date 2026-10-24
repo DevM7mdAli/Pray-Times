@@ -7,3 +7,4 @@ apps/mobile/ios/
 apps/mobile/targets/widget/Assets.xcassets/
 apps/mobile/android/
 pnpm-lock.yaml
+.nx/

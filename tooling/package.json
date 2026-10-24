@@ -1,0 +1,31 @@
+{
+  "name": "@pray-times/tooling",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Build, packaging, release, and policy scripts shared across the workspace.",
+  "type": "module",
+  "scripts": {
+    "check-tailwind": "node check-tailwind.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@pray-times/tailwind-preset": "workspace:*"
+  },
+  "nx": {
+    "tags": [
+      "type:tooling"
+    ],
+    "targets": {
+      "check-tailwind": {
+        "cache": true,
+        "inputs": [
+          "{projectRoot}/check-tailwind.mjs",
+          "^production",
+          "{workspaceRoot}/apps/*/tailwind.config.cjs",
+          "{workspaceRoot}/apps/**/*.{ts,tsx,html,css}"
+        ],
+        "outputs": []
+      }
+    }
+  }
+}

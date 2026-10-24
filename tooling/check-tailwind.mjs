@@ -1,4 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -27,13 +28,13 @@ const ARBITRARY_VALUE_CEILING = {
 };
 
 // An arbitrary value repeated at least this many times is a design decision
-// that deserves a name in tailwind.preset.cjs. Utilities that are pure
+// that deserves a name in @pray-times/tailwind-preset. Utilities that are pure
 // boilerplate rather than design values are exempt.
 const REPEAT_LIMIT = 6;
 const REPEAT_EXEMPT =
   /^(content|z|leading|tracking|grid-cols|grid-rows|transition|w|h|size|min-h|min-w|max-w|max-h|inset|translate-x|translate-y|opacity|stroke|border)-/;
 
-// Must mirror theme.extend.screens in tailwind.preset.cjs.
+// Must mirror theme.extend.screens in @pray-times/tailwind-preset.
 const REGISTERED_SCREENS_PX = [600, 830];
 
 async function walk(directory, exts) {
@@ -100,7 +101,7 @@ for (const file of cssFiles) {
   const hexMatches = [...new Set(withoutFunctionColors.match(/#[0-9a-fA-F]{3,8}\b/g) || [])];
   if (hexMatches.length > 0) {
     failures.push(
-      `${file} has raw hex color(s) ${hexMatches.join(", ")} — add them to tailwind.preset.cjs and use theme()`
+      `${file} has raw hex color(s) ${hexMatches.join(", ")} — add them to @pray-times/tailwind-preset and use theme()`
     );
   }
 
@@ -121,7 +122,7 @@ for (const file of cssFiles) {
 // Tailwind silently drops a class that names a token which does not exist, so
 // a renamed token leaves markup that compiles clean and renders unstyled.
 // Verify every custom token family used in markup still resolves.
-const preset = (await import(`file://${path.join(root, "tailwind.preset.cjs")}`)).default;
+const preset = createRequire(import.meta.url)("@pray-times/tailwind-preset");
 const presetKeys = {
   "text-display": Object.keys(preset.theme.extend.fontSize).filter((k) => k.startsWith("display-")),
   shadow: Object.keys(preset.theme.extend.boxShadow),
@@ -178,7 +179,7 @@ for (const file of await walk(appsRoot, MARKUP_EXTENSIONS)) {
 for (const [utility, count] of [...repeats].sort((a, b) => b[1] - a[1])) {
   if (count >= REPEAT_LIMIT) {
     failures.push(
-      `\`${utility}\` appears ${count} times — give it a name in tailwind.preset.cjs instead of repeating the literal`
+      `\`${utility}\` appears ${count} times — give it a name in @pray-times/tailwind-preset instead of repeating the literal`
     );
   }
 }
@@ -187,7 +188,7 @@ for (const [app, ceiling] of Object.entries(ARBITRARY_VALUE_CEILING)) {
   const count = arbitraryByApp.get(app) ?? 0;
   if (count > ceiling) {
     failures.push(
-      `${app} has ${count} arbitrary-value utilities in markup, ceiling is ${ceiling} — promote the reusable ones to tailwind.preset.cjs`
+      `${app} has ${count} arbitrary-value utilities in markup, ceiling is ${ceiling} — promote the reusable ones to @pray-times/tailwind-preset`
     );
   }
 }
@@ -198,7 +199,7 @@ for (const config of [
   "apps/mobile/tailwind.config.cjs",
 ]) {
   const source = await readFile(path.join(root, config), "utf8");
-  if (!source.includes('require("../../tailwind.preset.cjs")')) {
+  if (!source.includes('require("@pray-times/tailwind-preset")')) {
     failures.push(`${config} does not extend the shared Tailwind preset`);
   }
 }

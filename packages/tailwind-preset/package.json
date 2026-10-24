@@ -1,0 +1,15 @@
+{
+  "name": "@pray-times/tailwind-preset",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Shared Tailwind theme for the landing page, extension, and mobile app.",
+  "main": "./index.cjs",
+  "exports": {
+    ".": "./index.cjs"
+  },
+  "nx": {
+    "tags": [
+      "type:config"
+    ]
+  }
+}

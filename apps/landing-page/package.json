@@ -25,10 +25,27 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@pray-times/tailwind-preset": "workspace:*",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17"
+  },
+  "nx": {
+    "tags": [
+      "type:app"
+    ],
+    "targets": {
+      "build": {
+        "inputs": [
+          "production",
+          "^production",
+          {
+            "env": "VITE_PUSH_API_URL"
+          }
+        ]
+      }
+    }
   }
 }

@@ -36,6 +36,34 @@ Run all release checks:
 pnpm check
 ```
 
+## Workspace
+
+This is a pnpm workspace orchestrated by [Nx](https://nx.dev). Each project is a package with its own `package.json`; its scripts are its Nx targets, and its `nx` field holds the tags and any target settings that differ from the defaults in `nx.json`.
+
+| Project                       | Path                       | Tag            |
+| ----------------------------- | -------------------------- | -------------- |
+| `@pray-times/landing-page`    | `apps/landing-page`        | `type:app`     |
+| `@pray-times/extension`       | `apps/extension`           | `type:app`     |
+| `@pray-times/mobile`          | `apps/mobile`              | `type:app`     |
+| `@pray-times/web-push-worker` | `apps/web-push-worker`     | `type:app`     |
+| `@pray-times/core`            | `packages/core`            | `type:lib`     |
+| `@pray-times/tailwind-preset` | `packages/tailwind-preset` | `type:config`  |
+| `@pray-times/tooling`         | `tooling`                  | `type:tooling` |
+
+The `@nx/enforce-module-boundaries` lint rule keeps the dependency direction one-way: apps may use libraries, config, and tooling but never each other; `core` depends only on other libraries; tooling may read libraries and config but no app. A dependency becomes visible to Nx, and to the cache, once it is declared in `package.json` with `workspace:*`.
+
+Nx caches `build`, `typecheck`, `lint`, `test`, `check-tailwind`, `package`, and `lint-firefox` by their inputs, so a task whose sources, dependencies, and tool versions have not changed replays its result instead of running again.
+
+```bash
+pnpm exec nx build @pray-times/landing-page   # one task, plus whatever it depends on
+pnpm exec nx run-many -t lint test            # a target across every project
+pnpm affected                                 # only what your branch changes, compared with main
+pnpm graph                                    # the project graph in a browser
+pnpm exec nx affected -t build --explain      # why each task was selected
+```
+
+CI runs `nx affected` against the last green commit on `main` (or the pull request's base) and carries the Nx cache between runs, so a change to the landing page does not rebuild the extension or start the macOS Safari build. A release still checks the whole workspace before it is cut.
+
 ## Browser extension
 
 The extension is built for Chrome and Edge, Firefox, and Safari from one source tree.

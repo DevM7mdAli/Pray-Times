@@ -1,5 +1,5 @@
 /**
- * Widget palette, mirrored from `tailwind.preset.cjs` (the app's single dark
+ * Widget palette, mirrored from `@pray-times/tailwind-preset` (the app's single dark
  * theme). Android widgets import this directly. iOS can't import TS, so the
  * same values are duplicated once in `targets/widget/expo-target.config.js` —
  * update both when the palette changes.

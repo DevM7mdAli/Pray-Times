@@ -17,3 +17,7 @@ artifacts/*.sha256
 
 # Store keys downloaded during mobile release setup (docs/mobile-release.md)
 apps/mobile/credentials/
+
+# Nx workspace data and local task cache
+.nx/cache
+.nx/workspace-data

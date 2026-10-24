@@ -1,9 +1,11 @@
 packages:
   - apps/*
   - packages/*
+  - tooling
 
 allowBuilds:
   esbuild: true
+  nx: true
   workerd: true
 
 overrides:

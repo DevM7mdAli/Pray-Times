@@ -6,6 +6,14 @@ on:
 
 permissions:
   contents: read
+  # nrwl/nx-set-shas reads past runs of this workflow to find the last green
+  # commit on main.
+  actions: read
+
+env:
+  # Nx keeps its task cache under ~/.nx by default; pin it inside the checkout
+  # so actions/cache can carry it between runs.
+  NX_CACHE_DIRECTORY: ${{ github.workspace }}/.nx/cache
 
 jobs:
   commitlint:
@@ -36,6 +44,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          # nx affected compares against the base commit, so it needs history.
+          fetch-depth: 0
+          filter: tree:0
       - uses: pnpm/action-setup@v6
         with:
           version: 11.18.0
@@ -44,9 +56,22 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Builds and packages Chrome, Firefox, and Safari, then runs the Firefox
-      # add-on validator against the Firefox build.
-      - run: pnpm check
+      # Pull requests compare against where the branch left main; pushes to
+      # main compare against the last commit that passed this workflow.
+      - uses: nrwl/nx-set-shas@v5
+      - name: Restore the Nx cache
+        uses: actions/cache@v6
+        with:
+          path: .nx/cache
+          key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-${{ runner.os }}-
+      - run: pnpm format:check
+      # Runs only the tasks whose inputs this change reaches. Packaging covers
+      # Chrome, Firefox, and Safari, and lint-firefox runs the Firefox add-on
+      # validator against the Firefox build.
+      - run: pnpm exec nx affected -t check-tailwind typecheck lint test build package lint-firefox
       - name: Upload the browser packages
         uses: actions/upload-artifact@v4
         with:
@@ -54,7 +79,8 @@ jobs:
           path: |
             artifacts/*.zip
             artifacts/*.zip.sha256
-          if-no-files-found: error
+          # Nothing is packaged when the change does not reach the extension.
+          if-no-files-found: ignore
 
   safari:
     # A Safari extension ships inside an app bundle, so the only real check is
@@ -62,6 +88,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          filter: tree:0
       - uses: pnpm/action-setup@v6
         with:
           version: 11.18.0
@@ -70,8 +99,24 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - uses: nrwl/nx-set-shas@v5
+      # The Xcode build is the slowest check here, so it only runs when the
+      # change reaches the extension build or this workflow. The job itself
+      # still succeeds so the release job, which needs it, is not skipped.
+      - name: Check whether the extension build is affected
+        id: affected
+        run: |
+          if pnpm exec nx show projects --affected -t build --json | grep -q '"@pray-times/extension"' ||
+            git diff --name-only "$NX_BASE" "$NX_HEAD" | grep -qx '.github/workflows/ci.yml'; then
+            echo "extension=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "The extension build is not affected, so Safari is skipped"
+            echo "extension=false" >> "$GITHUB_OUTPUT"
+          fi
       - run: pnpm build:extension safari
+        if: steps.affected.outputs.extension == 'true'
       - name: Convert the Safari build to an Xcode project
+        if: steps.affected.outputs.extension == 'true'
         run: |
           xcrun safari-web-extension-converter apps/extension/dist/safari \
             --project-location "$RUNNER_TEMP/safari" \
@@ -79,6 +124,7 @@ jobs:
             --bundle-identifier io.github.devm7mdali.praytimes \
             --swift --macos-only --no-open --no-prompt --force
       - name: Build the Safari app extension
+        if: steps.affected.outputs.extension == 'true'
         # Only the extension target is built. Building the containing app adds a
         # ValidateEmbeddedBinary step that needs a real signing identity, which
         # CI does not have, and the appex is what carries the web extension.
@@ -102,6 +148,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
       - name: Upload the Safari Xcode project
+        if: steps.affected.outputs.extension == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: safari-xcode-project
@@ -142,6 +189,19 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
         if: steps.current.outputs.release == 'true'
+      # Verify saved its cache for this exact commit, so the full run below
+      # replays every task it already ran instead of repeating them.
+      - name: Restore the Nx cache
+        if: steps.current.outputs.release == 'true'
+        uses: actions/cache/restore@v6
+        with:
+          path: .nx/cache
+          key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-${{ runner.os }}-
+      # A release is cut from the whole workspace, so it checks every project
+      # rather than only the affected ones.
       - run: pnpm verify:release
         if: steps.current.outputs.release == 'true'
       - name: Bootstrap the current extension version
