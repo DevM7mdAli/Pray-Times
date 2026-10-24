@@ -40,10 +40,27 @@ async function readScheduledIds(): Promise<string[]> {
   }
 }
 
+/** Cancel every pending prayer alarm, including ones leaked by an earlier overlapping rebuild. */
 async function clearOwnedNotifications(): Promise<void> {
-  const ids = await readScheduledIds();
-  await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
+  const [storedIds, pending] = await Promise.all([
+    readScheduledIds(),
+    Notifications.getAllScheduledNotificationsAsync(),
+  ]);
+  const ids = new Set(storedIds);
+  for (const request of pending) {
+    if (typeof request.content.data?.prayerAlarmId === "string") ids.add(request.identifier);
+  }
+  await Promise.all([...ids].map((id) => Notifications.cancelScheduledNotificationAsync(id)));
   await appStorage.removeItem(SCHEDULE_IDS_KEY);
+}
+
+let queue: Promise<void> = Promise.resolve();
+
+/** Run schedule changes one at a time so a rebuild never reads ids another is still writing. */
+function serialized(task: () => Promise<void>): Promise<void> {
+  const run = queue.then(task, task);
+  queue = run.catch(() => undefined);
+  return run;
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
@@ -67,6 +84,12 @@ export async function reconcilePrayerNotifications(input: {
   locale: SupportedLocale;
   enabledPrayers: Readonly<Record<PrayerKey, boolean>>;
 }): Promise<void> {
+  return serialized(() => schedulePrayerNotifications(input));
+}
+
+async function schedulePrayerNotifications(
+  input: Parameters<typeof reconcilePrayerNotifications>[0]
+): Promise<void> {
   await clearOwnedNotifications();
   const schedule = buildPrayerSchedule(input.days, input.enabledPrayers).slice(
     0,
@@ -78,6 +101,8 @@ export async function reconcilePrayerNotifications(input: {
       const place = cityName(input.city, input.locale);
       const time = formatPrayerTime(entry.time, input.locale);
       return Notifications.scheduleNotificationAsync({
+        // A stable identifier makes rescheduling the same prayer replace it instead of stacking.
+        identifier: entry.id,
         content: {
           title: input.locale === "ar" ? `حان وقت صلاة ${prayer}` : `It’s time for ${prayer}`,
           body: `${place} · ${time}`,
@@ -94,6 +119,6 @@ export async function reconcilePrayerNotifications(input: {
   await appStorage.setItem(SCHEDULE_IDS_KEY, JSON.stringify({ ids } satisfies ScheduledIdRecord));
 }
 
-export async function disablePrayerNotifications(): Promise<void> {
-  await clearOwnedNotifications();
+export function disablePrayerNotifications(): Promise<void> {
+  return serialized(clearOwnedNotifications);
 }
