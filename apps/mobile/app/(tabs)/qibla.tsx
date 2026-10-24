@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
+import { useWindowDimensions } from "react-native";
 import * as Location from "expo-location";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
-import { cityName, compassPointFor, qiblaForCity } from "@pray-times/core";
+import {
+  cityName,
+  compassPointFor,
+  deviceHeadingFrom,
+  isHeadingAccuracyLow,
+  qiblaFor,
+  qiblaForCity,
+  smoothHeading,
+} from "@pray-times/core";
 import { Card, DirectionalStack, Kicker, OutlineButton, Screen } from "@/components/ui";
 import { Text, View } from "@/components/primitives";
 import { selectedCityForPreferences, usePreferencesStore } from "@/store/preferences-store";
@@ -19,10 +28,19 @@ export default function QiblaScreen() {
     }))
   );
   const city = useMemo(() => selectedCityForPreferences(preferences), [preferences]);
-  const qibla = qiblaForCity(city);
-  const [heading, setHeading] = useState(0);
+  const [heading, setHeading] = useState<number>();
+  const [isTrueNorth, setIsTrueNorth] = useState(true);
+  const [isAccuracyLow, setIsAccuracyLow] = useState(false);
+  const [devicePosition, setDevicePosition] = useState<{ latitude: number; longitude: number }>();
   const [isAligned, setIsAligned] = useState(false);
   const [compassError, setCompassError] = useState<string>();
+  // The live compass must point from where the device is, not from the chosen
+  // city, which may be elsewhere or tens of kilometres wide.
+  const qibla = isAligned && devicePosition ? qiblaFor(devicePosition) : qiblaForCity(city);
+  // Headings are measured from the top of the device in portrait. The app is
+  // portrait-only on phones, but an iPad can still rotate the interface.
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   useEffect(() => {
     if (!isAligned) return;
@@ -30,16 +48,35 @@ export default function QiblaScreen() {
     let subscription: Location.LocationSubscription | undefined;
     void Location.watchHeadingAsync((result) => {
       if (!active) return;
-      const nextHeading = result.trueHeading >= 0 ? result.trueHeading : result.magHeading;
-      if (Number.isFinite(nextHeading)) setHeading(nextHeading);
+      const reading = deviceHeadingFrom(result);
+      if (!reading) return;
+      setHeading((previous) => smoothHeading(previous, reading.degrees));
+      setIsTrueNorth(reading.isTrueNorth);
+      setIsAccuracyLow(isHeadingAccuracyLow(result.accuracy));
     })
       .then((value) => {
-        subscription = value;
+        if (active) subscription = value;
+        else value.remove();
       })
-      .catch(() => setCompassError(t("compassDenied")));
+      .catch(() => {
+        if (!active) return;
+        setCompassError(t("compassDenied"));
+        setIsAligned(false);
+      });
+    void Location.getLastKnownPositionAsync({ maxAge: 10 * 60_000, requiredAccuracy: 5_000 })
+      .then(
+        (position) =>
+          position ?? Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      )
+      .then((position) => {
+        if (active) setDevicePosition(position.coords);
+      })
+      // Without a fix the compass keeps the chosen city's coordinates.
+      .catch(() => undefined);
     return () => {
       active = false;
       subscription?.remove();
+      setHeading(undefined);
     };
   }, [isAligned, t]);
 
@@ -55,7 +92,8 @@ export default function QiblaScreen() {
 
   const distance =
     qibla.distanceKm < 10 ? qibla.distanceKm.toFixed(1) : Math.round(qibla.distanceKm);
-  const roseRotation = isAligned ? -heading : 0;
+  const isCompassLive = isAligned && heading !== undefined && !isLandscape;
+  const roseRotation = isCompassLive ? -heading : 0;
 
   return (
     <Screen>
@@ -140,11 +178,19 @@ export default function QiblaScreen() {
               </DirectionalStack>
             </View>
             <OutlineButton onPress={() => void enableCompass()}>{t("alignCompass")}</OutlineButton>
-            {isAligned ? (
-              <Text align="center" className="text-muted">
-                {t("compassActive")}
-              </Text>
-            ) : null}
+            {isAligned
+              ? compassNotices({
+                  devicePosition: devicePosition !== undefined,
+                  heading: heading !== undefined,
+                  isAccuracyLow,
+                  isLandscape,
+                  isTrueNorth,
+                }).map((key) => (
+                  <Text align="center" className="text-muted" key={key}>
+                    {t(key)}
+                  </Text>
+                ))
+              : null}
             {compassError ? (
               <Text align="center" className="text-fajr">
                 {compassError}
@@ -155,4 +201,27 @@ export default function QiblaScreen() {
       </Card>
     </Screen>
   );
+}
+
+type CompassNotice =
+  | "compassWaiting"
+  | "compassPortrait"
+  | "compassActive"
+  | "compassCalibrate"
+  | "compassMagnetic"
+  | "compassFromDevice";
+
+function compassNotices(state: {
+  devicePosition: boolean;
+  heading: boolean;
+  isAccuracyLow: boolean;
+  isLandscape: boolean;
+  isTrueNorth: boolean;
+}): CompassNotice[] {
+  if (state.isLandscape) return ["compassPortrait"];
+  if (!state.heading) return ["compassWaiting"];
+  const notices: CompassNotice[] = [state.isAccuracyLow ? "compassCalibrate" : "compassActive"];
+  if (!state.isTrueNorth) notices.push("compassMagnetic");
+  if (state.devicePosition) notices.push("compassFromDevice");
+  return notices;
 }

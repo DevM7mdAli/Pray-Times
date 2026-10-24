@@ -5,6 +5,7 @@ export * from "./detect.js";
 export * from "./geocoding.js";
 export * from "./methods.js";
 export * from "./qibla.js";
+export * from "./geomagnetism.js";
 export * from "./request.js";
 export * from "./schemas.js";
 export * from "./time.js";

@@ -43,7 +43,16 @@ import {
   parseMethodOverrides,
   parseSavedCities,
   parseSavedCity,
+  angleDelta,
+  compassAccuracyLevel,
   compassPointFor,
+  decimalYearOf,
+  deviceHeadingFrom,
+  isHeadingAccuracyLow,
+  magneticDeclination,
+  normalizeDegrees,
+  orientationHeadingFrom,
+  smoothHeading,
   prayerName,
   prayerNameForCity,
   prayerKeysForCity,
@@ -545,6 +554,192 @@ test("compass points round to the nearest of eight", () => {
   assert.equal(compassPointFor(180), "S");
   assert.equal(compassPointFor(337.5), "N");
   assert.equal(compassPointFor(-45), "NW");
+});
+
+test("qibla bearings match published angles for cities worldwide", () => {
+  // Published great-circle qibla angles from true north.
+  const published: [string, number, number, number][] = [
+    ["London", 51.5074, -0.1278, 118.99],
+    ["New York", 40.7128, -74.006, 58.48],
+    ["Jakarta", -6.2088, 106.8456, 295.15],
+    ["Sydney", -33.8688, 151.2093, 277.5],
+    ["Cairo", 30.0444, 31.2357, 136.14],
+    ["Tokyo", 35.6762, 139.6503, 293.0],
+  ];
+  for (const [name, latitude, longitude, expected] of published) {
+    const { bearing } = qiblaFor({ latitude, longitude });
+    assert.ok(Math.abs(bearing - expected) < 0.05, `${name}: got ${bearing}`);
+  }
+});
+
+test("compass angles wrap at north", () => {
+  assert.equal(normalizeDegrees(-0), 0);
+  assert.equal(normalizeDegrees(360), 0);
+  assert.equal(normalizeDegrees(-90), 270);
+  assert.equal(normalizeDegrees(725), 5);
+  assert.equal(angleDelta(359, 1), 2);
+  assert.equal(angleDelta(1, 359), -2);
+  assert.equal(angleDelta(0, 180), 180);
+  assert.equal(angleDelta(90, 90), 0);
+});
+
+test("the device heading prefers true north and keeps Android's unfolded values", () => {
+  assert.deepEqual(deviceHeadingFrom({ trueHeading: 245.5, magHeading: 242 }), {
+    degrees: 245.5,
+    isTrueNorth: true,
+  });
+  // Android: magnetic 1° plus a -3° declination arrives as -2°, still true north.
+  assert.deepEqual(deviceHeadingFrom({ trueHeading: -2, magHeading: 1 }), {
+    degrees: 358,
+    isTrueNorth: true,
+  });
+  // -1 means the platform had no location for the declination.
+  assert.deepEqual(deviceHeadingFrom({ trueHeading: -1, magHeading: 120 }), {
+    degrees: 120,
+    isTrueNorth: false,
+  });
+  assert.equal(deviceHeadingFrom({ trueHeading: -1, magHeading: -1 }), undefined);
+  assert.equal(deviceHeadingFrom({ trueHeading: Number.NaN, magHeading: Number.NaN }), undefined);
+});
+
+test("heading smoothing eases across north instead of sweeping through south", () => {
+  assert.equal(smoothHeading(undefined, 370), 10);
+  assert.equal(smoothHeading(100, 100), 100);
+  // 358° toward 6° is an 8° turn east, so a quarter of it lands on 0°.
+  assert.equal(smoothHeading(358, 6), 0);
+  const eased = smoothHeading(2, 354);
+  assert.ok(Math.abs(eased - 0) < 1e-9, `got ${eased}`);
+  // Repeated readings converge on the target without crossing 180°.
+  let heading: number | undefined = 350;
+  for (let index = 0; index < 50; index += 1) {
+    heading = smoothHeading(heading, 10);
+    assert.ok(heading >= 350 || heading <= 10, `strayed to ${heading}`);
+  }
+  assert.ok(Math.abs(angleDelta(heading, 10)) < 0.01, `got ${heading}`);
+});
+
+test("low compass accuracy is flagged below medium calibration", () => {
+  assert.equal(isHeadingAccuracyLow(0), true);
+  assert.equal(isHeadingAccuracyLow(1), true);
+  assert.equal(isHeadingAccuracyLow(2), false);
+  assert.equal(isHeadingAccuracyLow(3), false);
+  assert.equal(isHeadingAccuracyLow(Number.NaN), true);
+});
+
+test("browser headings read Safari's compass and only absolute alpha", () => {
+  const safari = {
+    alpha: 12,
+    absolute: false,
+    webkitCompassHeading: 245,
+    webkitCompassAccuracy: 10,
+  };
+  assert.deepEqual(orientationHeadingFrom(safari, 0), {
+    degrees: 245,
+    isTrueNorth: false,
+    accuracy: 3,
+  });
+  // Chrome's absolute alpha turns counter-clockwise, so 90° is facing west.
+  assert.deepEqual(orientationHeadingFrom({ alpha: 90, absolute: true }, 0), {
+    degrees: 270,
+    isTrueNorth: false,
+    accuracy: undefined,
+  });
+  assert.equal(orientationHeadingFrom({ alpha: 0, absolute: true }, 0)?.degrees, 0);
+  // A relative alpha starts wherever the page did, so it is not a heading.
+  assert.equal(orientationHeadingFrom({ alpha: 90, absolute: false }, 0), undefined);
+  assert.equal(orientationHeadingFrom({ alpha: null, absolute: true }, 0), undefined);
+  assert.equal(
+    orientationHeadingFrom({ alpha: null, absolute: false, webkitCompassHeading: -1 }, 0),
+    undefined
+  );
+});
+
+test("browser headings follow the screen into landscape", () => {
+  // Device top pointing west, turned counter-clockwise: the screen faces north.
+  assert.equal(orientationHeadingFrom({ alpha: 90, absolute: true }, 90)?.degrees, 0);
+  assert.equal(
+    orientationHeadingFrom({ alpha: null, absolute: false, webkitCompassHeading: 10 }, 270)
+      ?.degrees,
+    280
+  );
+  assert.equal(
+    orientationHeadingFrom({ alpha: null, absolute: false, webkitCompassHeading: 10 }, -90)
+      ?.degrees,
+    280
+  );
+  assert.equal(orientationHeadingFrom({ alpha: 90, absolute: true }, Number.NaN)?.degrees, 270);
+});
+
+test("a known declination turns a browser heading to true north", () => {
+  // New York: magnetic 100° with a -12.5° (west) declination is 87.5° true.
+  assert.deepEqual(orientationHeadingFrom({ alpha: 260, absolute: true }, 0, -12.5), {
+    degrees: 87.5,
+    isTrueNorth: true,
+    accuracy: undefined,
+  });
+  // Auckland: magnetic 350° with +20° (east) wraps past north to 10° true.
+  assert.equal(
+    orientationHeadingFrom({ alpha: null, absolute: false, webkitCompassHeading: 350 }, 0, 20)
+      ?.degrees,
+    10
+  );
+  // An unknown declination leaves the heading magnetic.
+  assert.equal(
+    orientationHeadingFrom({ alpha: 260, absolute: true }, 0, Number.NaN)?.isTrueNorth,
+    false
+  );
+});
+
+test("magnetic declination matches NOAA's published WMM2025 test values", () => {
+  // From NOAA NCEI's "Test Values for WMM2025": year, height km, lat, lon, D°.
+  const published: [number, number, number, number, number][] = [
+    [2025.0, 0, 80, 0, 1.28],
+    [2025.0, 0, 0, 120, -0.16],
+    [2025.0, 0, -80, 240, 68.78],
+    [2025.0, 100, 80, 0, 0.85],
+    [2025.0, 100, 0, 120, -0.15],
+    [2025.0, 100, -80, 240, 68.21],
+    [2027.5, 0, 80, 0, 2.59],
+    [2027.5, 0, 0, 120, -0.24],
+    [2027.5, 0, -80, 240, 68.49],
+    [2027.5, 100, 80, 0, 2.16],
+    [2027.5, 100, 0, 120, -0.23],
+    [2027.5, 100, -80, 240, 67.93],
+  ];
+  for (const [year, height, latitude, longitude, expected] of published) {
+    const declination = magneticDeclination({ latitude, longitude }, year, height);
+    assert.ok(
+      declination !== undefined && Math.abs(declination - expected) < 0.006,
+      `${year} ${height}km ${latitude},${longitude}: got ${declination}`
+    );
+  }
+});
+
+test("magnetic declination is only given inside the model's validity window", () => {
+  const mecca = { latitude: 21.4225, longitude: 39.8262 };
+  assert.equal(magneticDeclination(mecca, 2024.99), undefined);
+  assert.equal(magneticDeclination(mecca, 2030), undefined);
+  assert.equal(magneticDeclination(mecca, Number.NaN), undefined);
+  assert.equal(magneticDeclination({ latitude: 90, longitude: 0 }, 2026), undefined);
+  assert.equal(typeof magneticDeclination(mecca, 2029.99), "number");
+});
+
+test("decimal years count UTC time through the year", () => {
+  assert.equal(decimalYearOf(new Date("2026-01-01T00:00:00Z")), 2026);
+  assert.equal(decimalYearOf(new Date("2027-07-02T12:00:00Z")), 2027.5);
+  // 2028 is a leap year, so its midpoint is a day later in the calendar.
+  assert.equal(decimalYearOf(new Date("2028-07-02T00:00:00Z")), 2028.5);
+});
+
+test("Safari's compass uncertainty maps onto the calibration scale", () => {
+  assert.equal(compassAccuracyLevel(5), 3);
+  assert.equal(compassAccuracyLevel(25), 2);
+  assert.equal(compassAccuracyLevel(40), 1);
+  assert.equal(compassAccuracyLevel(80), 0);
+  // Negative means the compass is not calibrated at all.
+  assert.equal(compassAccuracyLevel(-1), 0);
+  assert.equal(isHeadingAccuracyLow(compassAccuracyLevel(25)), false);
+  assert.equal(isHeadingAccuracyLow(compassAccuracyLevel(-1)), true);
 });
 
 test("the method registry keys every entry by the provider's own id", () => {

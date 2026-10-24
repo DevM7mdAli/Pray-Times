@@ -3,7 +3,12 @@ import { useTranslation } from "react-i18next";
 import {
   cityName,
   compassPointFor,
+  decimalYearOf,
+  isHeadingAccuracyLow,
+  magneticDeclination,
+  orientationHeadingFrom,
   qiblaForCity,
+  smoothHeading,
   type City,
   type SupportedLocale,
 } from "@pray-times/core";
@@ -13,7 +18,21 @@ import { Card, Kicker } from "../../../components/Card";
 type HeadingState = "idle" | "live" | "unsupported" | "denied";
 
 /** Safari exposes the compass heading directly; elsewhere alpha is used. */
-type CompassEvent = DeviceOrientationEvent & { webkitCompassHeading?: number };
+type CompassEvent = DeviceOrientationEvent & {
+  webkitCompassHeading?: number;
+  webkitCompassAccuracy?: number;
+};
+
+/** A compass that has not reported within this long is treated as missing. */
+const NO_COMPASS_TIMEOUT_MS = 3000;
+
+/** The screen's counter-clockwise rotation from the device's natural orientation. */
+function screenAngle(): number {
+  if (typeof screen.orientation?.angle === "number") return screen.orientation.angle;
+  // Safari before 16.4 only has the older, deprecated `window.orientation`.
+  const legacy = (window as { orientation?: unknown }).orientation;
+  return typeof legacy === "number" ? legacy : 0;
+}
 
 type OrientationConstructor = {
   requestPermission?: () => Promise<"granted" | "denied" | "default">;
@@ -31,29 +50,53 @@ export function QiblaCompass({ city }: { city: City }) {
   const locale = useLocale();
   const qibla = qiblaForCity(city);
   const [headingState, setHeadingState] = useState<HeadingState>("idle");
-  const [deviceHeading, setDeviceHeading] = useState(0);
+  const [deviceHeading, setDeviceHeading] = useState<number>();
+  const [isAccuracyLow, setIsAccuracyLow] = useState(false);
+  const [isTrueNorth, setIsTrueNorth] = useState(false);
+  const { latitude, longitude } = city;
 
   useEffect(() => {
     if (headingState !== "live") return;
+    setDeviceHeading(undefined);
+    setIsAccuracyLow(false);
+    setIsTrueNorth(false);
+    // Browsers report magnetic north. Declination barely changes over a few
+    // hundred km, so the city's coordinates are close enough to correct it.
+    const declination = magneticDeclination({ latitude, longitude }, decimalYearOf(new Date()));
+    let received = false;
     const onOrientation = (event: Event) => {
       const orientation = event as CompassEvent;
-      // `webkitCompassHeading` is already degrees clockwise from north; `alpha`
-      // is counter-clockwise, so it has to be inverted.
-      const heading =
-        typeof orientation.webkitCompassHeading === "number"
-          ? orientation.webkitCompassHeading
-          : typeof orientation.alpha === "number"
-            ? 360 - orientation.alpha
-            : undefined;
-      if (heading !== undefined) setDeviceHeading(((heading % 360) + 360) % 360);
+      const reading = orientationHeadingFrom(
+        {
+          alpha: orientation.alpha,
+          absolute: orientation.absolute,
+          webkitCompassHeading: orientation.webkitCompassHeading,
+          webkitCompassAccuracy: orientation.webkitCompassAccuracy,
+        },
+        screenAngle(),
+        declination
+      );
+      if (!reading) return;
+      received = true;
+      setDeviceHeading((previous) => smoothHeading(previous, reading.degrees));
+      setIsAccuracyLow(reading.accuracy !== undefined && isHeadingAccuracyLow(reading.accuracy));
+      setIsTrueNorth(reading.isTrueNorth);
     };
-    window.addEventListener("deviceorientationabsolute", onOrientation);
-    window.addEventListener("deviceorientation", onOrientation);
+    // Chrome's plain `deviceorientation` alpha is relative to wherever the page
+    // started, so listen to the absolute event alone where it exists. Safari
+    // has no absolute event and puts its compass on `deviceorientation`.
+    const eventName =
+      "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
+    window.addEventListener(eventName, onOrientation);
+    // Desktop browsers accept the listener but never report a heading.
+    const timeout = window.setTimeout(() => {
+      if (!received) setHeadingState("unsupported");
+    }, NO_COMPASS_TIMEOUT_MS);
     return () => {
-      window.removeEventListener("deviceorientationabsolute", onOrientation);
-      window.removeEventListener("deviceorientation", onOrientation);
+      window.removeEventListener(eventName, onOrientation);
+      window.clearTimeout(timeout);
     };
-  }, [headingState]);
+  }, [headingState, latitude, longitude]);
 
   const enableCompass = async () => {
     if (typeof window === "undefined" || !("DeviceOrientationEvent" in window)) {
@@ -75,7 +118,7 @@ export function QiblaCompass({ city }: { city: City }) {
   };
 
   // North-up until the device reports a heading, then the rose turns with it.
-  const roseRotation = headingState === "live" ? -deviceHeading : 0;
+  const roseRotation = headingState === "live" && deviceHeading !== undefined ? -deviceHeading : 0;
   const point = compassPointFor(qibla.bearing);
   const bearingLabel = new Intl.NumberFormat(locale === "ar" ? "ar-SA" : "en-US", {
     maximumFractionDigits: 0,
@@ -191,9 +234,19 @@ export function QiblaCompass({ city }: { city: City }) {
 
           <div className="mt-[22px] flex flex-wrap items-center gap-3.5 border-t border-nur/10 pt-[18px]">
             {headingState === "live" ? (
-              <p className="m-0 text-xs text-muted" role="status">
-                {t("aligning")}
-              </p>
+              <div className="grid gap-1.5" role="status">
+                {deviceHeading === undefined ? (
+                  <p className="m-0 text-xs text-muted">{t("waiting")}</p>
+                ) : (
+                  <>
+                    <p className="m-0 text-xs text-muted">{t("aligning")}</p>
+                    {isAccuracyLow ? (
+                      <p className="m-0 text-xs text-muted">{t("calibrate")}</p>
+                    ) : null}
+                    {isTrueNorth ? null : <p className="m-0 text-xs text-muted">{t("magnetic")}</p>}
+                  </>
+                )}
+              </div>
             ) : (
               <>
                 <button
