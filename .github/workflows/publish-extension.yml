@@ -1,0 +1,135 @@
+name: Publish extension
+
+on:
+  # Started by the release job in Verify once semantic-release has tagged a
+  # version, or by hand to publish or retry an existing GitHub Release.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish, for example v1.9.1
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-extension-${{ inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ inputs.tag }}
+
+jobs:
+  chrome:
+    runs-on: ubuntu-latest
+    # The store credentials live on the environment, so a required reviewer
+    # there gates every Chrome Web Store push.
+    environment:
+      name: chrome-web-store
+      url: https://chromewebstore.google.com/detail/${{ vars.CHROME_EXTENSION_ID }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The store receives the exact archive attached to the GitHub Release,
+      # not a rebuild, and only after its published checksum matches.
+      - name: Download the Chrome archive
+        id: archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          archive="$(tooling/release/download-archive.sh "$TAG" chrome "$RUNNER_TEMP/release")"
+          echo "path=$archive" >> "$GITHUB_OUTPUT"
+      - name: Upload and publish to the Chrome Web Store
+        env:
+          EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
+          PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: pnpm exec chrome-webstore-upload --source "${{ steps.archive.outputs.path }}"
+
+  firefox:
+    runs-on: ubuntu-latest
+    environment:
+      name: firefox-amo
+      url: https://addons.mozilla.org/firefox/addon/${{ vars.AMO_ADDON_SLUG }}/
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Download the Firefox archive
+        id: archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          archive="$(tooling/release/download-archive.sh "$TAG" firefox "$RUNNER_TEMP/release")"
+          # web-ext signs a directory, so the verified archive is unpacked as is.
+          unzip -q "$archive" -d "$RUNNER_TEMP/firefox"
+          echo "dir=$RUNNER_TEMP/firefox" >> "$GITHUB_OUTPUT"
+      # The scripts are TypeScript bundled by esbuild, and AMO requires the
+      # original source for any processed code before it will review a version.
+      - name: Archive the source code for AMO review
+        id: source
+        run: |
+          path="$RUNNER_TEMP/pray-times-source-${TAG#v}.zip"
+          git archive --format=zip --output "$path" HEAD
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+      - name: Submit to Firefox Add-ons
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+        # Review of a listed version can take days, so the job ends once AMO
+        # has accepted the submission instead of waiting for approval.
+        run: |
+          pnpm exec web-ext sign \
+            --no-config-discovery \
+            --no-input \
+            --channel listed \
+            --source-dir "${{ steps.archive.outputs.dir }}" \
+            --artifacts-dir "$RUNNER_TEMP/web-ext-artifacts" \
+            --upload-source-code "${{ steps.source.outputs.path }}" \
+            --approval-timeout 0
+
+  edge:
+    runs-on: ubuntu-latest
+    environment: edge-add-ons
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
+      # Edge runs the same Manifest V3 service worker as Chrome, so it takes
+      # the Chrome archive unchanged.
+      - name: Download the Chrome archive
+        id: archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          archive="$(tooling/release/download-archive.sh "$TAG" chrome "$RUNNER_TEMP/release")"
+          echo "path=$archive" >> "$GITHUB_OUTPUT"
+      - name: Upload and publish to Edge Add-ons
+        # Pinned to the v2.1.1 commit, since this third-party action is handed
+        # the store credentials.
+        uses: wdzeng/edge-addon@9881f57720358040d079eaa06a4596dc9c273eb6 # v2.1.1
+        with:
+          product-id: ${{ vars.EDGE_PRODUCT_ID }}
+          zip-path: ${{ steps.archive.outputs.path }}
+          client-id: ${{ secrets.EDGE_CLIENT_ID }}
+          api-key: ${{ secrets.EDGE_API_KEY }}

@@ -171,7 +171,7 @@ After `Verify` succeeds on `main`, the `Deploy landing page` workflow builds and
 
 ## Automated releases
 
-Do not create version tags manually. After a Conventional Commit reaches `main`, CI validates the commit history and the code, then determines the version, updates `apps/extension/manifest.base.json`, creates the tag, builds a ZIP and SHA-256 checksum for each browser, and publishes them all on the GitHub Release.
+Do not create version tags manually. After a Conventional Commit reaches `main`, CI validates the commit history and the code, then determines the version, updates `apps/extension/manifest.base.json`, creates the tag, builds a ZIP and SHA-256 checksum for each browser, and publishes them all on the GitHub Release. The `Publish extension` workflow then submits the archives to the Chrome Web Store, Firefox Add-ons, and Edge Add-ons; its one-time store and secret setup is in [docs/extension-release.md](docs/extension-release.md).
 
 | Commit                                                                  | Release result |
 | ----------------------------------------------------------------------- | -------------- |
